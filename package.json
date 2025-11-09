@@ -1,0 +1,44 @@
+{
+  "name": "sdk-ci-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.prod.json",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fifx": "eslint . --fix",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.1",
+  "dependencies": {
+    "@effect/cli": "^0.72.0",
+    "@effect/platform": "^0.93.0",
+    "@effect/platform-node": "^0.100.0",
+    "dotenv": "^17.2.3",
+    "effect": "^3.19.2"
+  },
+  "devDependencies": {
+    "@effect/eslint-plugin": "^0.3.2",
+    "@effect/language-service": "^0.55.2",
+    "@effect/vitest": "^0.27.0",
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
+    "@eslint/markdown": "^7.5.1",
+    "@types/dotenv": "^8.2.3",
+    "@types/node": "^24.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "@vitest/coverage-v8": "^4.0.8",
+    "dprint": "^0.50.2",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "typescript-eslint": "^8.46.3",
+    "vitest": "^4.0.8"
+  }
+}
