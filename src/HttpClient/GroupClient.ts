@@ -1,3 +1,12 @@
+/**
+ * PingOne Groups HTTP Client
+ *
+ * Provides functions for managing PingOne groups via the PingOne Management API.
+ * Includes operations for creating, reading, updating, and deleting groups, as well as
+ * managing group memberships.
+ *
+ * @since 0.0.1
+ */
 import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
 import { HttpClient } from "@effect/platform/HttpClient"
 import type { Schema } from "effect"
@@ -35,31 +44,10 @@ import type {
  * @param payload.token - PingOne access token with group:create permissions
  * @param payload.groupData - Group data matching PingOneCreateGroupRequest schema
  * @returns Effect that yields the created group response with ID, name, and member counts
- *
- * @example
- * ```ts
- * import { createGroup } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const group = yield* createGroup({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupData: {
- *       name: "Engineering Team",
- *       description: "All engineering users",
- *       population: { id: "pop-456" }
- *     }
- *   })
- *
- *   console.log("Created group:", group.id)
- *   return group
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails with non-2xx status code
+ ** @throws {PingOneApiError} When API request fails with non-2xx status code
  * @see {@link PingOneCreateGroupRequest} for request schema definition
  * @see {@link PingOneCreateGroupResponse} for response schema definition
+ * @since 0.0.1
  * @category API Client
  */
 export const createGroup = <S extends Schema.Schema.Type<typeof PingOneCreateGroupRequest>>(
@@ -99,31 +87,9 @@ export const createGroup = <S extends Schema.Schema.Type<typeof PingOneCreateGro
  * @param payload.groupId - Unique identifier of the group to retrieve
  * @param payload.expand - Optional comma-separated list of resources to expand
  * @returns Effect that yields group data including name, description, and member counts
- *
- * @example
- * ```ts
- * import { readGroup } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const group = yield* readGroup({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789"
- *   })
- *
- *   console.log("Group:", {
- *     name: group.name,
- *     description: group.description,
- *     memberCount: group.totalMemberCounts?.totalMembers
- *   })
- *
- *   return group
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails (e.g., 404 if group not found)
+ ** @throws {PingOneApiError} When API request fails (e.g., 404 if group not found)
  * @see {@link PingOneReadGroupResponse} for response schema definition
+ * @since 0.0.1
  * @category API Client
  */
 export const readGroup = ({ envId, token, groupId, expand }: ReadGroupPayload) =>
@@ -164,27 +130,9 @@ export const readGroup = ({ envId, token, groupId, expand }: ReadGroupPayload) =
  * @param payload.filter - Optional SCIM filter expression
  * @param payload.expand - Optional comma-separated list of resources to expand
  * @returns Effect that yields paginated list of groups
- *
- * @example
- * ```ts
- * import { listGroups } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const result = yield* listGroups({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     limit: 10,
- *     filter: 'name sw "Engineering"'
- *   })
- *
- *   console.log("Groups:", result._embedded.groups.length)
- *   return result
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails
+ ** @throws {PingOneApiError} When API request fails
  * @see {@link PingOneListGroupsResponse} for response schema definition
+ * @since 0.0.1
  * @category API Client
  */
 export const listGroups = ({ envId, token, limit, filter, expand }: ListGroupsPayload) =>
@@ -231,31 +179,10 @@ export const listGroups = ({ envId, token, limit, filter, expand }: ListGroupsPa
  * @param payload.groupId - Unique identifier of the group to update
  * @param payload.groupData - Group data to update (only modified fields needed)
  * @returns Effect that yields the updated group response with new values
- *
- * @example
- * ```ts
- * import { updateGroup } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const updatedGroup = yield* updateGroup({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789",
- *     groupData: {
- *       name: "Senior Engineering Team",
- *       description: "Senior engineering members only"
- *     }
- *   })
- *
- *   console.log("Updated:", updatedGroup.name)
- *   return updatedGroup
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails (e.g., 404 if group not found, 422 if validation fails)
+ ** @throws {PingOneApiError} When API request fails (e.g., 404 if group not found, 422 if validation fails)
  * @see {@link PingOneUpdateGroupRequest} for request schema definition
  * @see {@link PingOneUpdateGroupResponse} for response schema definition
+ * @since 0.0.1
  * @category API Client
  */
 export const updateGroup = <S extends Schema.Schema.Type<typeof PingOneUpdateGroupRequest>>(
@@ -294,24 +221,8 @@ export const updateGroup = <S extends Schema.Schema.Type<typeof PingOneUpdateGro
  * @param payload.token - PingOne access token with group:delete permissions
  * @param payload.groupId - Unique identifier of the group to delete
  * @returns Effect that yields undefined on successful deletion
- *
- * @example
- * ```ts
- * import { deleteGroup } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   yield* deleteGroup({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789"
- *   })
- *
- *   console.log("Group deleted successfully")
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails (e.g., 404 if group not found, 403 if forbidden)
+ ** @throws {PingOneApiError} When API request fails (e.g., 404 if group not found, 403 if forbidden)
+ * @since 0.0.1
  * @category API Client
  */
 export const deleteGroup = ({ envId, token, groupId }: DeleteGroupPayload) =>
@@ -348,25 +259,8 @@ export const deleteGroup = ({ envId, token, groupId }: DeleteGroupPayload) =>
  * @param payload.groupId - Unique identifier of the group
  * @param payload.userId - Unique identifier of the user to add
  * @returns Effect that yields undefined on successful addition
- *
- * @example
- * ```ts
- * import { addGroupMember } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   yield* addGroupMember({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789",
- *     userId: "user-456"
- *   })
- *
- *   console.log("User added to group")
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails
+ ** @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
  * @category API Client
  */
 export const addGroupMember = ({ envId, token, groupId, userId }: AddGroupMemberPayload) =>
@@ -405,25 +299,8 @@ export const addGroupMember = ({ envId, token, groupId, userId }: AddGroupMember
  * @param payload.groupId - Unique identifier of the group
  * @param payload.userId - Unique identifier of the user to remove
  * @returns Effect that yields undefined on successful removal
- *
- * @example
- * ```ts
- * import { removeGroupMember } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   yield* removeGroupMember({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789",
- *     userId: "user-456"
- *   })
- *
- *   console.log("User removed from group")
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails
+ ** @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
  * @category API Client
  */
 export const removeGroupMember = ({ envId, token, groupId, userId }: RemoveGroupMemberPayload) =>
@@ -462,27 +339,9 @@ export const removeGroupMember = ({ envId, token, groupId, userId }: RemoveGroup
  * @param payload.groupId - Unique identifier of the group
  * @param payload.limit - Optional limit for number of results
  * @returns Effect that yields paginated list of group members
- *
- * @example
- * ```ts
- * import { listGroupMembers } from "./GroupClient"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const result = yield* listGroupMembers({
- *     envId: "abc-123",
- *     token: "eyJhbGc...",
- *     groupId: "group-789",
- *     limit: 50
- *   })
- *
- *   console.log("Members:", result._embedded.users.length)
- *   return result
- * })
- * ```
- *
- * @throws {PingOneApiError} When API request fails
+ ** @throws {PingOneApiError} When API request fails
  * @see {@link PingOneListGroupMembersResponse} for response schema definition
+ * @since 0.0.1
  * @category API Client
  */
 export const listGroupMembers = ({ envId, token, groupId, limit }: ListGroupMembersPayload) =>

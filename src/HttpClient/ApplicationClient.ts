@@ -1,3 +1,11 @@
+/**
+ * PingOne Applications HTTP Client
+ *
+ * Provides functions for managing PingOne applications via the PingOne Management API.
+ * Includes operations for creating, reading, updating, and deleting OAuth/OIDC applications.
+ *
+ * @since 0.0.1
+ */
 import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
 import { HttpClient } from "@effect/platform/HttpClient"
 import type { Schema } from "effect"
@@ -10,6 +18,17 @@ import {
   UpdateApplicationRequestSchema
 } from "./ApplicationSchemas.js"
 
+/**
+ * Creates an application in PingOne via API
+ *
+ * @param payload - Create application payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token
+ * @param payload.applicationData - Application data
+ * @returns Effect that yields the created application
+ * @since 0.0.1
+ * @category API Client
+ */
 export const createApplication = <S extends Schema.Schema.Type<typeof CreateApplicationRequestSchema>>(
   { envId, token, applicationData }: { envId: string; token: string; applicationData: S }
 ) =>
@@ -41,6 +60,17 @@ export const createApplication = <S extends Schema.Schema.Type<typeof CreateAppl
     )
   })
 
+/**
+ * Reads an application from PingOne via API
+ *
+ * @param payload - Read application payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token
+ * @param payload.applicationId - Application ID
+ * @returns Effect that yields the application data
+ * @since 0.0.1
+ * @category API Client
+ */
 export const readApplication = ({
   envId,
   token,
@@ -70,6 +100,18 @@ export const readApplication = ({
     )
   })
 
+/**
+ * Lists applications in PingOne via API
+ *
+ * @param payload - List applications payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token
+ * @param payload.limit - Optional pagination limit
+ * @param payload.filter - Optional filter expression
+ * @returns Effect that yields paginated list of applications
+ * @since 0.0.1
+ * @category API Client
+ */
 export const listApplications = ({
   envId,
   token,
@@ -111,6 +153,18 @@ export const listApplications = ({
     )
   })
 
+/**
+ * Updates an application in PingOne via API
+ *
+ * @param payload - Update application payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token
+ * @param payload.applicationId - Application ID
+ * @param payload.applicationData - Application data to update
+ * @returns Effect that yields the updated application
+ * @since 0.0.1
+ * @category API Client
+ */
 export const updateApplication = <S extends Schema.Schema.Type<typeof UpdateApplicationRequestSchema>>(
   {
     envId,
@@ -147,6 +201,17 @@ export const updateApplication = <S extends Schema.Schema.Type<typeof UpdateAppl
     )
   })
 
+/**
+ * Deletes an application from PingOne via API
+ *
+ * @param payload - Delete application payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token
+ * @param payload.applicationId - Application ID
+ * @returns Effect that yields undefined on success
+ * @since 0.0.1
+ * @category API Client
+ */
 export const deleteApplication = ({
   envId,
   token,

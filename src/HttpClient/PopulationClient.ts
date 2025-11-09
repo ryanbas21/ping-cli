@@ -1,3 +1,11 @@
+/**
+ * PingOne Populations HTTP Client
+ *
+ * Provides functions for managing PingOne populations via the PingOne Management API.
+ * Includes operations for creating, reading, updating, and deleting user populations.
+ *
+ * @since 0.0.1
+ */
 import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
 import { HttpClient } from "@effect/platform/HttpClient"
 import type { Schema } from "effect"
@@ -18,6 +26,8 @@ import {
  * @param params.token - Authentication token
  * @param params.populationData - Population data (name, description)
  * @returns Effect that yields the created population
+ * @since 0.0.1
+ * @category API Client
  */
 export const createPopulation = <S extends Schema.Schema.Type<typeof CreatePopulationRequestSchema>>(
   { envId, token, populationData }: { envId: string; token: string; populationData: S }
@@ -58,6 +68,8 @@ export const createPopulation = <S extends Schema.Schema.Type<typeof CreatePopul
  * @param params.token - Authentication token
  * @param params.populationId - Population ID
  * @returns Effect that yields population details
+ * @since 0.0.1
+ * @category API Client
  */
 export const readPopulation = ({
   envId,
@@ -97,6 +109,8 @@ export const readPopulation = ({
  * @param params.limit - Optional limit for number of results
  * @param params.filter - Optional filter expression
  * @returns Effect that yields list of populations
+ * @since 0.0.1
+ * @category API Client
  */
 export const listPopulations = ({
   envId,
@@ -154,6 +168,8 @@ export const listPopulations = ({
  * @param params.populationId - Population ID
  * @param params.populationData - Updated population data
  * @returns Effect that yields the updated population
+ * @since 0.0.1
+ * @category API Client
  */
 export const updatePopulation = <S extends Schema.Schema.Type<typeof UpdatePopulationRequestSchema>>(
   {
@@ -199,6 +215,8 @@ export const updatePopulation = <S extends Schema.Schema.Type<typeof UpdatePopul
  * @param params.token - Authentication token
  * @param params.populationId - Population ID
  * @returns Effect that yields void on success
+ * @since 0.0.1
+ * @category API Client
  */
 export const deletePopulation = ({
   envId,

@@ -1,5 +1,5 @@
 ---
-"ping-cli": minor
+"ping-cli": patch
 ---
 
 Initial release of PingOne SDK CI CLI - a comprehensive command-line tool for managing PingOne resources.

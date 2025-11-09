@@ -1,9 +1,21 @@
 {
   "$schema": "node_modules/@effect/docgen/schema.json",
-  "exclude": ["src/HttpClient/**/*.ts"],
+  "projectHomepage": "https://github.com/ryanbas21/ping-cli",
+  "srcDir": "src",
+  "outDir": "api_docs",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/main.ts",
+    "src/PingCommand.ts",
+    "src/Commands/**/*"
+  ],
+  "enforceDescriptions": false,
+  "enforceExamples": false,
+  "enforceVersion": false,
+  "enableSearchIndex": false,
   "parseCompilerOptions": {
-    "outdir": "api_docs",
-    "noEmit": true,
+    "noEmit": false,
     "strict": true,
     "skipLibCheck": true,
     "moduleResolution": "NodeNext",

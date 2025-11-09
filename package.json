@@ -1,11 +1,12 @@
 {
   "name": "ping-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "PingOne SDK CLI - A comprehensive command-line tool for managing PingOne resources",
   "main": "index.js",
+  "homepage": "https://github.com/ryanbas21/ping-cli#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryanbas21/sdk-ci-cli"
+    "url": "https://github.com/ryanbas21/ping-cli"
   },
   "scripts": {
     "build": "tsc -p ./tsconfig.prod.json",
@@ -13,7 +14,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "docs": "docgen"
   },
   "keywords": [],
   "author": "",
