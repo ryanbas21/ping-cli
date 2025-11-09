@@ -32,7 +32,7 @@ export const deleteApplicationCommand = Command.make(
         applicationId
       }).pipe(
         Effect.flatMap(() => Console.log(`Application ${applicationId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete application: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to delete application: ${error._tag}`))
       )
     })
 )

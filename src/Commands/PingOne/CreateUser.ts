@@ -141,7 +141,7 @@ export const createUser = Command.make(
             `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to create user: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to create user: ${error._tag}`))
       )
     })
 )

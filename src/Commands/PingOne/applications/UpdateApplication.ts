@@ -70,7 +70,7 @@ export const updateApplicationCommand = Command.make(
             }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to update application: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to update application: ${error._tag}`))
       )
     })
 )

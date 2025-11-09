@@ -1,6 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
-import type { PingOneAuthError } from "../../Errors.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
 
 describe("ConfigHelper", () => {

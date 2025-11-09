@@ -68,7 +68,7 @@ export const createPopulationCommand = Command.make(
             }\nDefault: ${population.default}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to create population: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to create population: ${error._tag}`))
       )
     })
 )

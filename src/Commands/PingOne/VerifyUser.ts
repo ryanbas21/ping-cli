@@ -74,7 +74,7 @@ Lifecycle Status: ${user.lifecycle.status}
 Enabled: ${user.enabled}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to verify user: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to verify user: ${error._tag}`))
       )
     })
 )

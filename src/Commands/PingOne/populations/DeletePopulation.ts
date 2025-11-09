@@ -36,7 +36,7 @@ export const deletePopulationCommand = Command.make(
         populationId
       }).pipe(
         Effect.flatMap(() => Console.log(`Population ${populationId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete population: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to delete population: ${error._tag}`))
       )
     })
 )

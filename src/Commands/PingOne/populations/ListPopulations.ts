@@ -59,7 +59,7 @@ export const listPopulationsCommand = Command.make(
             }`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to list populations: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to list populations: ${error._tag}`))
       )
     })
 )

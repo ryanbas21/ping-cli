@@ -198,7 +198,7 @@ The linter will automatically fix formatting issues when you run `pnpm lint:fix`
 
 Use descriptive branch names:
 
-```
+```bash
 feature/add-user-search
 fix/auth-token-validation
 docs/update-api-documentation
@@ -209,7 +209,7 @@ refactor/extract-http-client
 
 Follow conventional commit format:
 
-```
+```bash
 feat: add user search functionality
 fix: validate auth token before API calls
 docs: update API documentation
@@ -266,7 +266,7 @@ git push origin feature/your-feature-name
 
 Organize tests by module:
 
-```
+```bash
 src/
   HttpClient/
     PingOneClient.ts

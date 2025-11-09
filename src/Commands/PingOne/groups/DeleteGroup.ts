@@ -36,7 +36,7 @@ export const deleteGroupCommand = Command.make(
         groupId
       }).pipe(
         Effect.flatMap(() => Console.log(`Group ${groupId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete group: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to delete group: ${error._tag}`))
       )
     })
 )

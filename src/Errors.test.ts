@@ -152,7 +152,7 @@ describe("Errors", () => {
               }
               return "Unknown error"
             },
-            onSuccess: (value) => `Success: ${value}`
+            onSuccess: (_value) => "Success"
           })
         )
 

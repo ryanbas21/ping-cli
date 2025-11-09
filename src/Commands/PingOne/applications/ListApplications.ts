@@ -54,7 +54,7 @@ export const listApplicationsCommand = Command.make(
             }`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to list applications: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to list applications: ${error._tag}`))
       )
     })
 )

@@ -26,7 +26,7 @@ describe("HttpClient", () => {
   describe("invokeJsSdkWorkflow - successful responses", () => {
     it.effect("should successfully dispatch CI workflow", () =>
       Effect.gen(function*() {
-        const mockHttp = makeMockHttpClient(
+        const _mockHttp = makeMockHttpClient(
           () => Effect.succeed(new Response(null, { status: 204 }))
         )
 
@@ -44,7 +44,7 @@ describe("HttpClient", () => {
 
     it.effect("should successfully dispatch publish workflow", () =>
       Effect.gen(function*() {
-        const mockHttp = makeMockHttpClient(
+        const _mockHttp = makeMockHttpClient(
           () => Effect.succeed(new Response(null, { status: 200 }))
         )
 
@@ -98,7 +98,7 @@ describe("HttpClient", () => {
   describe("invokeJsSdkWorkflow - error responses", () => {
     it.effect("should fail on 401 Unauthorized", () =>
       Effect.gen(function*() {
-        const mock401 = makeMockHttpClient(
+        const _mock401 = makeMockHttpClient(
           () => Effect.succeed(new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 }))
         )
 
@@ -120,7 +120,7 @@ describe("HttpClient", () => {
 
     it.effect("should fail on 403 Forbidden", () =>
       Effect.gen(function*() {
-        const mock403 = makeMockHttpClient(
+        const _mock403 = makeMockHttpClient(
           () => Effect.succeed(new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 }))
         )
 
@@ -142,7 +142,7 @@ describe("HttpClient", () => {
 
     it.effect("should fail on 404 Not Found", () =>
       Effect.gen(function*() {
-        const mock404 = makeMockHttpClient(
+        const _mock404 = makeMockHttpClient(
           () => Effect.succeed(new Response(JSON.stringify({ message: "Not Found" }), { status: 404 }))
         )
 
@@ -164,7 +164,7 @@ describe("HttpClient", () => {
 
     it.effect("should fail on 422 Unprocessable Entity", () =>
       Effect.gen(function*() {
-        const mock422 = makeMockHttpClient(
+        const _mock422 = makeMockHttpClient(
           () => Effect.succeed(new Response(JSON.stringify({ message: "Validation failed" }), { status: 422 }))
         )
 
@@ -186,7 +186,7 @@ describe("HttpClient", () => {
 
     it.effect("should fail on 500 Internal Server Error", () =>
       Effect.gen(function*() {
-        const mock500 = makeMockHttpClient(
+        const _mock500 = makeMockHttpClient(
           () => Effect.succeed(new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 }))
         )
 
@@ -227,7 +227,7 @@ describe("HttpClient", () => {
   describe("invokeJsSdkWorkflow - request construction", () => {
     it.effect("should construct correct URL with workflow ID", () =>
       Effect.gen(function*() {
-        let capturedRequest: HttpClientRequest.HttpClientRequest | undefined
+        let _capturedRequest: HttpClientRequest.HttpClientRequest | undefined
 
         yield* invokeJsSdkWorkflow({
           workflowId: "custom-workflow.yml",

@@ -39,7 +39,7 @@ export const addGroupMemberCommand = Command.make(
         userId
       }).pipe(
         Effect.flatMap(() => Console.log(`User ${userId} added to group ${groupId} successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to add member to group: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to add member to group: ${error._tag}`))
       )
     })
 )

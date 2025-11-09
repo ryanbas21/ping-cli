@@ -8,7 +8,7 @@ import tseslint from "typescript-eslint"
 
 export default defineConfig([
   {
-    ignores: ["CLAUDE.md", "node_modules", "dist", "docs/*"]
+    ignores: ["CLAUDE.md", "node_modules", "dist", "docs/*", "vitest.config.ts"]
   },
   // Base config for JS files
   {

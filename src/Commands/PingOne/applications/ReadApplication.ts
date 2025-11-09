@@ -38,7 +38,7 @@ export const readApplicationCommand = Command.make(
             }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to read application: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to read application: ${error._tag}`))
       )
     })
 )

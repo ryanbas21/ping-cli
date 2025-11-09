@@ -517,7 +517,7 @@ pnpm build
 
 ## Project Structure
 
-```
+```bash
 sdk-ci-cli/
 ├── src/
 │   ├── Commands/           # CLI command implementations

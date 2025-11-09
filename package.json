@@ -25,11 +25,16 @@
     "test:coverage": "vitest run --coverage",
     "docs": "docgen"
   },
-  "keywords": ["cli", "effect", "typescript"],
+  "keywords": [
+    "cli",
+    "effect",
+    "typescript"
+  ],
   "author": "ryanbas21",
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
+    "@changesets/changelog-github": "^0.5.1",
     "@effect/cli": "^0.72.0",
     "@effect/platform": "^0.93.0",
     "@effect/platform-node": "^0.100.0",

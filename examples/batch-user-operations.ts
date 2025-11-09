@@ -63,7 +63,7 @@ const createUserSafely = (
     return user
   }).pipe(
     Effect.catchAll((error) =>
-      Console.error(`✗ Failed to create ${userData.username}: ${error}`).pipe(
+      Console.error(`✗ Failed to create ${userData.username}: ${error._tag}`).pipe(
         Effect.flatMap(() => Effect.succeed(null))
       )
     )
@@ -122,7 +122,7 @@ const batchUpdateUsers = (userIds: Array<string>) =>
         return updatedUser
       }).pipe(
         Effect.catchAll((error) =>
-          Console.error(`✗ Failed to update ${userId}: ${error}`).pipe(
+          Console.error(`✗ Failed to update ${userId}: ${error._tag}`).pipe(
             Effect.flatMap(() => Effect.succeed(null))
           )
         )
@@ -161,7 +161,7 @@ const program = Effect.gen(function*() {
   yield* Console.log("\n=== Batch Operations Complete ===")
 }).pipe(
   Effect.catchAll((error) =>
-    Console.error(`\nFatal error in batch operations: ${error}`).pipe(
+    Console.error(`\nFatal error in batch operations: ${error._tag}`).pipe(
       Effect.flatMap(() => Effect.fail(error))
     )
   )

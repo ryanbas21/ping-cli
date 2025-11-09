@@ -50,7 +50,7 @@ export const readGroupCommand = Command.make(
             }\nCustom: ${group.custom}\nCreated: ${group.createdAt}\nUpdated: ${group.updatedAt}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to read group: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to read group: ${error._tag}`))
       )
     })
 )

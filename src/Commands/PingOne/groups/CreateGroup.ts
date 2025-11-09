@@ -94,7 +94,7 @@ export const createGroupCommand = Command.make(
             }`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to create group: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to create group: ${error._tag}`))
       )
     })
 )

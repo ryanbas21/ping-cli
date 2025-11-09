@@ -7,16 +7,7 @@ import {
   readApplication,
   updateApplication
 } from "../src/HttpClient/ApplicationClient.js"
-import {
-  addGroupMember,
-  createGroup,
-  deleteGroup,
-  listGroupMembers,
-  listGroups,
-  readGroup,
-  removeGroupMember,
-  updateGroup
-} from "../src/HttpClient/GroupClient.js"
+import { createGroup, deleteGroup, listGroups, readGroup, updateGroup } from "../src/HttpClient/GroupClient.js"
 import {
   createPopulation,
   deletePopulation,

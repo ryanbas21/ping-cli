@@ -10,7 +10,7 @@
 
 import { NodeContext, NodeHttpClient, NodeRuntime } from "@effect/platform-node"
 import { Config, Console, Effect, Layer, Schedule } from "effect"
-import { PingOneApiError, PingOneAuthError, PingOneValidationError } from "../src/Errors.js"
+import { PingOneValidationError } from "../src/Errors.js"
 import { createPingOneUser, readPingOneUser } from "../src/HttpClient/PingOneClient.js"
 
 /**
@@ -39,7 +39,7 @@ const handleSpecificErrors = Effect.gen(function*() {
         }),
       PingOneAuthError: (error) =>
         Effect.gen(function*() {
-          yield* Console.error(`Authentication Error: ${error.cause}`)
+          yield* Console.error(`Authentication Error: ${String((error as { cause?: string }).cause ?? "Unknown")}`)
           yield* Console.log("Please check your PINGONE_TOKEN environment variable")
           return yield* Effect.fail(error)
         })
@@ -82,7 +82,7 @@ const retryWithBackoff = Effect.gen(function*() {
     }),
     Effect.catchAll((error) =>
       Effect.gen(function*() {
-        yield* Console.error(`Failed after ${attemptCount} attempts: ${error}`)
+        yield* Console.error(`Failed after ${attemptCount} attempts: ${error._tag}`)
         return yield* Effect.fail(error)
       })
     )
@@ -181,7 +181,8 @@ const errorRecoveryWithCleanup = Effect.gen(function*() {
   }).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function*() {
-        yield* Console.error(`Workflow failed: ${error}`)
+        const errorTag = "_tag" in error ? String(error._tag) : "Unknown"
+        yield* Console.error(`Workflow failed: ${errorTag}`)
         yield* Console.log("Performing cleanup...")
 
         // Cleanup logic here
@@ -255,7 +256,7 @@ const program = Effect.gen(function*() {
   yield* Console.log("\nAll examples completed!")
 }).pipe(
   Effect.catchAll((error) =>
-    Console.error(`\nFatal error: ${error}`).pipe(
+    Console.error(`\nFatal error: ${String(error)}`).pipe(
       Effect.flatMap(() => Effect.fail(error))
     )
   )

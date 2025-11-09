@@ -55,7 +55,7 @@ export const listGroupMembersCommand = Command.make(
             }`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to list group members: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to list group members: ${error._tag}`))
       )
     })
 )

@@ -44,7 +44,7 @@ export const readPopulationCommand = Command.make(
             }`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to read population: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to read population: ${error._tag}`))
       )
     })
 )

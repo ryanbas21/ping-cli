@@ -48,7 +48,7 @@ export const updateUser = Command.make(
         catch: (error) =>
           new PingOneValidationError({
             field: "jsonData",
-            message: `Invalid JSON format: ${error}`
+            message: `Invalid JSON format: ${String(error)}`
           })
       })
 
@@ -84,7 +84,7 @@ Lifecycle Status: ${user.lifecycle.status}
 Updated: ${user.updatedAt}`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to update user: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to update user: ${error._tag}`))
       )
     })
 )

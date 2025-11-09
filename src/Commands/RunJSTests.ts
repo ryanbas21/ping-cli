@@ -56,7 +56,7 @@ export const runJSTests = Command.make(
             payload: { inputs: { baseUrl }, ref }
           }).pipe(
             Effect.flatMap((response) => Console.log(`Workflow dispatched successfully. Status: ${response.status}`)),
-            Effect.catchAll((error) => Console.error(`Failed to dispatch workflow: ${error}`))
+            Effect.catchAll((error) => Console.error(`Failed to dispatch workflow: ${error._tag}`))
           ),
         onFalse: () =>
           Effect.fail(

@@ -74,7 +74,7 @@ export const updatePopulationCommand = Command.make(
             }`
           )
         ),
-        Effect.catchAll((error) => Console.error(`Failed to update population: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to update population: ${error._tag}`))
       )
     })
 )

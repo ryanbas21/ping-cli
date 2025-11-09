@@ -93,7 +93,7 @@ const createAndVerifyUserWorkflow = Effect.gen(function*() {
  */
 const program = createAndVerifyUserWorkflow.pipe(
   Effect.catchAll((error) =>
-    Console.error(`Error in workflow: ${error}`).pipe(
+    Console.error(`Error in workflow: ${error._tag}`).pipe(
       Effect.flatMap(() => Effect.fail(error))
     )
   )

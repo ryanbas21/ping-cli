@@ -63,7 +63,7 @@ export const listGroupsCommand = Command.make(
             }`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to list groups: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to list groups: ${error._tag}`))
       )
     })
 )

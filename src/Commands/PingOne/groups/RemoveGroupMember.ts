@@ -39,7 +39,7 @@ export const removeGroupMemberCommand = Command.make(
         userId
       }).pipe(
         Effect.flatMap(() => Console.log(`User ${userId} removed from group ${groupId} successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to remove member from group: ${error}`))
+        Effect.catchAll((error) => Console.error(`Failed to remove member from group: ${error._tag}`))
       )
     })
 )
