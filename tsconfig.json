@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
     "target": "esnext",
     "module": "NodeNext",
     "lib": ["ES2022"],
@@ -11,5 +12,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "exclude": ["./eslint.config.mts", "vitest.config.ts"]
+  "exclude": ["vitest.config.ts"]
 }

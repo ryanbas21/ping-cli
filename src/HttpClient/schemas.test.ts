@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
-import * as Schema from "effect/Schema"
 import { Effect } from "effect"
+import * as Schema from "effect/Schema"
 import { GitHubDispatchSchema, PingCIWorkflow, PingPublishWorkflow } from "./schemas"
 
 describe("Schemas", () => {
@@ -17,8 +17,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(validPayload)
 
         assert.deepStrictEqual(result, validPayload)
-      })
-    )
+      }))
 
     it.effect("should validate CI workflow with branch ref", () =>
       Effect.gen(function*() {
@@ -32,8 +31,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate CI workflow with commit SHA", () =>
       Effect.gen(function*() {
@@ -47,8 +45,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should reject CI workflow without ref", () =>
       Effect.gen(function*() {
@@ -61,8 +58,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject CI workflow without baseUrl", () =>
       Effect.gen(function*() {
@@ -74,8 +70,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject CI workflow without inputs", () =>
       Effect.gen(function*() {
@@ -86,8 +81,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject CI workflow with wrong types", () =>
       Effect.gen(function*() {
@@ -101,8 +95,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingCIWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 
   describe("PingPublishWorkflow", () => {
@@ -115,8 +108,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with ref", () =>
       Effect.gen(function*() {
@@ -129,8 +121,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with tag", () =>
       Effect.gen(function*() {
@@ -143,8 +134,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with branch", () =>
       Effect.gen(function*() {
@@ -157,8 +147,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with prerelease", () =>
       Effect.gen(function*() {
@@ -171,8 +160,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with access", () =>
       Effect.gen(function*() {
@@ -185,8 +173,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate publish workflow with all fields", () =>
       Effect.gen(function*() {
@@ -203,8 +190,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should reject publish workflow without inputs", () =>
       Effect.gen(function*() {
@@ -213,8 +199,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject publish workflow with wrong types", () =>
       Effect.gen(function*() {
@@ -231,8 +216,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(PingPublishWorkflow)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 
   describe("GitHubDispatchSchema (Union)", () => {
@@ -248,8 +232,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(ciPayload)
 
         assert.deepStrictEqual(result, ciPayload)
-      })
-    )
+      }))
 
     it.effect("should validate Publish workflow variant", () =>
       Effect.gen(function*() {
@@ -262,8 +245,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(publishPayload)
 
         assert.deepStrictEqual(result, publishPayload)
-      })
-    )
+      }))
 
     it.effect("should validate CI workflow with full structure", () =>
       Effect.gen(function*() {
@@ -277,8 +259,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should validate Publish workflow with multiple fields", () =>
       Effect.gen(function*() {
@@ -293,8 +274,7 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(payload)
 
         assert.deepStrictEqual(result, payload)
-      })
-    )
+      }))
 
     it.effect("should reject completely invalid payloads", () =>
       Effect.gen(function*() {
@@ -305,39 +285,34 @@ describe("Schemas", () => {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(invalidPayload).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject null values", () =>
       Effect.gen(function*() {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(null).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject undefined values", () =>
       Effect.gen(function*() {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)(undefined).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject arrays", () =>
       Effect.gen(function*() {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)([]).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject primitives", () =>
       Effect.gen(function*() {
         const result = yield* Schema.decodeUnknown(GitHubDispatchSchema)("string").pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 })

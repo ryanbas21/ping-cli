@@ -44,12 +44,8 @@ export const deleteUser = Command.make(
         token,
         userId
       }).pipe(
-        Effect.flatMap(() =>
-          Console.log(`User ${userId} deleted successfully!`)
-        ),
-        Effect.catchAll((error) =>
-          Console.error(`Failed to delete user: ${error}`)
-        )
+        Effect.flatMap(() => Console.log(`User ${userId} deleted successfully!`)),
+        Effect.catchAll((error) => Console.error(`Failed to delete user: ${error}`))
       )
     })
 )

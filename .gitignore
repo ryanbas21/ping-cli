@@ -1,3 +1,4 @@
+api_docs/*
 node_modules
 .claude
 .serena

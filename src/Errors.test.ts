@@ -1,6 +1,12 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Effect } from "effect"
-import { NoGithubToken, PingOneApiError, PingOneAuthError, PingOneValidationError, WorkflowDispatchError } from "./Errors"
+import {
+  NoGithubToken,
+  PingOneApiError,
+  PingOneAuthError,
+  PingOneValidationError,
+  WorkflowDispatchError
+} from "./Errors"
 
 describe("Errors", () => {
   describe("NoGithubToken", () => {
@@ -12,8 +18,7 @@ describe("Errors", () => {
 
         assert.strictEqual(error._tag, "NoGithubToken")
         assert.strictEqual(error.cause, "No Github token provided")
-      })
-    )
+      }))
 
     it.effect("should be throwable as Effect", () =>
       Effect.gen(function*() {
@@ -28,24 +33,20 @@ describe("Errors", () => {
             assert.strictEqual(result.cause.error.cause, "Token missing")
           }
         }
-      })
-    )
+      }))
 
     it.effect("should be catchable", () =>
       Effect.gen(function*() {
         const program = Effect.fail(
           new NoGithubToken({ cause: "Missing token" })
         ).pipe(
-          Effect.catchTag("NoGithubToken", (error) =>
-            Effect.succeed(`Caught: ${error.cause}`)
-          )
+          Effect.catchTag("NoGithubToken", (error) => Effect.succeed(`Caught: ${error.cause}`))
         )
 
         const result = yield* program
 
         assert.strictEqual(result, "Caught: Missing token")
-      })
-    )
+      }))
   })
 
   describe("WorkflowDispatchError", () => {
@@ -59,8 +60,7 @@ describe("Errors", () => {
         assert.strictEqual(error._tag, "WorkflowDispatchError")
         assert.strictEqual(error.status, 401)
         assert.strictEqual(error.message, "Unauthorized")
-      })
-    )
+      }))
 
     it.effect("should support various HTTP status codes", () =>
       Effect.gen(function*() {
@@ -75,8 +75,7 @@ describe("Errors", () => {
           assert.strictEqual(error.status, status)
           assert.strictEqual(error.message, `Error ${status}`)
         }
-      })
-    )
+      }))
 
     it.effect("should be throwable as Effect", () =>
       Effect.gen(function*() {
@@ -95,8 +94,7 @@ describe("Errors", () => {
             assert.strictEqual(result.cause.error.message, "Forbidden")
           }
         }
-      })
-    )
+      }))
 
     it.effect("should be catchable by tag", () =>
       Effect.gen(function*() {
@@ -106,16 +104,13 @@ describe("Errors", () => {
             message: "Not Found"
           })
         ).pipe(
-          Effect.catchTag("WorkflowDispatchError", (error) =>
-            Effect.succeed(`Status: ${error.status}`)
-          )
+          Effect.catchTag("WorkflowDispatchError", (error) => Effect.succeed(`Status: ${error.status}`))
         )
 
         const result = yield* program
 
         assert.strictEqual(result, "Status: 404")
-      })
-    )
+      }))
 
     it.effect("should preserve error details through pipe operations", () =>
       Effect.gen(function*() {
@@ -130,8 +125,7 @@ describe("Errors", () => {
               status: error.status,
               message: error.message,
               tag: error._tag
-            })
-          )
+            }))
         )
 
         const result = yield* program
@@ -141,8 +135,7 @@ describe("Errors", () => {
           message: "Internal Server Error",
           tag: "WorkflowDispatchError"
         })
-      })
-    )
+      }))
 
     it.effect("should work with Effect.match for error handling", () =>
       Effect.gen(function*() {
@@ -166,8 +159,7 @@ describe("Errors", () => {
         const result = yield* program
 
         assert.strictEqual(result, "Failed with 401: GitHub API request failed with status 401")
-      })
-    )
+      }))
   })
 
   describe("PingOneAuthError", () => {
@@ -179,8 +171,7 @@ describe("Errors", () => {
 
         assert.strictEqual(error._tag, "PingOneAuthError")
         assert.strictEqual(error.cause, "No PingOne token provided")
-      })
-    )
+      }))
 
     it.effect("should be throwable as Effect", () =>
       Effect.gen(function*() {
@@ -190,28 +181,24 @@ describe("Errors", () => {
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
-          const error = result.cause.error as PingOneAuthError
+          const error = result.cause.error
           assert.strictEqual(error._tag, "PingOneAuthError")
           assert.strictEqual(error.cause, "Invalid credentials")
         }
-      })
-    )
+      }))
 
     it.effect("should be catchable by tag", () =>
       Effect.gen(function*() {
         const program = Effect.fail(
           new PingOneAuthError({ cause: "Missing environment ID" })
         ).pipe(
-          Effect.catchTag("PingOneAuthError", (error) =>
-            Effect.succeed(`Caught: ${error.cause}`)
-          )
+          Effect.catchTag("PingOneAuthError", (error) => Effect.succeed(`Caught: ${error.cause}`))
         )
 
         const result = yield* program
 
         assert.strictEqual(result, "Caught: Missing environment ID")
-      })
-    )
+      }))
   })
 
   describe("PingOneApiError", () => {
@@ -225,8 +212,7 @@ describe("Errors", () => {
         assert.strictEqual(error._tag, "PingOneApiError")
         assert.strictEqual(error.status, 401)
         assert.strictEqual(error.message, "Unauthorized")
-      })
-    )
+      }))
 
     it.effect("should support optional error code", () =>
       Effect.gen(function*() {
@@ -240,8 +226,7 @@ describe("Errors", () => {
         assert.strictEqual(error.status, 400)
         assert.strictEqual(error.message, "Bad Request")
         assert.strictEqual(error.errorCode, "INVALID_VALUE")
-      })
-    )
+      }))
 
     it.effect("should support various HTTP status codes", () =>
       Effect.gen(function*() {
@@ -256,8 +241,7 @@ describe("Errors", () => {
           assert.strictEqual(error.status, status)
           assert.strictEqual(error.message, `Error ${status}`)
         }
-      })
-    )
+      }))
 
     it.effect("should be throwable as Effect", () =>
       Effect.gen(function*() {
@@ -271,13 +255,12 @@ describe("Errors", () => {
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
-          const error = result.cause.error as PingOneApiError
+          const error = result.cause.error
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 403)
           assert.strictEqual(error.errorCode, "INSUFFICIENT_PERMISSIONS")
         }
-      })
-    )
+      }))
 
     it.effect("should be catchable by tag", () =>
       Effect.gen(function*() {
@@ -287,16 +270,13 @@ describe("Errors", () => {
             message: "Not Found"
           })
         ).pipe(
-          Effect.catchTag("PingOneApiError", (error) =>
-            Effect.succeed(`Status: ${error.status}`)
-          )
+          Effect.catchTag("PingOneApiError", (error) => Effect.succeed(`Status: ${error.status}`))
         )
 
         const result = yield* program
 
         assert.strictEqual(result, "Status: 404")
-      })
-    )
+      }))
   })
 
   describe("PingOneValidationError", () => {
@@ -310,8 +290,7 @@ describe("Errors", () => {
         assert.strictEqual(error._tag, "PingOneValidationError")
         assert.strictEqual(error.field, "email")
         assert.strictEqual(error.message, "Invalid email format")
-      })
-    )
+      }))
 
     it.effect("should support various field validations", () =>
       Effect.gen(function*() {
@@ -328,8 +307,7 @@ describe("Errors", () => {
           assert.strictEqual(error.field, validation.field)
           assert.strictEqual(error.message, validation.message)
         }
-      })
-    )
+      }))
 
     it.effect("should be throwable as Effect", () =>
       Effect.gen(function*() {
@@ -342,12 +320,11 @@ describe("Errors", () => {
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
-          const error = result.cause.error as PingOneValidationError
+          const error = result.cause.error
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.strictEqual(error.field, "username")
         }
-      })
-    )
+      }))
 
     it.effect("should be catchable by tag", () =>
       Effect.gen(function*() {
@@ -357,16 +334,16 @@ describe("Errors", () => {
             message: "Invalid email format"
           })
         ).pipe(
-          Effect.catchTag("PingOneValidationError", (error) =>
-            Effect.succeed(`Invalid ${error.field}: ${error.message}`)
+          Effect.catchTag(
+            "PingOneValidationError",
+            (error) => Effect.succeed(`Invalid ${error.field}: ${error.message}`)
           )
         )
 
         const result = yield* program
 
         assert.strictEqual(result, "Invalid email: Invalid email format")
-      })
-    )
+      }))
   })
 
   describe("Error composition", () => {
@@ -386,8 +363,7 @@ describe("Errors", () => {
         assert.strictEqual(authError._tag, "PingOneAuthError")
         assert.strictEqual(apiError._tag, "PingOneApiError")
         assert.strictEqual(validationError._tag, "PingOneValidationError")
-      })
-    )
+      }))
 
     it.effect("should support selective error handling for NoGithubToken", () =>
       Effect.gen(function*() {
@@ -398,8 +374,7 @@ describe("Errors", () => {
         const result = yield* program
 
         assert.strictEqual(result, "Handled NoGithubToken")
-      })
-    )
+      }))
 
     it.effect("should support selective error handling for WorkflowDispatchError", () =>
       Effect.gen(function*() {
@@ -412,8 +387,7 @@ describe("Errors", () => {
         const result = yield* program
 
         assert.strictEqual(result, "Handled WorkflowDispatchError")
-      })
-    )
+      }))
 
     it.effect("should support selective error handling for PingOne errors", () =>
       Effect.gen(function*() {
@@ -442,7 +416,6 @@ describe("Errors", () => {
         assert.strictEqual(authResult, "Handled Auth")
         assert.strictEqual(apiResult, "Handled API")
         assert.strictEqual(validationResult, "Handled Validation")
-      })
-    )
+      }))
   })
 })

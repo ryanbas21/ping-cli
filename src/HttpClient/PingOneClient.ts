@@ -23,10 +23,46 @@ import type {
 /**
  * Creates a user in PingOne via API
  *
- * @param envId - PingOne environment ID
- * @param token - PingOne access token
- * @param userData - User data matching PingOneCreateUserRequest schema
- * @returns Effect that yields the created user response
+ * Makes a POST request to the PingOne Users API to create a new user account.
+ * The request is validated against the PingOneCreateUserRequest schema and the
+ * response is validated against the PingOneCreateUserResponse schema.
+ *
+ * @param payload - Create user payload
+ * @param payload.envId - PingOne environment ID where the user will be created
+ * @param payload.token - PingOne access token with user:create permissions
+ * @param payload.userData - User data matching PingOneCreateUserRequest schema
+ * @returns Effect that yields the created user response with ID, username, email, and lifecycle information
+ *
+ * @example
+ * ```ts
+ * import { createPingOneUser } from "./PingOneClient"
+ * import { Effect, Layer } from "effect"
+ * import { HttpClient } from "@effect/platform"
+ *
+ * const program = Effect.gen(function* () {
+ *   const user = yield* createPingOneUser({
+ *     envId: "abc-123",
+ *     token: "eyJhbGc...",
+ *     userData: {
+ *       username: "john.doe",
+ *       email: "john@example.com",
+ *       population: { id: "pop-456" },
+ *       name: {
+ *         given: "John",
+ *         family: "Doe"
+ *       }
+ *     }
+ *   })
+ *
+ *   console.log("Created user:", user.id)
+ *   return user
+ * })
+ * ```
+ *
+ * @throws {PingOneApiError} When API request fails with non-2xx status code
+ * @see {@link PingOneCreateUserRequest} for request schema definition
+ * @see {@link PingOneCreateUserResponse} for response schema definition
+ * @category API Client
  */
 export const createPingOneUser = <S extends Schema.Schema.Type<typeof PingOneCreateUserRequest>>(
   { envId, token, userData }: CreateUserPayload<S>
@@ -56,18 +92,48 @@ export const createPingOneUser = <S extends Schema.Schema.Type<typeof PingOneCre
             )
         })
       ),
-      Effect.flatMap((response) =>
-        HttpClientResponse.schemaBodyJson(PingOneCreateUserResponse)(response)
-      )
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneCreateUserResponse)(response))
     )
 
 /**
  * Reads a user from PingOne by ID
  *
- * @param envId - PingOne environment ID
- * @param token - PingOne access token
- * @param userId - User ID to read
- * @returns Effect that yields the user data
+ * Makes a GET request to retrieve user information from the PingOne API.
+ * The request includes the `expand=population` query parameter to include
+ * full population details in the response.
+ *
+ * @param payload - Read user payload
+ * @param payload.envId - PingOne environment ID containing the user
+ * @param payload.token - PingOne access token with user:read permissions
+ * @param payload.userId - Unique identifier of the user to retrieve
+ * @returns Effect that yields user data including username, email, status, and population info
+ *
+ * @example
+ * ```ts
+ * import { readPingOneUser } from "./PingOneClient"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   const user = yield* readPingOneUser({
+ *     envId: "abc-123",
+ *     token: "eyJhbGc...",
+ *     userId: "user-789"
+ *   })
+ *
+ *   console.log("User:", {
+ *     username: user.username,
+ *     email: user.email,
+ *     enabled: user.enabled,
+ *     status: user.lifecycle.status
+ *   })
+ *
+ *   return user
+ * })
+ * ```
+ *
+ * @throws {PingOneApiError} When API request fails (e.g., 404 if user not found)
+ * @see {@link PingOneReadUserResponse} for response schema definition
+ * @category API Client
  */
 export const readPingOneUser = (
   { envId, token, userId }: ReadUserPayload
@@ -98,11 +164,46 @@ export const readPingOneUser = (
 /**
  * Updates a user in PingOne via API
  *
- * @param envId - PingOne environment ID
- * @param token - PingOne access token
- * @param userId - User ID to update
- * @param userData - User data matching PingOneUpdateUserRequest schema
- * @returns Effect that yields the updated user response
+ * Makes a PUT request to update an existing user's information.
+ * Only provided fields will be updated; omitted fields remain unchanged.
+ * The request is validated against the PingOneUpdateUserRequest schema.
+ *
+ * @param payload - Update user payload
+ * @param payload.envId - PingOne environment ID containing the user
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - Unique identifier of the user to update
+ * @param payload.userData - User data to update (only modified fields needed)
+ * @returns Effect that yields the updated user response with new values
+ *
+ * @example
+ * ```ts
+ * import { updatePingOneUser } from "./PingOneClient"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   const updatedUser = yield* updatePingOneUser({
+ *     envId: "abc-123",
+ *     token: "eyJhbGc...",
+ *     userId: "user-789",
+ *     userData: {
+ *       email: "newemail@example.com",
+ *       name: {
+ *         given: "Jane",
+ *         family: "Smith"
+ *       },
+ *       department: "Product"
+ *     }
+ *   })
+ *
+ *   console.log("Updated:", updatedUser.email)
+ *   return updatedUser
+ * })
+ * ```
+ *
+ * @throws {PingOneApiError} When API request fails (e.g., 404 if user not found, 422 if validation fails)
+ * @see {@link PingOneUpdateUserRequest} for request schema definition
+ * @see {@link PingOneUpdateUserResponse} for response schema definition
+ * @category API Client
  */
 export const updatePingOneUser = <S extends Schema.Schema.Type<typeof PingOneUpdateUserRequest>>(
   { envId, token, userId, userData }: UpdateUserPayload<S>
@@ -132,18 +233,39 @@ export const updatePingOneUser = <S extends Schema.Schema.Type<typeof PingOneUpd
             )
         })
       ),
-      Effect.flatMap((response) =>
-        HttpClientResponse.schemaBodyJson(PingOneUpdateUserResponse)(response)
-      )
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneUpdateUserResponse)(response))
     )
 
 /**
  * Deletes a user from PingOne
  *
- * @param envId - PingOne environment ID
- * @param token - PingOne access token
- * @param userId - User ID to delete
- * @returns Effect that yields void on success (204 No Content)
+ * Makes a DELETE request to permanently remove a user from the PingOne environment.
+ * This operation cannot be undone. Returns undefined on success (HTTP 204 No Content).
+ *
+ * @param payload - Delete user payload
+ * @param payload.envId - PingOne environment ID containing the user
+ * @param payload.token - PingOne access token with user:delete permissions
+ * @param payload.userId - Unique identifier of the user to delete
+ * @returns Effect that yields undefined on successful deletion
+ *
+ * @example
+ * ```ts
+ * import { deletePingOneUser } from "./PingOneClient"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   yield* deletePingOneUser({
+ *     envId: "abc-123",
+ *     token: "eyJhbGc...",
+ *     userId: "user-789"
+ *   })
+ *
+ *   console.log("User deleted successfully")
+ * })
+ * ```
+ *
+ * @throws {PingOneApiError} When API request fails (e.g., 404 if user not found, 403 if forbidden)
+ * @category API Client
  */
 export const deletePingOneUser = (
   { envId, token, userId }: DeleteUserPayload
@@ -174,11 +296,41 @@ export const deletePingOneUser = (
 /**
  * Verifies a user account in PingOne with a verification code
  *
- * @param envId - PingOne environment ID
- * @param token - PingOne access token
- * @param userId - User ID to verify
- * @param verificationData - Verification code data
- * @returns Effect that yields the verified user response
+ * Makes a POST request with a special content type to verify a user's account
+ * using a verification code (typically 6 digits) sent to the user's email.
+ * Upon successful verification, the user's lifecycle status is updated to ACCOUNT_OK.
+ *
+ * @param payload - Verify user payload
+ * @param payload.envId - PingOne environment ID containing the user
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - Unique identifier of the user to verify
+ * @param payload.verificationData - Verification data containing the verification code
+ * @returns Effect that yields the verified user response with updated lifecycle status
+ *
+ * @example
+ * ```ts
+ * import { verifyPingOneUser } from "./PingOneClient"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function* () {
+ *   const verifiedUser = yield* verifyPingOneUser({
+ *     envId: "abc-123",
+ *     token: "eyJhbGc...",
+ *     userId: "user-789",
+ *     verificationData: {
+ *       verificationCode: "123456"
+ *     }
+ *   })
+ *
+ *   console.log("Verified:", verifiedUser.lifecycle.status)
+ *   return verifiedUser
+ * })
+ * ```
+ *
+ * @throws {PingOneApiError} When API request fails (e.g., 400 if code is invalid, 404 if user not found)
+ * @see {@link PingOneVerifyUserRequest} for request schema definition
+ * @see {@link PingOneVerifyUserResponse} for response schema definition
+ * @category API Client
  */
 export const verifyPingOneUser = <S extends Schema.Schema.Type<typeof PingOneVerifyUserRequest>>(
   { envId, token, userId, verificationData }: VerifyUserPayload<S>
@@ -208,7 +360,5 @@ export const verifyPingOneUser = <S extends Schema.Schema.Type<typeof PingOneVer
             )
         })
       ),
-      Effect.flatMap((response) =>
-        HttpClientResponse.schemaBodyJson(PingOneVerifyUserResponse)(response)
-      )
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneVerifyUserResponse)(response))
     )

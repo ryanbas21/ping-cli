@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
-import * as Schema from "effect/Schema"
 import { Effect } from "effect"
+import * as Schema from "effect/Schema"
 import {
   PingOneCreateUserRequest,
   PingOneCreateUserResponse,
@@ -20,8 +20,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneUserNameSchema)(validName)
 
         assert.deepStrictEqual(result, validName)
-      })
-    )
+      }))
 
     it.effect("should validate name with only given", () =>
       Effect.gen(function*() {
@@ -32,8 +31,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneUserNameSchema)(validName)
 
         assert.deepStrictEqual(result, validName)
-      })
-    )
+      }))
 
     it.effect("should validate empty name object", () =>
       Effect.gen(function*() {
@@ -42,8 +40,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneUserNameSchema)(emptyName)
 
         assert.deepStrictEqual(result, emptyName)
-      })
-    )
+      }))
   })
 
   describe("PingOnePopulationSchema", () => {
@@ -56,8 +53,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOnePopulationSchema)(validPopulation)
 
         assert.deepStrictEqual(result, validPopulation)
-      })
-    )
+      }))
 
     it.effect("should reject population without id", () =>
       Effect.gen(function*() {
@@ -66,8 +62,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOnePopulationSchema)(invalidPopulation).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 
   describe("PingOneCreateUserRequest", () => {
@@ -84,8 +79,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserRequest)(minimalUser)
 
         assert.deepStrictEqual(result, minimalUser)
-      })
-    )
+      }))
 
     it.effect("should validate full user request with all fields", () =>
       Effect.gen(function*() {
@@ -106,8 +100,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserRequest)(fullUser)
 
         assert.deepStrictEqual(result, fullUser)
-      })
-    )
+      }))
 
     it.effect("should reject user without username", () =>
       Effect.gen(function*() {
@@ -121,8 +114,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserRequest)(invalidUser).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject user without email", () =>
       Effect.gen(function*() {
@@ -136,8 +128,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserRequest)(invalidUser).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
 
     it.effect("should reject user without population", () =>
       Effect.gen(function*() {
@@ -149,8 +140,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserRequest)(invalidUser).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 
   describe("PingOneCreateUserResponse", () => {
@@ -176,8 +166,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserResponse)(validResponse)
 
         assert.deepStrictEqual(result, validResponse)
-      })
-    )
+      }))
 
     it.effect("should validate response with optional fields", () =>
       Effect.gen(function*() {
@@ -199,8 +188,7 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserResponse)(responseWithOptionals)
 
         assert.deepStrictEqual(result, responseWithOptionals)
-      })
-    )
+      }))
 
     it.effect("should reject response missing required id", () =>
       Effect.gen(function*() {
@@ -219,7 +207,6 @@ describe("PingOneSchemas", () => {
         const result = yield* Schema.decodeUnknown(PingOneCreateUserResponse)(invalidResponse).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
-      })
-    )
+      }))
   })
 })

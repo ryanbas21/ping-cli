@@ -1,13 +1,17 @@
 {
-  "name": "sdk-ci-cli",
+  "name": "ping-cli",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryanbas21/sdk-ci-cli"
+  },
   "scripts": {
     "build": "tsc -p ./tsconfig.prod.json",
     "test": "vitest run",
     "lint": "eslint .",
-    "lint:fifx": "eslint . --fix",
+    "lint:fix": "eslint . --fix",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage"
   },
@@ -16,6 +20,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
+    "@changesets/cli": "^2.29.7",
     "@effect/cli": "^0.72.0",
     "@effect/platform": "^0.93.0",
     "@effect/platform-node": "^0.100.0",
@@ -23,6 +28,7 @@
     "effect": "^3.19.2"
   },
   "devDependencies": {
+    "@effect/docgen": "^0.5.2",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.55.2",
     "@effect/vitest": "^0.27.0",

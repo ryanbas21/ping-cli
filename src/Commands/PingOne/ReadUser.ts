@@ -59,9 +59,7 @@ Population ID: ${user.population.id}
 Environment ID: ${user.environment.id}`
           )
         ),
-        Effect.catchAll((error) =>
-          Console.error(`Failed to read user: ${error}`)
-        )
+        Effect.catchAll((error) => Console.error(`Failed to read user: ${error}`))
       )
     })
 )

@@ -15,8 +15,7 @@ export const getEnvironmentId = (cliOption: string) =>
           Effect.catchAll(() =>
             Effect.fail(
               new PingOneAuthError({
-                cause:
-                  "No PingOne environment ID provided. Set PINGONE_ENV_ID env var or use --environment-id"
+                cause: "No PingOne environment ID provided. Set PINGONE_ENV_ID env var or use --environment-id"
               })
             )
           )
@@ -28,7 +27,9 @@ export const getEnvironmentId = (cliOption: string) =>
  * Gets PingOne access token from CLI option or environment variable
  * Priority: CLI option > PINGONE_TOKEN env var
  */
-export const getToken = (cliOption: { readonly _tag: "Some"; readonly value: Redacted.Redacted<string> } | { readonly _tag: "None" }) =>
+export const getToken = (
+  cliOption: { readonly _tag: "Some"; readonly value: Redacted.Redacted<string> } | { readonly _tag: "None" }
+) =>
   Effect.gen(function*() {
     // Check if CLI option was provided
     if (cliOption._tag === "Some") {
@@ -43,8 +44,7 @@ export const getToken = (cliOption: { readonly _tag: "Some"; readonly value: Red
       Effect.catchAll(() =>
         Effect.fail(
           new PingOneAuthError({
-            cause:
-              "No PingOne token provided. Set PINGONE_TOKEN env var or use --pingone-token"
+            cause: "No PingOne token provided. Set PINGONE_TOKEN env var or use --pingone-token"
           })
         )
       )

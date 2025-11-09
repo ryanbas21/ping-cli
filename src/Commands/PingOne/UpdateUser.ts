@@ -79,9 +79,7 @@ Lifecycle Status: ${user.lifecycle.status}
 Updated: ${user.updatedAt}`
           )
         ),
-        Effect.catchAll((error) =>
-          Console.error(`Failed to update user: ${error}`)
-        )
+        Effect.catchAll((error) => Console.error(`Failed to update user: ${error}`))
       )
     })
 )

@@ -1,5 +1,5 @@
 import { Command } from "@effect/cli"
-import { Array } from "effect"
+import * as Array from "effect/Array"
 import { p1Command } from "./Commands/PingOne/index.js"
 import { runJSTests } from "./Commands/RunJSTests.js"
 import { RunPublish } from "./Commands/RunPublish.js"

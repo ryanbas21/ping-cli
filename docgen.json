@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/@effect/docgen/schema.json",
+  "exclude": ["src/HttpClient/**/*.ts"],
+  "parseCompilerOptions": {
+    "outdir": "api_docs",
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"]
+  }
+}

@@ -80,8 +80,7 @@ export const createUser = Command.make(
               Effect.catchAll(() =>
                 Effect.fail(
                   new PingOneAuthError({
-                    cause:
-                      "No PingOne population ID provided. Set PINGONE_POPULATION_ID env var or use --population-id"
+                    cause: "No PingOne population ID provided. Set PINGONE_POPULATION_ID env var or use --population-id"
                   })
                 )
               )
@@ -96,7 +95,7 @@ export const createUser = Command.make(
         population: { id: string }
         name?: { given?: string; family?: string }
         department?: string
-        locales?: string[]
+        locales?: Array<string>
       } = {
         username,
         email,
@@ -137,9 +136,7 @@ export const createUser = Command.make(
             `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
           )
         ),
-        Effect.catchAll((error) =>
-          Console.error(`Failed to create user: ${error}`)
-        )
+        Effect.catchAll((error) => Console.error(`Failed to create user: ${error}`))
       )
     })
 )

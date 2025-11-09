@@ -1,8 +1,14 @@
-import { assert, describe, it } from "@effect/vitest"
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer } from "effect"
-import { PingOneApiError } from "../Errors"
-import { createPingOneUser, deletePingOneUser, readPingOneUser, updatePingOneUser, verifyPingOneUser } from "./PingOneClient"
+import type { PingOneApiError } from "../Errors"
+import {
+  createPingOneUser,
+  deletePingOneUser,
+  readPingOneUser,
+  updatePingOneUser,
+  verifyPingOneUser
+} from "./PingOneClient"
 
 describe("PingOneClient", () => {
   describe("createPingOneUser", () => {
@@ -54,8 +60,7 @@ describe("PingOneClient", () => {
         assert.strictEqual(result.id, "user-123")
         assert.strictEqual(result.username, "john.doe")
         assert.strictEqual(result.email, "john@example.com")
-      })
-    )
+      }))
 
     it.effect("should successfully create a user with 201 response", () =>
       Effect.gen(function*() {
@@ -113,8 +118,7 @@ describe("PingOneClient", () => {
         assert.strictEqual(result.id, "user-456")
         assert.strictEqual(result.department, "Engineering")
         assert.deepStrictEqual(result.locales, ["Sydney", "London"])
-      })
-    )
+      }))
 
     it.effect("should fail with PingOneApiError on 401 unauthorized", () =>
       Effect.gen(function*() {
@@ -153,8 +157,7 @@ describe("PingOneClient", () => {
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 401)
         }
-      })
-    )
+      }))
 
     it.effect("should fail with PingOneApiError on 403 forbidden", () =>
       Effect.gen(function*() {
@@ -193,8 +196,7 @@ describe("PingOneClient", () => {
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 403)
         }
-      })
-    )
+      }))
 
     it.effect("should fail with PingOneApiError on 404 not found", () =>
       Effect.gen(function*() {
@@ -233,8 +235,7 @@ describe("PingOneClient", () => {
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 404)
         }
-      })
-    )
+      }))
 
     it.effect("should fail with PingOneApiError on 422 validation error", () =>
       Effect.gen(function*() {
@@ -273,8 +274,7 @@ describe("PingOneClient", () => {
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 422)
         }
-      })
-    )
+      }))
 
     it.effect("should fail with PingOneApiError on 500 server error", () =>
       Effect.gen(function*() {
@@ -313,8 +313,7 @@ describe("PingOneClient", () => {
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 500)
         }
-      })
-    )
+      }))
 
     it.effect("should construct correct request URL with environment ID", () =>
       Effect.gen(function*() {
@@ -333,21 +332,24 @@ describe("PingOneClient", () => {
           return Effect.succeed(
             HttpClientResponse.fromWeb(
               req,
-              new Response(JSON.stringify({
-                id: "user-123",
-                environment: { id: "env-custom" },
-                population: { id: "pop-123" },
-                createdAt: "2024-01-01T00:00:00Z",
-                email: "john@example.com",
-                enabled: true,
-                lifecycle: { status: "ACCOUNT_OK" },
-                mfaEnabled: false,
-                updatedAt: "2024-01-01T00:00:00Z",
-                username: "john.doe"
-              }), {
-                status: 200,
-                headers: { "content-type": "application/json" }
-              })
+              new Response(
+                JSON.stringify({
+                  id: "user-123",
+                  environment: { id: "env-custom" },
+                  population: { id: "pop-123" },
+                  createdAt: "2024-01-01T00:00:00Z",
+                  email: "john@example.com",
+                  enabled: true,
+                  lifecycle: { status: "ACCOUNT_OK" },
+                  mfaEnabled: false,
+                  updatedAt: "2024-01-01T00:00:00Z",
+                  username: "john.doe"
+                }),
+                {
+                  status: 200,
+                  headers: { "content-type": "application/json" }
+                }
+              )
             )
           )
         })
@@ -359,8 +361,7 @@ describe("PingOneClient", () => {
         }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
 
         assert.strictEqual(capturedUrl, "https://api.pingone.com/v1/environments/env-custom/users")
-      })
-    )
+      }))
 
     it.effect("should set correct headers including bearer token", () =>
       Effect.gen(function*() {
@@ -376,21 +377,24 @@ describe("PingOneClient", () => {
           Effect.succeed(
             HttpClientResponse.fromWeb(
               req,
-              new Response(JSON.stringify({
-                id: "user-123",
-                environment: { id: "env-123" },
-                population: { id: "pop-123" },
-                createdAt: "2024-01-01T00:00:00Z",
-                email: "john@example.com",
-                enabled: true,
-                lifecycle: { status: "ACCOUNT_OK" },
-                mfaEnabled: false,
-                updatedAt: "2024-01-01T00:00:00Z",
-                username: "john.doe"
-              }), {
-                status: 200,
-                headers: { "content-type": "application/json" }
-              })
+              new Response(
+                JSON.stringify({
+                  id: "user-123",
+                  environment: { id: "env-123" },
+                  population: { id: "pop-123" },
+                  createdAt: "2024-01-01T00:00:00Z",
+                  email: "john@example.com",
+                  enabled: true,
+                  lifecycle: { status: "ACCOUNT_OK" },
+                  mfaEnabled: false,
+                  updatedAt: "2024-01-01T00:00:00Z",
+                  username: "john.doe"
+                }),
+                {
+                  status: 200,
+                  headers: { "content-type": "application/json" }
+                }
+              )
             )
           )
         )
@@ -402,8 +406,7 @@ describe("PingOneClient", () => {
         }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
 
         assert.strictEqual(result.id, "user-123")
-      })
-    )
+      }))
 
     it.effect("should use POST method for user creation", () =>
       Effect.gen(function*() {
@@ -422,21 +425,24 @@ describe("PingOneClient", () => {
           return Effect.succeed(
             HttpClientResponse.fromWeb(
               req,
-              new Response(JSON.stringify({
-                id: "user-123",
-                environment: { id: "env-123" },
-                population: { id: "pop-123" },
-                createdAt: "2024-01-01T00:00:00Z",
-                email: "john@example.com",
-                enabled: true,
-                lifecycle: { status: "ACCOUNT_OK" },
-                mfaEnabled: false,
-                updatedAt: "2024-01-01T00:00:00Z",
-                username: "john.doe"
-              }), {
-                status: 200,
-                headers: { "content-type": "application/json" }
-              })
+              new Response(
+                JSON.stringify({
+                  id: "user-123",
+                  environment: { id: "env-123" },
+                  population: { id: "pop-123" },
+                  createdAt: "2024-01-01T00:00:00Z",
+                  email: "john@example.com",
+                  enabled: true,
+                  lifecycle: { status: "ACCOUNT_OK" },
+                  mfaEnabled: false,
+                  updatedAt: "2024-01-01T00:00:00Z",
+                  username: "john.doe"
+                }),
+                {
+                  status: 200,
+                  headers: { "content-type": "application/json" }
+                }
+              )
             )
           )
         })
@@ -448,8 +454,7 @@ describe("PingOneClient", () => {
         }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
 
         assert.strictEqual(capturedMethod, "POST")
-      })
-    )
+      }))
   })
 
   describe("readPingOneUser", () => {
@@ -580,19 +585,22 @@ describe("PingOneClient", () => {
         return Effect.succeed(
           HttpClientResponse.fromWeb(
             req,
-            new Response(JSON.stringify({
-              id: "user-123",
-              environment: { id: "env-123" },
-              population: { id: "pop-123" },
-              createdAt: "2024-01-01T00:00:00Z",
-              enabled: true,
-              lifecycle: { status: "ACCOUNT_OK" },
-              mfaEnabled: false,
-              updatedAt: "2024-01-01T00:00:00Z"
-            }), {
-              status: 200,
-              headers: { "content-type": "application/json" }
-            })
+            new Response(
+              JSON.stringify({
+                id: "user-123",
+                environment: { id: "env-123" },
+                population: { id: "pop-123" },
+                createdAt: "2024-01-01T00:00:00Z",
+                enabled: true,
+                lifecycle: { status: "ACCOUNT_OK" },
+                mfaEnabled: false,
+                updatedAt: "2024-01-01T00:00:00Z"
+              }),
+              {
+                status: 200,
+                headers: { "content-type": "application/json" }
+              }
+            )
           )
         )
       })

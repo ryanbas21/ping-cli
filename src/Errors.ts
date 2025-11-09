@@ -1,4 +1,4 @@
-import { Data } from "effect"
+import * as Data from "effect/Data"
 
 export class NoGithubToken extends Data.TaggedError("NoGithubToken")<{ cause: string }> {}
 
