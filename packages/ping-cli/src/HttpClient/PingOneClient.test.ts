@@ -2,6 +2,7 @@ import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import type { PingOneApiError } from "../Errors.js"
+import { MockServicesLive } from "../test-helpers/TestLayers.js"
 import {
   createPingOneUser,
   deletePingOneUser,
@@ -51,11 +52,16 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(result.id, "user-123")
         assert.strictEqual(result.username, "john.doe")
@@ -109,11 +115,16 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-456",
           token: "test-token",
           userData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(result.id, "user-456")
         assert.strictEqual(result.department, "Engineering")
@@ -142,12 +153,17 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "invalid-token",
           userData
         }).pipe(
-          Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)),
+          Effect.provide(testLayer),
           Effect.exit
         )
 
@@ -181,12 +197,17 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
         }).pipe(
-          Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)),
+          Effect.provide(testLayer),
           Effect.exit
         )
 
@@ -220,12 +241,17 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
         }).pipe(
-          Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)),
+          Effect.provide(testLayer),
           Effect.exit
         )
 
@@ -259,12 +285,17 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
         }).pipe(
-          Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)),
+          Effect.provide(testLayer),
           Effect.exit
         )
 
@@ -298,12 +329,17 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
         }).pipe(
-          Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)),
+          Effect.provide(testLayer),
           Effect.exit
         )
 
@@ -354,11 +390,16 @@ describe("PingOneClient", () => {
           )
         })
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         yield* createPingOneUser({
           envId: "env-custom",
           token: "test-token",
           userData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(capturedUrl, "https://api.pingone.com/v1/environments/env-custom/users")
       }))
@@ -399,11 +440,16 @@ describe("PingOneClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createPingOneUser({
           envId: "env-123",
           token: "custom-auth-token",
           userData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(result.id, "user-123")
       }))
@@ -447,11 +493,16 @@ describe("PingOneClient", () => {
           )
         })
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         yield* createPingOneUser({
           envId: "env-123",
           token: "test-token",
           userData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(capturedMethod, "POST")
       }))
@@ -484,7 +535,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* readPingOneUser({
@@ -511,7 +565,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* readPingOneUser({
@@ -562,7 +619,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* updatePingOneUser({
@@ -605,7 +665,10 @@ describe("PingOneClient", () => {
         )
       })
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         yield* updatePingOneUser({
@@ -633,7 +696,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* deletePingOneUser({
@@ -659,7 +725,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* deletePingOneUser({
@@ -690,7 +759,10 @@ describe("PingOneClient", () => {
         )
       })
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         yield* deletePingOneUser({
@@ -731,7 +803,10 @@ describe("PingOneClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* verifyPingOneUser({
@@ -776,7 +851,10 @@ describe("PingOneClient", () => {
         )
       })
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         yield* verifyPingOneUser({

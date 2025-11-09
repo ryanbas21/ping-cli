@@ -2,6 +2,7 @@ import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import type { PingOneApiError } from "../Errors.js"
+import { MockServicesLive } from "../test-helpers/TestLayers.js"
 import {
   addGroupMember,
   createGroup,
@@ -46,11 +47,16 @@ describe("GroupClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createGroup({
           envId: "env-123",
           token: "test-token",
           groupData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)))
+        }).pipe(Effect.provide(testLayer))
 
         assert.strictEqual(result.id, "group-123")
         assert.strictEqual(result.name, "Engineering Team")
@@ -75,11 +81,16 @@ describe("GroupClient", () => {
           )
         )
 
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
         const result = yield* createGroup({
           envId: "env-123",
           token: "invalid-token",
           groupData
-        }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, mockClient)), Effect.exit)
+        }).pipe(Effect.provide(testLayer), Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
@@ -114,7 +125,10 @@ describe("GroupClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* readGroup({
@@ -141,7 +155,10 @@ describe("GroupClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* readGroup({
@@ -198,7 +215,10 @@ describe("GroupClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* listGroups({
@@ -237,7 +257,10 @@ describe("GroupClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* updateGroup({
@@ -262,7 +285,10 @@ describe("GroupClient", () => {
         Effect.succeed(HttpClientResponse.fromWeb(req, new Response(null, { status: 204 })))
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* deleteGroup({
@@ -282,7 +308,10 @@ describe("GroupClient", () => {
         Effect.succeed(HttpClientResponse.fromWeb(req, new Response(null, { status: 201 })))
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* addGroupMember({
@@ -303,7 +332,10 @@ describe("GroupClient", () => {
         Effect.succeed(HttpClientResponse.fromWeb(req, new Response(null, { status: 204 })))
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* removeGroupMember({
@@ -343,7 +375,10 @@ describe("GroupClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* listGroupMembers({

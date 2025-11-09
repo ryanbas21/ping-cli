@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
+import { MockServicesLive } from "../../test-helpers/TestLayers.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
 
 describe("ConfigHelper", () => {
@@ -13,8 +14,11 @@ describe("ConfigHelper", () => {
       }))
 
     it.effect("should prioritize CLI option over environment variable", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -28,8 +32,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fall back to environment variable when CLI option is empty", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -41,8 +48,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fall back to environment variable when CLI option is whitespace", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -54,8 +64,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fail with PingOneAuthError when neither CLI nor env var provided", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map()) // Empty config
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map()) // Empty config
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -66,7 +79,7 @@ describe("ConfigHelper", () => {
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
           const error = result.cause.error
           assert.strictEqual(error._tag, "PingOneAuthError")
-          assert.isTrue(error.cause.includes("No PingOne environment ID provided"))
+          assert.isTrue(error.message.includes("No PingOne environment ID provided"))
         }
       }).pipe(Effect.provide(configLayer))
     })
@@ -95,8 +108,11 @@ describe("ConfigHelper", () => {
       }))
 
     it.effect("should prioritize CLI option over environment variable", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -112,8 +128,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fall back to environment variable when CLI option is None", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -125,8 +144,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fall back to env var when CLI option is Some but empty string", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_TOKEN", "token-from-env"]]))
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -142,8 +164,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fail with PingOneAuthError when neither CLI nor env var provided", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map()) // Empty config
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map()) // Empty config
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -154,7 +179,7 @@ describe("ConfigHelper", () => {
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
           const error = result.cause.error
           assert.strictEqual(error._tag, "PingOneAuthError")
-          assert.isTrue(error.cause.includes("No PingOne token provided"))
+          assert.isTrue(error.message.includes("No PingOne OAuth 2.0 access token provided"))
         }
       }).pipe(Effect.provide(configLayer))
     })
@@ -176,13 +201,16 @@ describe("ConfigHelper", () => {
 
   describe("Configuration hierarchy integration", () => {
     it.effect("should demonstrate full priority chain: CLI > env var", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(
-          new Map([
-            ["PINGONE_ENV_ID", "env-var-env"],
-            ["PINGONE_TOKEN", "env-var-token"]
-          ])
-        )
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(
+            new Map([
+              ["PINGONE_ENV_ID", "env-var-env"],
+              ["PINGONE_TOKEN", "env-var-token"]
+            ])
+          )
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -200,13 +228,16 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should demonstrate env var fallback when CLI not provided", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(
-          new Map([
-            ["PINGONE_ENV_ID", "env-var-env"],
-            ["PINGONE_TOKEN", "env-var-token"]
-          ])
-        )
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(
+            new Map([
+              ["PINGONE_ENV_ID", "env-var-env"],
+              ["PINGONE_TOKEN", "env-var-token"]
+            ])
+          )
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {
@@ -220,8 +251,11 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fail gracefully when no configuration source available", () => {
-      const configLayer = Layer.setConfigProvider(
-        ConfigProvider.fromMap(new Map()) // Empty config
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map()) // Empty config
+        ),
+        MockServicesLive
       )
 
       return Effect.gen(function*() {

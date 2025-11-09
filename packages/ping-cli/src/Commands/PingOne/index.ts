@@ -11,6 +11,8 @@ import { verifyUser } from "./VerifyUser.js"
 
 /**
  * PingOne subcommands
+ *
+ * @since 0.0.1
  */
 const p1Subcommands = Array.make(
   createUser,
@@ -25,6 +27,8 @@ const p1Subcommands = Array.make(
 
 /**
  * Parent p1 command with nested subcommands
+ *
+ * @since 0.0.1
  */
 export const p1Command = Command.make("p1").pipe(
   Command.withSubcommands(p1Subcommands)

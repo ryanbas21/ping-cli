@@ -3,6 +3,8 @@ import type { PingOneCreateGroupRequest, PingOneUpdateGroupRequest } from "./Gro
 
 /**
  * Payload for creating a group
+ *
+ * @since 0.0.1
  */
 export interface CreateGroupPayload<S extends Schema.Schema.Type<typeof PingOneCreateGroupRequest>> {
   envId: string
@@ -12,6 +14,8 @@ export interface CreateGroupPayload<S extends Schema.Schema.Type<typeof PingOneC
 
 /**
  * Payload for reading a group
+ *
+ * @since 0.0.1
  */
 export interface ReadGroupPayload {
   envId: string
@@ -22,6 +26,8 @@ export interface ReadGroupPayload {
 
 /**
  * Payload for listing groups
+ *
+ * @since 0.0.1
  */
 export interface ListGroupsPayload {
   envId: string
@@ -33,6 +39,8 @@ export interface ListGroupsPayload {
 
 /**
  * Payload for updating a group
+ *
+ * @since 0.0.1
  */
 export interface UpdateGroupPayload<S extends Schema.Schema.Type<typeof PingOneUpdateGroupRequest>> {
   envId: string
@@ -43,6 +51,8 @@ export interface UpdateGroupPayload<S extends Schema.Schema.Type<typeof PingOneU
 
 /**
  * Payload for deleting a group
+ *
+ * @since 0.0.1
  */
 export interface DeleteGroupPayload {
   envId: string
@@ -52,6 +62,8 @@ export interface DeleteGroupPayload {
 
 /**
  * Payload for adding a member to a group
+ *
+ * @since 0.0.1
  */
 export interface AddGroupMemberPayload {
   envId: string
@@ -62,6 +74,8 @@ export interface AddGroupMemberPayload {
 
 /**
  * Payload for removing a member from a group
+ *
+ * @since 0.0.1
  */
 export interface RemoveGroupMemberPayload {
   envId: string
@@ -72,6 +86,8 @@ export interface RemoveGroupMemberPayload {
 
 /**
  * Payload for listing group members
+ *
+ * @since 0.0.1
  */
 export interface ListGroupMembersPayload {
   envId: string

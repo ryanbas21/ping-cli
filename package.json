@@ -23,8 +23,8 @@
     "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
     "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
     "@effect/docgen": "^0.5.2",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.55.2",
@@ -38,6 +38,7 @@
     "@vitest/coverage-v8": "^4.0.8",
     "dprint": "^0.50.2",
     "eslint": "^9.39.1",
+    "eslint-plugin-jsdoc": "^61.1.12",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
     "typescript": "^5.7.2",

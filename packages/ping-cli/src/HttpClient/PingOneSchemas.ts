@@ -2,6 +2,8 @@ import * as Schema from "effect/Schema"
 
 /**
  * Schema for user name structure in PingOne
+ *
+ * @since 0.0.1
  */
 export const PingOneUserNameSchema = Schema.Struct({
   given: Schema.optional(Schema.String),
@@ -10,6 +12,8 @@ export const PingOneUserNameSchema = Schema.Struct({
 
 /**
  * Schema for population reference in PingOne
+ *
+ * @since 0.0.1
  */
 export const PingOnePopulationSchema = Schema.Struct({
   id: Schema.String
@@ -18,6 +22,8 @@ export const PingOnePopulationSchema = Schema.Struct({
 /**
  * Schema for creating a user in PingOne
  * Based on PingOne API documentation
+ *
+ * @since 0.0.1
  */
 export const PingOneCreateUserRequest = Schema.Struct({
   username: Schema.String,
@@ -30,6 +36,8 @@ export const PingOneCreateUserRequest = Schema.Struct({
 
 /**
  * Schema for environment reference in PingOne responses
+ *
+ * @since 0.0.1
  */
 export const PingOneEnvironmentSchema = Schema.Struct({
   id: Schema.String
@@ -37,6 +45,8 @@ export const PingOneEnvironmentSchema = Schema.Struct({
 
 /**
  * Schema for lifecycle status in PingOne responses
+ *
+ * @since 0.0.1
  */
 export const PingOneLifecycleSchema = Schema.Struct({
   status: Schema.String
@@ -44,6 +54,8 @@ export const PingOneLifecycleSchema = Schema.Struct({
 
 /**
  * Schema for PingOne API response when creating a user
+ *
+ * @since 0.0.1
  */
 export const PingOneCreateUserResponse = Schema.Struct({
   id: Schema.String,
@@ -63,11 +75,15 @@ export const PingOneCreateUserResponse = Schema.Struct({
 
 /**
  * Schema for reading a user (same structure as create response)
+ *
+ * @since 0.0.1
  */
 export const PingOneReadUserResponse = PingOneCreateUserResponse
 
 /**
  * Schema for extended name structure in update operations
+ *
+ * @since 0.0.1
  */
 export const PingOneExtendedNameSchema = Schema.Struct({
   formatted: Schema.optional(Schema.String),
@@ -80,6 +96,8 @@ export const PingOneExtendedNameSchema = Schema.Struct({
 
 /**
  * Schema for photo in update operations
+ *
+ * @since 0.0.1
  */
 export const PingOnePhotoSchema = Schema.Struct({
   href: Schema.String
@@ -87,6 +105,8 @@ export const PingOnePhotoSchema = Schema.Struct({
 
 /**
  * Schema for address in update operations
+ *
+ * @since 0.0.1
  */
 export const PingOneAddressSchema = Schema.Struct({
   streetAddress: Schema.optional(Schema.String),
@@ -99,6 +119,8 @@ export const PingOneAddressSchema = Schema.Struct({
 /**
  * Schema for updating a user in PingOne
  * Based on PingOne API documentation for PUT /users/:id
+ *
+ * @since 0.0.1
  */
 export const PingOneUpdateUserRequest = Schema.Struct({
   username: Schema.optional(Schema.String),
@@ -119,6 +141,8 @@ export const PingOneUpdateUserRequest = Schema.Struct({
 
 /**
  * Schema for update user response (includes all fields from update request plus system fields)
+ *
+ * @since 0.0.1
  */
 export const PingOneUpdateUserResponse = Schema.Struct({
   id: Schema.String,
@@ -147,6 +171,8 @@ export const PingOneUpdateUserResponse = Schema.Struct({
 
 /**
  * Schema for verifying a user account
+ *
+ * @since 0.0.1
  */
 export const PingOneVerifyUserRequest = Schema.Struct({
   verificationCode: Schema.String
@@ -154,5 +180,7 @@ export const PingOneVerifyUserRequest = Schema.Struct({
 
 /**
  * Schema for verify user response (same as read user)
+ *
+ * @since 0.0.1
  */
 export const PingOneVerifyUserResponse = PingOneCreateUserResponse

@@ -2,6 +2,8 @@ import { Schema } from "effect"
 
 /**
  * Schema for Population in PingOne
+ *
+ * @since 0.0.1
  */
 export const PopulationSchema = Schema.Struct({
   id: Schema.String,
@@ -19,11 +21,15 @@ export const PopulationSchema = Schema.Struct({
 
 /**
  * Type inferred from PopulationSchema
+ *
+ * @since 0.0.1
  */
 export type Population = typeof PopulationSchema.Type
 
 /**
  * Schema for the embedded populations response
+ *
+ * @since 0.0.1
  */
 export const PopulationsEmbeddedSchema = Schema.Struct({
   populations: Schema.Array(PopulationSchema)
@@ -31,6 +37,8 @@ export const PopulationsEmbeddedSchema = Schema.Struct({
 
 /**
  * Schema for the list populations response
+ *
+ * @since 0.0.1
  */
 export const ListPopulationsResponseSchema = Schema.Struct({
   _embedded: PopulationsEmbeddedSchema,
@@ -40,11 +48,15 @@ export const ListPopulationsResponseSchema = Schema.Struct({
 
 /**
  * Type for list populations response
+ *
+ * @since 0.0.1
  */
 export type ListPopulationsResponse = typeof ListPopulationsResponseSchema.Type
 
 /**
  * Schema for population creation request
+ *
+ * @since 0.0.1
  */
 export const CreatePopulationRequestSchema = Schema.Struct({
   name: Schema.String,
@@ -53,11 +65,15 @@ export const CreatePopulationRequestSchema = Schema.Struct({
 
 /**
  * Type for create population request
+ *
+ * @since 0.0.1
  */
 export type CreatePopulationRequest = typeof CreatePopulationRequestSchema.Type
 
 /**
  * Schema for population update request
+ *
+ * @since 0.0.1
  */
 export const UpdatePopulationRequestSchema = Schema.Struct({
   name: Schema.optional(Schema.String),
@@ -66,5 +82,7 @@ export const UpdatePopulationRequestSchema = Schema.Struct({
 
 /**
  * Type for update population request
+ *
+ * @since 0.0.1
  */
 export type UpdatePopulationRequest = typeof UpdatePopulationRequestSchema.Type

@@ -11,6 +11,8 @@ import { verifyUser } from "./Commands/PingOne/VerifyUser.js"
 
 /**
  * PingOne CLI commands
+ *
+ * @since 0.0.1
  */
 const pingCommands = Array.make(
   createUser,
@@ -25,6 +27,8 @@ const pingCommands = Array.make(
 
 /**
  * Main PingOne CLI command
+ *
+ * @since 0.0.1
  */
 export const PingCommand = Command.make("ping-cli")
 

@@ -1,6 +1,8 @@
 # API Reference
 
-This document provides detailed information about the PingOne API endpoints used by this CLI and the GitHub API integration.
+This document provides detailed information about:
+- **PingOne API**: Used by the `ping-cli` package for managing PingOne resources (users, groups, applications, populations)
+- **GitHub API**: Used by the `js-sdk-ci-cli` package for automating GitHub workflow dispatches
 
 ## Table of Contents
 
@@ -633,6 +635,8 @@ class PingOneValidationError extends Data.TaggedError("PingOneValidationError")<
 ---
 
 ## GitHub API
+
+> **Note**: This section documents the GitHub API integration used by the `js-sdk-ci-cli` package. This is an internal tool for automating SDK development workflows.
 
 ### Workflow Dispatch
 

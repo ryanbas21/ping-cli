@@ -1,6 +1,7 @@
 import { HttpClient, HttpClientError } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
+import { MockServicesLive } from "../../test-helpers/TestLayers.js"
 import { updateUser } from "./UpdateUser.js"
 
 describe("UpdateUser Command", () => {
@@ -47,7 +48,7 @@ describe("UpdateUser Command", () => {
 
         // Validation passes, HTTP fails but error is handled gracefully
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should fail with PingOneValidationError for invalid JSON", () => {
@@ -78,7 +79,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Invalid JSON format"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should fail with PingOneValidationError for empty JSON object", () => {
@@ -109,7 +110,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("At least one field must be provided"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should parse complex nested JSON structures", () => {
@@ -152,7 +153,7 @@ describe("UpdateUser Command", () => {
 
         // Validation passes, HTTP fails but error is handled gracefully
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
   })
 
@@ -185,7 +186,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneAuthError")
           assert.isTrue(error.cause.includes("User ID cannot be empty"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
   })
 })

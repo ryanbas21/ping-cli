@@ -2,6 +2,7 @@ import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import type { PingOneApiError } from "../Errors.js"
+import { MockServicesLive } from "../test-helpers/TestLayers.js"
 import {
   createPopulation,
   deletePopulation,
@@ -32,7 +33,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* createPopulation({
@@ -64,7 +68,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* createPopulation({
@@ -109,7 +116,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* readPopulation({
@@ -159,7 +169,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* listPopulations({
@@ -201,7 +214,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* listPopulations({
@@ -238,7 +254,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* updatePopulation({
@@ -264,7 +283,10 @@ describe("PopulationClient", () => {
         Effect.succeed(HttpClientResponse.fromWeb(req, new Response(null, { status: 204 })))
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* deletePopulation({
@@ -290,7 +312,10 @@ describe("PopulationClient", () => {
         )
       )
 
-      const dependencies = Layer.succeed(HttpClient.HttpClient, mockClient)
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
 
       return Effect.gen(function*() {
         const result = yield* deletePopulation({

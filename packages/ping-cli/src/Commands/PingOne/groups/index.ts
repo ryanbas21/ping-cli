@@ -11,6 +11,8 @@ import { updateGroupCommand } from "./UpdateGroup.js"
 
 /**
  * Group management subcommands
+ *
+ * @since 0.0.1
  */
 const groupSubcommands = Array.make(
   createGroupCommand,
@@ -25,6 +27,8 @@ const groupSubcommands = Array.make(
 
 /**
  * Parent groups command with nested subcommands
+ *
+ * @since 0.0.1
  */
 export const groupsCommand = Command.make("groups").pipe(
   Command.withSubcommands(groupSubcommands)

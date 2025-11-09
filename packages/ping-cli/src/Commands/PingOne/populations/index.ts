@@ -8,6 +8,8 @@ import { updatePopulationCommand } from "./UpdatePopulation.js"
 
 /**
  * Population subcommands
+ *
+ * @since 0.0.1
  */
 const populationSubcommands = Array.make(
   createPopulationCommand,
@@ -19,6 +21,8 @@ const populationSubcommands = Array.make(
 
 /**
  * Parent populations command with nested subcommands
+ *
+ * @since 0.0.1
  */
 export const populationsCommand = Command.make("populations").pipe(
   Command.withSubcommands(populationSubcommands)

@@ -6,6 +6,11 @@ import { listApplicationsCommand } from "./ListApplications.js"
 import { readApplicationCommand } from "./ReadApplication.js"
 import { updateApplicationCommand } from "./UpdateApplication.js"
 
+/**
+ * Application management subcommands
+ *
+ * @since 0.0.1
+ */
 const applicationSubcommands = Array.make(
   createApplicationCommand,
   readApplicationCommand,
@@ -14,6 +19,11 @@ const applicationSubcommands = Array.make(
   deleteApplicationCommand
 )
 
+/**
+ * Parent applications command with nested subcommands
+ *
+ * @since 0.0.1
+ */
 export const applicationsCommand = Command.make("applications").pipe(
   Command.withSubcommands(applicationSubcommands)
 )

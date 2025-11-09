@@ -1,6 +1,7 @@
 import { HttpClient, HttpClientError } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
+import { MockServicesLive } from "../../test-helpers/TestLayers.js"
 import { createUser } from "./CreateUser.js"
 
 describe("CreateUser Command", () => {
@@ -52,7 +53,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Invalid email format"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should fail with PingOneValidationError for empty username", () => {
@@ -87,7 +88,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Username cannot be empty"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should fail with PingOneAuthError when population ID not provided", () => {
@@ -121,7 +122,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneAuthError")
           assert.isTrue(error.cause.includes("No PingOne population ID provided"))
         }
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
   })
 
@@ -160,7 +161,7 @@ describe("CreateUser Command", () => {
         // Validation passes, HTTP fails but error is handled gracefully
         // This proves config hierarchy works correctly
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should fall back to environment variable when CLI option is empty", () => {
@@ -192,7 +193,7 @@ describe("CreateUser Command", () => {
         // Validation passes, HTTP fails but error is handled gracefully
         // This proves fallback to env var works
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
   })
 
@@ -226,7 +227,7 @@ describe("CreateUser Command", () => {
         // Verification that optional fields are parsed
         // Validation passes, HTTP fails but error is handled gracefully
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
     it.effect("should parse comma-separated locales correctly", () => {
@@ -258,7 +259,7 @@ describe("CreateUser Command", () => {
         // Verification that locales are parsed from comma-separated string
         // Validation passes, HTTP fails but error is handled gracefully
         assert.strictEqual(result._tag, "Success")
-      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
+      }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
   })
 })

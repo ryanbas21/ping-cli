@@ -2,6 +2,8 @@ import * as Schema from "effect/Schema"
 
 /**
  * Schema for population reference in group
+ *
+ * @since 0.0.1
  */
 export const GroupPopulationSchema = Schema.Struct({
   id: Schema.String
@@ -9,6 +11,8 @@ export const GroupPopulationSchema = Schema.Struct({
 
 /**
  * Schema for environment reference in group responses
+ *
+ * @since 0.0.1
  */
 export const GroupEnvironmentSchema = Schema.Struct({
   id: Schema.String
@@ -17,6 +21,8 @@ export const GroupEnvironmentSchema = Schema.Struct({
 /**
  * Schema for creating a group in PingOne
  * Based on PingOne API documentation
+ *
+ * @since 0.0.1
  */
 export const PingOneCreateGroupRequest = Schema.Struct({
   name: Schema.String,
@@ -28,6 +34,8 @@ export const PingOneCreateGroupRequest = Schema.Struct({
 
 /**
  * Schema for PingOne API response when creating a group
+ *
+ * @since 0.0.1
  */
 export const PingOneCreateGroupResponse = Schema.Struct({
   id: Schema.String,
@@ -50,12 +58,16 @@ export const PingOneCreateGroupResponse = Schema.Struct({
 
 /**
  * Schema for reading a group (same structure as create response)
+ *
+ * @since 0.0.1
  */
 export const PingOneReadGroupResponse = PingOneCreateGroupResponse
 
 /**
  * Schema for updating a group in PingOne
  * All fields are optional for PATCH operations
+ *
+ * @since 0.0.1
  */
 export const PingOneUpdateGroupRequest = Schema.Struct({
   name: Schema.optional(Schema.String),
@@ -66,11 +78,15 @@ export const PingOneUpdateGroupRequest = Schema.Struct({
 
 /**
  * Schema for update group response
+ *
+ * @since 0.0.1
  */
 export const PingOneUpdateGroupResponse = PingOneCreateGroupResponse
 
 /**
  * Schema for list groups response (embedded format)
+ *
+ * @since 0.0.1
  */
 export const PingOneListGroupsResponse = Schema.Struct({
   _embedded: Schema.Struct({
@@ -88,6 +104,8 @@ export const PingOneListGroupsResponse = Schema.Struct({
 
 /**
  * Schema for user reference in group membership
+ *
+ * @since 0.0.1
  */
 export const GroupMemberSchema = Schema.Struct({
   id: Schema.String,
@@ -100,6 +118,8 @@ export const GroupMemberSchema = Schema.Struct({
 
 /**
  * Schema for list group members response
+ *
+ * @since 0.0.1
  */
 export const PingOneListGroupMembersResponse = Schema.Struct({
   _embedded: Schema.Struct({
