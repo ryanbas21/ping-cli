@@ -67,10 +67,10 @@ pnpm start <command> [arguments] [options]
 node dist/main.js <command> [arguments] [options]
 
 # Production (after global install)
-ping-cli <command> [arguments] [options]
+p1-cli <command> [arguments] [options]
 ```
 
-> **Note**: Throughout this documentation, examples use `pnpm start` for development usage. In production, replace `pnpm start` with `ping-cli` or `node dist/main.js`.
+> **Note**: Throughout this documentation, examples use `pnpm start` for development usage. In production, replace `pnpm start` with `p1-cli` or `node dist/main.js`.
 
 ## Commands
 

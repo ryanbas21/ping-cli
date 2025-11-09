@@ -30,7 +30,7 @@ const pingCommands = Array.make(
  *
  * @since 0.0.1
  */
-export const PingCommand = Command.make("ping-cli")
+export const PingCommand = Command.make("p1-cli")
 
 export const PingCli = PingCommand.pipe(Command.withSubcommands(pingCommands)).pipe(
   Command.run({ name: "PingOne CLI", version: "0.1.0" })

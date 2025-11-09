@@ -1,4 +1,4 @@
-# ping-cli
+# p1-cli
 
 Command-line tool for managing PingOne resources via the PingOne Management API.
 
@@ -21,7 +21,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 pnpm install
 
 # Build the CLI
-pnpm --filter 'ping-cli' build
+pnpm --filter 'p1-cli' build
 ```
 
 ## Configuration
@@ -57,88 +57,88 @@ Set `PINGONE_API_URL` to use different PingOne regions:
 
 ```bash
 # Create a user
-ping-cli create_user <username> <email> \
+p1-cli create_user <username> <email> \
   --population-id <pop-id> \
   --given-name "John" \
   --family-name "Doe"
 
 # Read a user
-ping-cli read_user <user-id>
+p1-cli read_user <user-id>
 
 # Update a user
-ping-cli update_user <user-id> '{"email": "newemail@example.com"}'
+p1-cli update_user <user-id> '{"email": "newemail@example.com"}'
 
 # Delete a user
-ping-cli delete_user <user-id>
+p1-cli delete_user <user-id>
 
 # Verify a user with a verification code
-ping-cli verify_user <user-id> <verification-code>
+p1-cli verify_user <user-id> <verification-code>
 ```
 
 ### Group Commands
 
 ```bash
 # Create a group
-ping-cli groups create <name> --description "Group description"
+p1-cli groups create <name> --description "Group description"
 
 # Read a group
-ping-cli groups read <group-id>
+p1-cli groups read <group-id>
 
 # List all groups
-ping-cli groups list --limit 10
+p1-cli groups list --limit 10
 
 # Update a group
-ping-cli groups update <group-id> '{"name": "New Name"}'
+p1-cli groups update <group-id> '{"name": "New Name"}'
 
 # Delete a group
-ping-cli groups delete <group-id>
+p1-cli groups delete <group-id>
 
 # Add a member to a group
-ping-cli groups add_member <group-id> <user-id>
+p1-cli groups add_member <group-id> <user-id>
 
 # Remove a member from a group
-ping-cli groups remove_member <group-id> <user-id>
+p1-cli groups remove_member <group-id> <user-id>
 
 # List group members
-ping-cli groups list_members <group-id>
+p1-cli groups list_members <group-id>
 ```
 
 ### Population Commands
 
 ```bash
 # Create a population
-ping-cli populations create <name> --description "Population description"
+p1-cli populations create <name> --description "Population description"
 
 # Read a population
-ping-cli populations read <population-id>
+p1-cli populations read <population-id>
 
 # List all populations
-ping-cli populations list
+p1-cli populations list
 
 # Update a population
-ping-cli populations update <population-id> '{"name": "New Name"}'
+p1-cli populations update <population-id> '{"name": "New Name"}'
 
 # Delete a population
-ping-cli populations delete <population-id>
+p1-cli populations delete <population-id>
 ```
 
 ### Application Commands
 
 ```bash
 # Create an application
-ping-cli applications create <name> <type> --description "App description"
+p1-cli applications create <name> <type> --description "App description"
 
 # Read an application
-ping-cli applications read <application-id>
+p1-cli applications read <application-id>
 
 # List all applications
-ping-cli applications list
+p1-cli applications list
 
 # Update an application
-ping-cli applications update <application-id> '{"name": "New Name"}'
+p1-cli applications update <application-id> '{"name": "New Name"}'
 
 # Delete an application
-ping-cli applications delete <application-id>
+p1-cli applications delete <application-id>
 ```
 
 ## Architecture
