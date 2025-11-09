@@ -16,23 +16,41 @@ import { CacheService, RetryService } from "../Services/index.js"
 import {
   PingOneCreateUserRequest,
   PingOneCreateUserResponse,
+  PingOneDeleteMfaDeviceResponse,
+  PingOneListMfaDevicesResponse,
+  PingOneListSessionsResponse,
+  PingOneListUsersResponse,
   PingOnePasswordResetRequest,
   PingOnePasswordResetResponse,
   PingOneReadUserResponse,
+  PingOneRevokeSessionResponse,
   PingOneSetPasswordRequest,
   PingOneSetPasswordResponse,
+  PingOneUpdateMfaRequest,
+  PingOneUpdateMfaResponse,
+  PingOneUpdateUserAccountRequest,
   PingOneUpdateUserRequest,
   PingOneUpdateUserResponse,
+  PingOneUpdateUserStatusRequest,
+  PingOneUserStatusResponse,
   PingOneVerifyUserRequest,
   PingOneVerifyUserResponse
 } from "./PingOneSchemas.js"
 import type {
   CreateUserPayload,
+  DeleteMfaDevicePayload,
   DeleteUserPayload,
+  ListMfaDevicesPayload,
+  ListUserSessionsPayload,
+  ListUsersPayload,
   PasswordResetPayload,
   ReadUserPayload,
+  RevokeUserSessionPayload,
   SetPasswordPayload,
+  UpdateUserAccountPayload,
+  UpdateUserMfaPayload,
   UpdateUserPayload,
+  UpdateUserStatusPayload,
   VerifyUserPayload
 } from "./PingOneTypes.js"
 
@@ -129,6 +147,79 @@ export const readPingOneUser = (
 
       if (response.status >= 200 && response.status < 300) {
         return yield* HttpClientResponse.schemaBodyJson(PingOneReadUserResponse)(response)
+      }
+
+      return yield* Effect.fail(
+        new PingOneApiError({
+          status: response.status,
+          message: `PingOne API request failed with status ${response.status}`
+        })
+      )
+    })
+
+    // Apply caching first, then retry
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+  })
+
+/**
+ * Lists users from PingOne with optional filtering and pagination
+ *
+ * Makes a GET request to retrieve a list of users from the PingOne API.
+ * Supports SCIM filtering for searching users and pagination via limit parameter.
+ *
+ * @param payload - List users payload
+ * @param payload.envId - PingOne environment ID containing the users
+ * @param payload.token - PingOne access token with user:read permissions
+ * @param payload.limit - Optional maximum number of users to return (default: 100, max: 1000)
+ * @param payload.filter - Optional SCIM filter expression (e.g., 'email eq "user@example.com"')
+ * @returns Effect that yields paginated list of users with metadata
+ * @throws {PingOneApiError} When API request fails (e.g., 400 if filter is invalid)
+ * @see {@link PingOneListUsersResponse} for response schema definition
+ * @example
+ * // List all users (up to default limit)
+ * listPingOneUsers({ envId, token })
+ *
+ * // Search by email
+ * listPingOneUsers({ envId, token, filter: 'email eq "user@example.com"' })
+ *
+ * // Search by username with limit
+ * listPingOneUsers({ envId, token, filter: 'username sw "john"', limit: 50 })
+ * @since 0.0.1
+ * @category API Client
+ */
+export const listPingOneUsers = (
+  { envId, token, limit, filter }: ListUsersPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const cache = yield* CacheService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    // Build query parameters
+    const queryParams = new URLSearchParams()
+    if (limit !== undefined) {
+      queryParams.append("limit", String(limit))
+    }
+    if (filter !== undefined) {
+      queryParams.append("filter", filter)
+    }
+
+    const queryString = queryParams.toString()
+    const url = queryString
+      ? `${apiBaseUrl}/environments/${envId}/users?${queryString}`
+      : `${apiBaseUrl}/environments/${envId}/users`
+
+    const req = HttpClientRequest.get(url).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
+
+    const httpRequest = Effect.gen(function*() {
+      const client = yield* HttpClient
+      const response = yield* client.execute(req)
+
+      if (response.status >= 200 && response.status < 300) {
+        return yield* HttpClientResponse.schemaBodyJson(PingOneListUsersResponse)(response)
       }
 
       return yield* Effect.fail(
@@ -464,6 +555,371 @@ export const resetPingOneUserPassword = <S extends Schema.Schema.Type<typeof Pin
       ),
       Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOnePasswordResetResponse)(response))
     )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+/**
+ * Enable a user in PingOne via API
+ *
+ * Makes a PATCH request to update the user's enabled status to true.
+ *
+ * @param payload - Update user status payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - ID of the user to enable
+ * @param payload.enabled - Enabled status (true to enable)
+ * @returns Effect that yields the user status response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const updatePingOneUserStatus = (
+  { envId, token, userId, enabled }: UpdateUserStatusPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.patch(
+      `${apiBaseUrl}/environments/${envId}/users/${userId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.schemaBodyJson(PingOneUpdateUserStatusRequest)({ enabled }),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneUserStatusResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+
+/**
+ * Update a user's account authentication status in PingOne via API
+ *
+ * Makes a PATCH request to update the user's account.canAuthenticate status.
+ * Setting canAuthenticate to false effectively locks the user account.
+ *
+ * @param payload - Update user account payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - ID of the user to update
+ * @param payload.canAuthenticate - Whether the user can authenticate (false to lock)
+ * @returns Effect that yields the user status response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const updatePingOneUserAccount = (
+  { envId, token, userId, canAuthenticate }: UpdateUserAccountPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.patch(
+      `${apiBaseUrl}/environments/${envId}/users/${userId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.schemaBodyJson(PingOneUpdateUserAccountRequest)({
+        account: { canAuthenticate }
+      }),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneUserStatusResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+/**
+ * List user sessions in PingOne via API
+ *
+ * Makes a GET request to retrieve all active sessions for a user.
+ *
+ * @param payload - List user sessions payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:read permissions
+ * @param payload.userId - ID of the user whose sessions to list
+ * @param payload.limit - Optional limit for number of sessions to return
+ * @returns Effect that yields the list sessions response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const listPingOneUserSessions = (
+  { envId, token, userId, limit }: ListUserSessionsPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const cache = yield* CacheService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    // Build query parameters
+    const queryParams = new URLSearchParams()
+    if (limit !== undefined) {
+      queryParams.append("limit", String(limit))
+    }
+
+    const queryString = queryParams.toString()
+    const url = queryString
+      ? `${apiBaseUrl}/environments/${envId}/users/${userId}/sessions?${queryString}`
+      : `${apiBaseUrl}/environments/${envId}/users/${userId}/sessions`
+
+    const req = HttpClientRequest.get(url).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
+
+    const httpRequest = Effect.gen(function*() {
+      const client = yield* HttpClient
+      const response = yield* client.execute(req)
+
+      if (response.status >= 200 && response.status < 300) {
+        return yield* HttpClientResponse.schemaBodyJson(PingOneListSessionsResponse)(response)
+      }
+
+      return yield* Effect.fail(
+        new PingOneApiError({
+          status: response.status,
+          message: `PingOne API request failed with status ${response.status}`
+        })
+      )
+    })
+
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+  })
+
+/**
+ * Revoke a user session in PingOne via API
+ *
+ * Makes a DELETE request to revoke a specific user session.
+ *
+ * @param payload - Revoke user session payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - ID of the user whose session to revoke
+ * @param payload.sessionId - ID of the session to revoke
+ * @returns Effect that yields the revoke session response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const revokePingOneUserSession = (
+  { envId, token, userId, sessionId }: RevokeUserSessionPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = Effect.gen(function*() {
+      const req = HttpClientRequest.del(
+        `${apiBaseUrl}/environments/${envId}/users/${userId}/sessions/${sessionId}`
+      ).pipe(
+        HttpClientRequest.bearerToken(token),
+        HttpClientRequest.accept("application/json")
+      )
+
+      const client = yield* HttpClient
+      const response = yield* client.execute(req)
+
+      if (response.status >= 200 && response.status < 300) {
+        return yield* HttpClientResponse.schemaBodyJson(PingOneRevokeSessionResponse)(response)
+      }
+
+      return yield* Effect.fail(
+        new PingOneApiError({
+          status: response.status,
+          message: `PingOne API request failed with status ${response.status}`
+        })
+      )
+    })
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+/**
+ * Update a user's MFA enabled status in PingOne via API
+ *
+ * Makes a PATCH request to update the user's mfaEnabled status.
+ *
+ * @param payload - Update user MFA payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - ID of the user to update
+ * @param payload.mfaEnabled - Whether MFA should be enabled (true) or disabled (false)
+ * @returns Effect that yields the MFA update response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const updatePingOneUserMfa = (
+  { envId, token, userId, mfaEnabled }: UpdateUserMfaPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.patch(
+      `${apiBaseUrl}/environments/${envId}/users/${userId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.schemaBodyJson(PingOneUpdateMfaRequest)({ mfaEnabled }),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneUpdateMfaResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+
+/**
+ * List MFA devices for a user in PingOne via API
+ *
+ * Makes a GET request to retrieve all MFA devices registered for a user.
+ *
+ * @param payload - List MFA devices payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:read permissions
+ * @param payload.userId - ID of the user whose MFA devices to list
+ * @param payload.limit - Optional limit for number of devices to return
+ * @returns Effect that yields the list MFA devices response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const listPingOneMfaDevices = (
+  { envId, token, userId, limit }: ListMfaDevicesPayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const cache = yield* CacheService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    // Build query parameters
+    const queryParams = new URLSearchParams()
+    if (limit !== undefined) {
+      queryParams.append("limit", String(limit))
+    }
+
+    const queryString = queryParams.toString()
+    const url = queryString
+      ? `${apiBaseUrl}/environments/${envId}/users/${userId}/devices?${queryString}`
+      : `${apiBaseUrl}/environments/${envId}/users/${userId}/devices`
+
+    const req = HttpClientRequest.get(url).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
+
+    const httpRequest = Effect.gen(function*() {
+      const client = yield* HttpClient
+      const response = yield* client.execute(req)
+
+      if (response.status >= 200 && response.status < 300) {
+        return yield* HttpClientResponse.schemaBodyJson(PingOneListMfaDevicesResponse)(response)
+      }
+
+      return yield* Effect.fail(
+        new PingOneApiError({
+          status: response.status,
+          message: `PingOne API request failed with status ${response.status}`
+        })
+      )
+    })
+
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+  })
+
+/**
+ * Delete an MFA device for a user in PingOne via API
+ *
+ * Makes a DELETE request to remove a specific MFA device from a user's account.
+ *
+ * @param payload - Delete MFA device payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:update permissions
+ * @param payload.userId - ID of the user whose MFA device to delete
+ * @param payload.deviceId - ID of the MFA device to delete
+ * @returns Effect that yields the delete MFA device response
+ * @throws {PingOneApiError} When API request fails
+ * @since 0.0.1
+ * @category API Client
+ */
+export const deletePingOneMfaDevice = (
+  { envId, token, userId, deviceId }: DeleteMfaDevicePayload
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = Effect.gen(function*() {
+      const req = HttpClientRequest.del(
+        `${apiBaseUrl}/environments/${envId}/users/${userId}/devices/${deviceId}`
+      ).pipe(
+        HttpClientRequest.bearerToken(token),
+        HttpClientRequest.accept("application/json")
+      )
+
+      const client = yield* HttpClient
+      const response = yield* client.execute(req)
+
+      if (response.status >= 200 && response.status < 300) {
+        return yield* HttpClientResponse.schemaBodyJson(PingOneDeleteMfaDeviceResponse)(response)
+      }
+
+      return yield* Effect.fail(
+        new PingOneApiError({
+          status: response.status,
+          message: `PingOne API request failed with status ${response.status}`
+        })
+      )
+    })
 
     return yield* retry.retryableRequest(httpRequest)
   })

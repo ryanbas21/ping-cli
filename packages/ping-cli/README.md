@@ -5,6 +5,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 ## Features
 
 - **User Management**: Full CRUD operations for PingOne users with verification support
+- **Bulk Operations**: Import, export, and delete users in bulk with CSV/JSON support and parallel processing
 - **Groups Management**: Create, read, update, delete groups with member management
 - **Populations Management**: Complete CRUD operations for managing user populations
 - **Applications Management**: Create and manage OAuth/OIDC applications with full lifecycle support
@@ -16,12 +17,32 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 
 ## Installation
 
+### From npm (Recommended)
+
 ```bash
-# Install from the monorepo root
+# Install globally
+npm install -g p1-cli
+
+# Or use with npx (no installation required)
+npx p1-cli --help
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/ryanbas21/ping-cli
+cd ping-cli
+
+# Install dependencies
 pnpm install
 
 # Build the CLI
 pnpm --filter 'p1-cli' build
+
+# Link for local development
+cd packages/ping-cli
+npm link
 ```
 
 ## Configuration
@@ -74,6 +95,124 @@ p1-cli delete_user <user-id>
 # Verify a user with a verification code
 p1-cli verify_user <user-id> <verification-code>
 ```
+
+### Bulk Operations
+
+Efficiently manage large numbers of users with bulk operations supporting CSV and JSON formats.
+
+#### Bulk Import Users
+
+Import users from a CSV or JSON file with parallel processing:
+
+```bash
+# Import from CSV (default format)
+p1-cli bulk_import_users users.csv \
+  --environment-id <env-id> \
+  --format csv
+
+# Import from JSON
+p1-cli bulk_import_users users.json \
+  --environment-id <env-id> \
+  --format json
+
+# Dry-run mode (preview without creating users)
+p1-cli bulk_import_users users.csv \
+  --environment-id <env-id> \
+  --dry-run
+
+# Control concurrency (default: 5 parallel operations)
+p1-cli bulk_import_users users.csv \
+  --environment-id <env-id> \
+  --concurrency 10
+```
+
+**CSV Format Example:**
+```csv
+username,email,populationId,givenName,familyName,department
+john.doe,john@example.com,pop-123,John,Doe,Engineering
+jane.smith,jane@example.com,pop-123,Jane,Smith,Sales
+```
+
+**JSON Format Example:**
+```json
+[
+  {
+    "username": "john.doe",
+    "email": "john@example.com",
+    "populationId": "pop-123",
+    "givenName": "John",
+    "familyName": "Doe",
+    "department": "Engineering"
+  },
+  {
+    "username": "jane.smith",
+    "email": "jane@example.com",
+    "populationId": "pop-123",
+    "givenName": "Jane",
+    "familyName": "Smith",
+    "department": "Sales"
+  }
+]
+```
+
+#### Bulk Export Users
+
+Export users to CSV or JSON format:
+
+```bash
+# Export all users to CSV
+p1-cli bulk_export_users users.csv \
+  --environment-id <env-id> \
+  --format csv
+
+# Export to JSON
+p1-cli bulk_export_users users.json \
+  --environment-id <env-id> \
+  --format json
+
+# Export with filter
+p1-cli bulk_export_users active-users.csv \
+  --environment-id <env-id> \
+  --filter 'enabled eq true' \
+  --limit 1000
+```
+
+#### Bulk Delete Users
+
+Delete multiple users from a file containing user IDs:
+
+```bash
+# Delete users (requires --confirm flag for safety)
+p1-cli bulk_delete_users user-ids.csv \
+  --environment-id <env-id> \
+  --confirm
+
+# Dry-run mode (preview without deleting)
+p1-cli bulk_delete_users user-ids.csv \
+  --environment-id <env-id> \
+  --dry-run
+
+# Control concurrency for rate limiting
+p1-cli bulk_delete_users user-ids.csv \
+  --environment-id <env-id> \
+  --confirm \
+  --concurrency 3
+```
+
+**CSV Format for Deletion:**
+```csv
+userId
+abc-123-def
+xyz-456-ghi
+```
+
+**Bulk Operations Features:**
+- **Parallel Processing**: Process multiple operations concurrently (default: 5)
+- **Progress Tracking**: Real-time progress updates every 10 operations
+- **Error Collection**: Automatic collection and reporting of failures
+- **Dry-Run Mode**: Preview operations without making changes
+- **Flexible Formats**: Support for both CSV and JSON
+- **Rate Limiting**: Configurable concurrency to respect API limits
 
 ### Group Commands
 

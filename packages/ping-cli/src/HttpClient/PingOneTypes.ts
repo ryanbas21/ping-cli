@@ -129,3 +129,141 @@ export type PingOneSetPasswordData = Schema.Schema.Type<typeof PingOneSetPasswor
  * @since 0.0.1
  */
 export type PingOnePasswordResetData = Schema.Schema.Type<typeof PingOnePasswordResetRequest>
+
+/**
+ * TypeScript interface for PingOne list users payload
+ *
+ * @since 0.0.1
+ */
+export interface ListUsersPayload {
+  readonly envId: string
+  readonly token: string
+  readonly limit?: number
+  readonly filter?: string
+}
+
+/**
+ * TypeScript interface for PingOne update user status payload
+ *
+ * @since 0.0.1
+ */
+export interface UpdateUserStatusPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly enabled: boolean
+}
+
+/**
+ * TypeScript interface for PingOne update user account payload
+ *
+ * @since 0.0.1
+ */
+export interface UpdateUserAccountPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly canAuthenticate: boolean
+}
+
+/**
+ * TypeScript interface for PingOne list user sessions payload
+ *
+ * @since 0.0.1
+ */
+export interface ListUserSessionsPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly limit?: number
+}
+
+/**
+ * TypeScript interface for PingOne revoke user session payload
+ *
+ * @since 0.0.1
+ */
+export interface RevokeUserSessionPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly sessionId: string
+}
+
+/**
+ * TypeScript interface for PingOne update user MFA payload
+ *
+ * @since 0.0.1
+ */
+export interface UpdateUserMfaPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly mfaEnabled: boolean
+}
+
+/**
+ * TypeScript interface for PingOne list MFA devices payload
+ *
+ * @since 0.0.1
+ */
+export interface ListMfaDevicesPayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly limit?: number
+}
+
+/**
+ * TypeScript interface for PingOne delete MFA device payload
+ *
+ * @since 0.0.1
+ */
+export interface DeleteMfaDevicePayload {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly deviceId: string
+}
+
+/**
+ * TypeScript interface for bulk import users payload
+ *
+ * @since 0.0.1
+ */
+export interface BulkImportUsersPayload {
+  readonly envId: string
+  readonly token: string
+  readonly filePath: string
+  readonly format: "csv" | "json"
+  readonly dryRun?: boolean
+  readonly concurrency?: number
+}
+
+/**
+ * TypeScript interface for bulk export users payload
+ *
+ * @since 0.0.1
+ */
+export interface BulkExportUsersPayload {
+  readonly envId: string
+  readonly token: string
+  readonly filePath: string
+  readonly format: "csv" | "json"
+  readonly filter?: string
+  readonly limit?: number
+}
+
+/**
+ * TypeScript interface for bulk delete users payload
+ *
+ * @since 0.0.1
+ */
+export interface BulkDeleteUsersPayload {
+  readonly envId: string
+  readonly token: string
+  readonly filePath: string
+  readonly format: "csv" | "json"
+  readonly dryRun?: boolean
+  readonly concurrency?: number
+}

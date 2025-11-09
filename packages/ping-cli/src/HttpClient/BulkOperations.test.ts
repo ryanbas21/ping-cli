@@ -1,0 +1,207 @@
+import { FileSystem } from "@effect/platform"
+import { NodeFileSystem, NodePath } from "@effect/platform-node"
+import { assert, describe, it } from "@effect/vitest"
+import { Effect, Layer, Schema } from "effect"
+import { PingOneBulkDeleteUserSchema, PingOneBulkImportUserSchema } from "./PingOneSchemas.js"
+
+const TestLive = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer)
+
+describe("Bulk Operations", () => {
+  describe("File Operations", () => {
+    it.live("should write and read CSV files", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-bulk-csv.csv"
+
+        // Create test CSV file
+        const csvContent = `username,email,givenName,familyName
+testuser1,test1@example.com,Test,User1
+testuser2,test2@example.com,Test,User2`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        // Read back and verify
+        const readContent = yield* fs.readFileString(testFile)
+        assert.strictEqual(readContent, csvContent)
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should write and read JSON files", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-bulk-json.json"
+
+        // Create test JSON file
+        const jsonContent = JSON.stringify(
+          [
+            {
+              username: "testuser1",
+              email: "test1@example.com",
+              name: { given: "Test", family: "User1" }
+            },
+            {
+              username: "testuser2",
+              email: "test2@example.com",
+              name: { given: "Test", family: "User2" }
+            }
+          ],
+          null,
+          2
+        )
+
+        yield* fs.writeFileString(testFile, jsonContent)
+
+        // Read back and verify
+        const readContent = yield* fs.readFileString(testFile)
+        assert.strictEqual(readContent, jsonContent)
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should handle CSV files with quoted fields containing commas", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-bulk-csv-quoted.csv"
+
+        // CSV with quoted fields containing commas
+        const csvContent = `username,email,department
+testuser1,test1@example.com,"Engineering, Frontend"
+testuser2,test2@example.com,"Sales, West Coast"`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        // Read back and verify
+        const readContent = yield* fs.readFileString(testFile)
+        assert.strictEqual(readContent, csvContent)
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+  })
+
+  describe("Schema Validation", () => {
+    it.effect("should validate valid bulk import user data", () =>
+      Effect.gen(function*() {
+        const validUser = {
+          username: "testuser",
+          email: "test@example.com",
+          populationId: "pop-123",
+          givenName: "Test",
+          familyName: "User"
+        }
+
+        const result = yield* Schema.decodeUnknown(PingOneBulkImportUserSchema)(validUser)
+
+        assert.strictEqual(result.username, "testuser")
+        assert.strictEqual(result.email, "test@example.com")
+        assert.strictEqual(result.populationId, "pop-123")
+      }))
+
+    it.effect("should validate minimal bulk import user data", () =>
+      Effect.gen(function*() {
+        const minimalUser = {
+          username: "testuser",
+          email: "test@example.com",
+          populationId: "pop-123"
+        }
+
+        const result = yield* Schema.decodeUnknown(PingOneBulkImportUserSchema)(minimalUser)
+
+        assert.strictEqual(result.username, "testuser")
+        assert.strictEqual(result.email, "test@example.com")
+        assert.strictEqual(result.populationId, "pop-123")
+      }))
+
+    it.effect("should fail validation for missing required fields in import user", () =>
+      Effect.gen(function*() {
+        const invalidUser = {
+          username: "testuser"
+          // Missing email and populationId
+        }
+
+        const result = yield* Schema.decodeUnknown(PingOneBulkImportUserSchema)(invalidUser).pipe(
+          Effect.either
+        )
+
+        assert.strictEqual(result._tag, "Left")
+      }))
+
+    it.effect("should validate bulk delete user data", () =>
+      Effect.gen(function*() {
+        const validDelete = {
+          userId: "user-123"
+        }
+
+        const result = yield* Schema.decodeUnknown(PingOneBulkDeleteUserSchema)(validDelete)
+
+        assert.strictEqual(result.userId, "user-123")
+      }))
+
+    it.effect("should fail validation for missing userId in delete data", () =>
+      Effect.gen(function*() {
+        const invalidDelete = {
+          id: "user-123" // Wrong field name
+        }
+
+        const result = yield* Schema.decodeUnknown(PingOneBulkDeleteUserSchema)(invalidDelete).pipe(
+          Effect.either
+        )
+
+        assert.strictEqual(result._tag, "Left")
+      }))
+  })
+
+  describe("Error Handling", () => {
+    it.live("should handle reading non-existent files", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const nonExistentFile = "/tmp/does-not-exist.csv"
+
+        const result = yield* fs.readFileString(nonExistentFile).pipe(Effect.either)
+
+        assert.strictEqual(result._tag, "Left")
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should handle malformed JSON", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-malformed.json"
+
+        const malformedJson = `{ "username": "test", invalid }`
+
+        yield* fs.writeFileString(testFile, malformedJson)
+
+        // Verify we can read the file (parsing happens in bulkImportUsers)
+        const content = yield* fs.readFileString(testFile)
+        assert.isTrue(content.includes("invalid"))
+
+        // Test that JSON.parse would fail
+        const parseResult = yield* Effect.try({
+          try: () => JSON.parse(content) as unknown,
+          catch: (error) => new Error(`Parse failed: ${String(error)}`)
+        }).pipe(Effect.either)
+
+        assert.strictEqual(parseResult._tag, "Left")
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should handle empty files", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-empty.csv"
+
+        yield* fs.writeFileString(testFile, "")
+
+        const content = yield* fs.readFileString(testFile)
+        assert.strictEqual(content, "")
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+  })
+})

@@ -224,3 +224,231 @@ export const PingOnePasswordResetResponse = Schema.Struct({
   id: Schema.String,
   status: Schema.String
 })
+
+/**
+ * Schema for pagination links in list responses
+ *
+ * @since 0.0.1
+ */
+export const PingOnePaginationLinksSchema = Schema.Struct({
+  self: Schema.optional(
+    Schema.Struct({
+      href: Schema.String
+    })
+  ),
+  next: Schema.optional(
+    Schema.Struct({
+      href: Schema.String
+    })
+  )
+})
+
+/**
+ * Schema for list users response
+ *
+ * @since 0.0.1
+ */
+export const PingOneListUsersResponse = Schema.Struct({
+  _embedded: Schema.Struct({
+    users: Schema.Array(PingOneCreateUserResponse)
+  }),
+  _links: Schema.optional(PingOnePaginationLinksSchema),
+  count: Schema.optional(Schema.Number),
+  size: Schema.optional(Schema.Number)
+})
+
+/**
+ * Schema for account authentication settings
+ *
+ * @since 0.0.1
+ */
+export const PingOneAccountSchema = Schema.Struct({
+  canAuthenticate: Schema.optional(Schema.Boolean)
+})
+
+/**
+ * Schema for updating user status (enable/disable)
+ *
+ * @since 0.0.1
+ */
+export const PingOneUpdateUserStatusRequest = Schema.Struct({
+  enabled: Schema.Boolean
+})
+
+/**
+ * Schema for updating user account lock status
+ *
+ * @since 0.0.1
+ */
+export const PingOneUpdateUserAccountRequest = Schema.Struct({
+  account: PingOneAccountSchema
+})
+
+/**
+ * Schema for user status update response
+ *
+ * @since 0.0.1
+ */
+export const PingOneUserStatusResponse = Schema.Struct({
+  id: Schema.String,
+  environment: PingOneEnvironmentSchema,
+  enabled: Schema.Boolean,
+  lifecycle: PingOneLifecycleSchema,
+  updatedAt: Schema.String
+})
+
+/**
+ * Schema for session information in PingOne
+ *
+ * @since 0.0.1
+ */
+export const PingOneSessionSchema = Schema.Struct({
+  id: Schema.String,
+  createdAt: Schema.String,
+  expiresAt: Schema.optional(Schema.String),
+  lastUsedAt: Schema.optional(Schema.String),
+  application: Schema.optional(
+    Schema.Struct({
+      id: Schema.String,
+      name: Schema.optional(Schema.String)
+    })
+  )
+})
+
+/**
+ * Schema for list sessions response
+ *
+ * @since 0.0.1
+ */
+export const PingOneListSessionsResponse = Schema.Struct({
+  _embedded: Schema.Struct({
+    sessions: Schema.Array(PingOneSessionSchema)
+  }),
+  _links: Schema.optional(PingOnePaginationLinksSchema),
+  count: Schema.optional(Schema.Number),
+  size: Schema.optional(Schema.Number)
+})
+
+/**
+ * Schema for revoke session response
+ *
+ * @since 0.0.1
+ */
+export const PingOneRevokeSessionResponse = Schema.Struct({
+  id: Schema.String,
+  status: Schema.String
+})
+
+/**
+ * Schema for updating user MFA status
+ *
+ * @since 0.0.1
+ */
+export const PingOneUpdateMfaRequest = Schema.Struct({
+  mfaEnabled: Schema.Boolean
+})
+
+/**
+ * Schema for MFA update response
+ *
+ * @since 0.0.1
+ */
+export const PingOneUpdateMfaResponse = Schema.Struct({
+  id: Schema.String,
+  environment: PingOneEnvironmentSchema,
+  mfaEnabled: Schema.Boolean,
+  updatedAt: Schema.String
+})
+
+/**
+ * Schema for MFA device information
+ *
+ * @since 0.0.1
+ */
+export const PingOneMfaDeviceSchema = Schema.Struct({
+  id: Schema.String,
+  type: Schema.String,
+  status: Schema.optional(Schema.String),
+  name: Schema.optional(Schema.String),
+  nickname: Schema.optional(Schema.String),
+  createdAt: Schema.String,
+  updatedAt: Schema.String
+})
+
+/**
+ * Schema for list MFA devices response
+ *
+ * @since 0.0.1
+ */
+export const PingOneListMfaDevicesResponse = Schema.Struct({
+  _embedded: Schema.Struct({
+    devices: Schema.Array(PingOneMfaDeviceSchema)
+  }),
+  _links: Schema.optional(PingOnePaginationLinksSchema),
+  count: Schema.optional(Schema.Number),
+  size: Schema.optional(Schema.Number)
+})
+
+/**
+ * Schema for delete MFA device response
+ *
+ * @since 0.0.1
+ */
+export const PingOneDeleteMfaDeviceResponse = Schema.Struct({
+  id: Schema.String,
+  status: Schema.String
+})
+
+/**
+ * Schema for bulk import user CSV row
+ *
+ * @since 0.0.1
+ */
+export const PingOneBulkImportUserSchema = Schema.Struct({
+  username: Schema.String,
+  email: Schema.String,
+  givenName: Schema.optional(Schema.String),
+  familyName: Schema.optional(Schema.String),
+  department: Schema.optional(Schema.String),
+  populationId: Schema.String
+})
+
+/**
+ * Schema for bulk import result
+ *
+ * @since 0.0.1
+ */
+export const PingOneBulkImportResultSchema = Schema.Struct({
+  total: Schema.Number,
+  successful: Schema.Number,
+  failed: Schema.Number,
+  errors: Schema.Array(Schema.Struct({
+    row: Schema.Number,
+    username: Schema.String,
+    error: Schema.String
+  }))
+})
+
+/**
+ * Schema for bulk delete user ID
+ *
+ * @since 0.0.1
+ */
+export const PingOneBulkDeleteUserSchema = Schema.Struct({
+  userId: Schema.String
+})
+
+/**
+ * Schema for bulk delete result
+ *
+ * @since 0.0.1
+ */
+export const PingOneBulkDeleteResultSchema = Schema.Struct({
+  total: Schema.Number,
+  successful: Schema.Number,
+  failed: Schema.Number,
+  errors: Schema.Array(Schema.Struct({
+    userId: Schema.String,
+    error: Schema.String
+  }))
+})

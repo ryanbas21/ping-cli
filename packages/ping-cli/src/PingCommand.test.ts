@@ -138,7 +138,7 @@ describe("PingCommand Smoke Tests", () => {
   })
 
   describe("Command Structure Validation", () => {
-    it.skip("should accept valid create_user command with all required args - requires HTTP mocking", () =>
+    it("should accept valid create_user command with all required args - requires HTTP mocking", () =>
       Effect.gen(function*() {
         // NOTE: This test is skipped because it would make actual HTTP requests.
         // The CLI successfully parses arguments but will fail at the HTTP layer.
@@ -167,7 +167,7 @@ describe("PingCommand Smoke Tests", () => {
         assert.strictEqual(result._tag, "Failure")
       }).pipe(Effect.provide(TestLayer)))
 
-    it.skip("should accept valid read_user command with all required args - requires HTTP mocking", () =>
+    it("should accept valid read_user command with all required args - requires HTTP mocking", () =>
       Effect.gen(function*() {
         // NOTE: Same as above - skipped because it requires HTTP mocking
         const result = yield* Effect.exit(
