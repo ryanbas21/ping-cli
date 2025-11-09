@@ -1,12 +1,9 @@
+---
 name: Publish
-
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
 concurrency: ${{ github.workflow }}-${{ github.ref }}
-
 jobs:
   publish:
     name: Publish to npm
@@ -15,46 +12,37 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-
+          node-version: 20.x
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
       - name: Update npm to latest
         run: npm install -g npm@latest
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Run tests
         run: pnpm test
-
       - name: Build project
         run: pnpm build
-
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish
+          publish: pnpm -r publish && changeset tag
           title: 'chore: release package'
           commit: 'chore: release package'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
-
   docs:
     name: Deploy Documentation
     runs-on: ubuntu-latest
@@ -64,34 +52,26 @@ jobs:
       contents: read
       pages: write
       id-token: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'pnpm'
-
+          node-version: 20.x
+          cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Generate documentation
         run: pnpm docs
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './api_docs'
-
+          path: ./api_docs
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
