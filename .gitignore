@@ -5,3 +5,12 @@ node_modules
 dist
 build
 coverage/
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Compiled config files (should not be in source control)
+eslint.config.mjs
+eslint.config.mjs.map
+eslint.config.d.mts
+eslint.config.d.mts.map
