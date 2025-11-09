@@ -1,4 +1,5 @@
-import { Effect } from "effect"
+import { NodeContext, NodeHttpClient, NodeRuntime } from "@effect/platform-node"
+import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import {
   createApplication,
@@ -248,7 +249,6 @@ const main = Effect.gen(function*() {
   yield* Console.log("\n=== All Examples Completed Successfully! ===")
 })
 
-Effect.runPromise(main).catch((error) => {
-  console.error("Example failed:", error)
-  process.exit(1)
-})
+const MainLive = Layer.merge(NodeHttpClient.layer, NodeContext.layer)
+
+main.pipe(Effect.provide(MainLive), NodeRuntime.runMain)

@@ -1,4 +1,4 @@
-import { HttpClient } from "@effect/platform"
+import { HttpClient, HttpClientError } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { updateUser } from "./UpdateUser.js"
@@ -7,12 +7,14 @@ describe("UpdateUser Command", () => {
   // Mock HttpClient that fails to simulate HTTP-level errors
   // Tests expecting validation errors won't reach this mock
   // Tests expecting HTTP errors will encounter this failure
-  const mockHttpClient = HttpClient.make((_req) =>
-    Effect.fail({
-      _tag: "RequestError" as const,
-      reason: "other",
-      error: new Error("Mock HTTP error - should not reach actual API in tests")
-    })
+  const mockHttpClient = HttpClient.make((req) =>
+    Effect.fail(
+      new HttpClientError.RequestError({
+        request: req,
+        reason: "Transport",
+        cause: new Error("Mock HTTP error - should not reach actual API in tests")
+      })
+    )
   )
 
   const httpClientLayer = Layer.succeed(HttpClient.HttpClient, mockHttpClient)

@@ -27,23 +27,20 @@ const handleSpecificErrors = Effect.gen(function*() {
     token,
     userId: "nonexistent-user-id"
   }).pipe(
-    Effect.catchTags({
-      PingOneApiError: (error) =>
-        Effect.gen(function*() {
-          if (error.status === 404) {
-            yield* Console.log("User not found - this is expected for this example")
-            return null
-          }
-          yield* Console.error(`API Error: ${error.status} - ${error.message}`)
-          return yield* Effect.fail(error)
-        }),
-      PingOneAuthError: (error) =>
-        Effect.gen(function*() {
-          yield* Console.error(`Authentication Error: ${String((error as { cause?: string }).cause ?? "Unknown")}`)
+    Effect.catchTag("PingOneApiError", (error) =>
+      Effect.gen(function*() {
+        if (error.status === 404) {
+          yield* Console.log("User not found - this is expected for this example")
+          return null
+        }
+        if (error.status === 401 || error.status === 403) {
+          yield* Console.error(`Authentication Error: ${error.status} - ${error.message}`)
           yield* Console.log("Please check your PINGONE_TOKEN environment variable")
           return yield* Effect.fail(error)
-        })
-    })
+        }
+        yield* Console.error(`API Error: ${error.status} - ${error.message}`)
+        return yield* Effect.fail(error)
+      }))
   )
 
   yield* Console.log(`Result: ${result === null ? "Handled 404 error gracefully" : "User found"}\n`)
@@ -217,20 +214,18 @@ const validationErrorHandling = Effect.gen(function*() {
       population: { id: populationId }
     }
   }).pipe(
-    Effect.catchTag("PingOneValidationError", (error) =>
-      Effect.gen(function*() {
-        yield* Console.error(`Validation Error:`)
-        yield* Console.error(`  Field: ${error.field}`)
-        yield* Console.error(`  Message: ${error.message}`)
-        yield* Console.log("\nSuggested fix: Ensure email follows format: user@domain.com")
-
-        return null
-      })),
     Effect.catchTag("PingOneApiError", (error) =>
       Effect.gen(function*() {
         if (error.status === 422) {
           yield* Console.error("Server-side validation failed:")
-          yield* Console.error(`  ${error.message}`)
+          yield* Console.error(`  Status: ${error.status}`)
+          yield* Console.error(`  Message: ${error.message}`)
+          if (error.errorCode) {
+            yield* Console.error(`  Error Code: ${error.errorCode}`)
+          }
+          yield* Console.log("\nSuggested fix: Ensure email follows format: user@domain.com")
+        } else {
+          yield* Console.error(`API Error: ${error.status} - ${error.message}`)
         }
         return null
       }))
@@ -256,7 +251,7 @@ const program = Effect.gen(function*() {
   yield* Console.log("\nAll examples completed!")
 }).pipe(
   Effect.catchAll((error) =>
-    Console.error(`\nFatal error: ${String(error)}`).pipe(
+    Console.error(`\nFatal error: ${"_tag" in error ? error._tag : String(error)}`).pipe(
       Effect.flatMap(() => Effect.fail(error))
     )
   )
@@ -265,6 +260,6 @@ const program = Effect.gen(function*() {
 /**
  * Set up layers and run
  */
-const layers = Layer.merge(NodeHttpClient.layer, NodeContext.layer)
+const MainLive = Layer.merge(NodeHttpClient.layer, NodeContext.layer)
 
-program.pipe(Effect.provide(layers), NodeRuntime.runMain)
+program.pipe(Effect.provide(MainLive), NodeRuntime.runMain)
