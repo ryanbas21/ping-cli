@@ -7,26 +7,10 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@changesets/changelog-github':
         specifier: ^0.5.1
         version: 0.5.1
-      '@effect/cli':
-        specifier: ^0.72.0
-        version: 0.72.0(@effect/platform@0.93.0(effect@3.19.2))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
-      '@effect/platform':
-        specifier: ^0.93.0
-        version: 0.93.0(effect@3.19.2)
-      '@effect/platform-node':
-        specifier: ^0.100.0
-        version: 0.100.0(@effect/cluster@0.52.6(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/workflow@0.12.2(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      effect:
-        specifier: ^3.19.2
-        version: 3.19.2
-    devDependencies:
       '@changesets/cli':
         specifier: ^2.29.7
         version: 2.29.7(@types/node@24.10.0)
@@ -51,9 +35,6 @@ importers:
       '@eslint/markdown':
         specifier: ^7.5.1
         version: 7.5.1
-      '@types/dotenv':
-        specifier: ^8.2.3
-        version: 8.2.3
       '@types/node':
         specifier: ^24.10.0
         version: 24.10.0
@@ -78,9 +59,80 @@ importers:
       jiti:
         specifier: ^2.6.1
         version: 2.6.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
       typescript-eslint:
         specifier: ^8.46.3
         version: 8.46.3(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+      vitest:
+        specifier: ^4.0.8
+        version: 4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
+
+  packages/js-sdk-ci-cli:
+    dependencies:
+      '@effect/cli':
+        specifier: ^0.72.0
+        version: 0.72.0(@effect/platform@0.93.0(effect@3.19.2))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
+      '@effect/platform':
+        specifier: ^0.93.0
+        version: 0.93.0(effect@3.19.2)
+      '@effect/platform-node':
+        specifier: ^0.100.0
+        version: 0.100.0(@effect/cluster@0.52.6(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/workflow@0.12.2(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      effect:
+        specifier: ^3.19.2
+        version: 3.19.2
+    devDependencies:
+      '@effect/vitest':
+        specifier: ^0.27.0
+        version: 0.27.0(effect@3.19.2)(vitest@4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.0
+      '@vitest/coverage-v8':
+        specifier: ^4.0.8
+        version: 4.0.8(vitest@4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.8
+        version: 4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
+
+  packages/ping-cli:
+    dependencies:
+      '@effect/cli':
+        specifier: ^0.72.0
+        version: 0.72.0(@effect/platform@0.93.0(effect@3.19.2))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
+      '@effect/platform':
+        specifier: ^0.93.0
+        version: 0.93.0(effect@3.19.2)
+      '@effect/platform-node':
+        specifier: ^0.100.0
+        version: 0.100.0(@effect/cluster@0.52.6(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/workflow@0.12.2(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(@effect/rpc@0.72.1(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/sql@0.48.0(@effect/experimental@0.57.0(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(@effect/platform@0.93.0(effect@3.19.2))(effect@3.19.2))(effect@3.19.2)
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      effect:
+        specifier: ^3.19.2
+        version: 3.19.2
+    devDependencies:
+      '@effect/vitest':
+        specifier: ^0.27.0
+        version: 0.27.0(effect@3.19.2)(vitest@4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.0
+      '@vitest/coverage-v8':
+        specifier: ^4.0.8
+        version: 4.0.8(vitest@4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
       vitest:
         specifier: ^4.0.8
         version: 4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -840,10 +892,6 @@ packages:
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
-
-  '@types/dotenv@8.2.3':
-    resolution: {integrity: sha512-g2FXjlDX/cYuc5CiQvyU/6kkbP1JtmGzh0obW50zD7OKeILVL0NSpPWLXVfqoAGQjom2/SLLx9zHq0KXvD6mbw==}
-    deprecated: This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed.
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -2994,10 +3042,6 @@ snapshots:
       '@types/ms': 2.1.0
 
   '@types/deep-eql@4.0.2': {}
-
-  '@types/dotenv@8.2.3':
-    dependencies:
-      dotenv: 17.2.3
 
   '@types/estree@1.0.8': {}
 

@@ -6,7 +6,12 @@ This document provides detailed information about the PingOne API endpoints used
 
 - [PingOne API](#pingone-api)
   - [Authentication](#authentication)
+  - [Regional API Endpoints](#regional-api-endpoints)
+  - [Service Integration](#service-integration)
   - [User Management Endpoints](#user-management-endpoints)
+  - [Groups Management Endpoints](#groups-management-endpoints)
+  - [Applications Management Endpoints](#applications-management-endpoints)
+  - [Populations Management Endpoints](#populations-management-endpoints)
   - [Request/Response Schemas](#requestresponse-schemas)
   - [Error Codes](#error-codes)
 - [GitHub API](#github-api)
@@ -19,9 +24,13 @@ This document provides detailed information about the PingOne API endpoints used
 
 ### Base URL
 
+The default base URL is:
+
 ```
 https://api.pingone.com/v1
 ```
+
+However, the API base URL is **configurable via environment variable** to support multiple PingOne regions. See [Regional API Endpoints](#regional-api-endpoints) below.
 
 ### Authentication
 
@@ -42,6 +51,163 @@ Authorization: Bearer {token}
 Accept: application/json
 Content-Type: application/json
 ```
+
+---
+
+### Regional API Endpoints
+
+The CLI supports multiple PingOne regions through the `PINGONE_API_URL` environment variable:
+
+| Region | API Base URL | Environment Variable |
+|--------|--------------|---------------------|
+| **North America** (default) | `https://api.pingone.com/v1` | Not required (default) |
+| **Europe** | `https://api.pingone.eu/v1` | `PINGONE_API_URL=https://api.pingone.eu/v1` |
+| **Asia Pacific** | `https://api.pingone.asia/v1` | `PINGONE_API_URL=https://api.pingone.asia/v1` |
+| **Canada** | `https://api.pingone.ca/v1` | `PINGONE_API_URL=https://api.pingone.ca/v1` |
+
+**Configuration Example:**
+
+```bash
+# In .env file or shell
+export PINGONE_API_URL=https://api.pingone.eu/v1
+export PINGONE_ENV_ID=your-environment-id
+export PINGONE_TOKEN=your-access-token
+
+# Run CLI commands - will use European endpoint
+ping-cli create_user john.doe john@example.com --population-id pop-123
+```
+
+**Implementation:**
+
+All HTTP client functions use `getApiBaseUrl()` to retrieve the configurable base URL:
+
+```typescript
+import { getApiBaseUrl } from "./Commands/PingOne/ConfigHelper"
+
+export const createPingOneUser = (payload) =>
+  Effect.gen(function*() {
+    const apiBaseUrl = yield* getApiBaseUrl()
+    // Uses ${apiBaseUrl}/environments/${envId}/users
+  })
+```
+
+---
+
+### Service Integration
+
+The `@ping/cli` package uses **Effect Layer composition** to provide cross-cutting concerns. All HTTP client functions integrate with these services automatically.
+
+#### RetryService
+
+**Automatic retry logic** with exponential backoff for transient failures.
+
+**Features:**
+- Automatically retries network errors, 5xx server errors, and 429 rate limits
+- Exponential backoff: 100ms base, 2x multiplier, max 30 seconds per retry
+- Respects `Retry-After` header from rate limit responses
+- Maximum retry duration: 2 minutes
+- Applied to **all API requests** (both mutations and reads)
+
+**Retry Decision Logic:**
+
+| Error Type | Status Code | Retry? | Reason |
+|------------|-------------|--------|---------|
+| Network Error | N/A | ✅ Yes | Transient connectivity issue |
+| Server Error | 500-599 | ✅ Yes | Temporary server issue |
+| Rate Limit | 429 | ✅ Yes | Temporary rate limit |
+| Client Error | 400-499 (except 429) | ❌ No | Permanent error (bad request, auth, not found) |
+| Success | 200-299 | N/A | No retry needed |
+
+**Example Behavior:**
+
+```typescript
+// User calls createPingOneUser
+const user = yield* createPingOneUser({ envId, token, userData })
+
+// Behind the scenes:
+// Attempt 1: Network error -> Wait 100ms -> Retry
+// Attempt 2: 503 Server Error -> Wait 200ms -> Retry
+// Attempt 3: 429 Rate Limit (Retry-After: 5s) -> Wait 5s -> Retry
+// Attempt 4: 201 Success -> Return result
+```
+
+#### CacheService
+
+**Response caching** to reduce API calls for read operations.
+
+**Features:**
+- Per-resource caching: Separate caches for users, groups, applications, populations
+- Cache TTL (Time-To-Live): 5 minutes
+- Cache capacity: 100 entries per resource type
+- Automatic cache invalidation on mutations
+- Applied only to **read operations** (read, list)
+- **NOT applied to mutations** (create, update, delete)
+
+**Cache Key Generation:**
+
+Cache keys are generated from:
+- Request URL (including environment ID, resource ID, query parameters)
+- Request headers (Authorization, Accept)
+
+**Cache Behavior:**
+
+```typescript
+// First call: Cache miss -> Makes API call -> Stores in cache
+const user1 = yield* readPingOneUser({ envId, token, userId: "user-123" })
+
+// Second call (within 5 min): Cache hit -> Returns cached response
+const user2 = yield* readPingOneUser({ envId, token, userId: "user-123" })
+
+// Mutation invalidates cache
+yield* updatePingOneUser({ envId, token, userId: "user-123", userData: {...} })
+
+// Next read: Cache miss -> Makes fresh API call
+const user3 = yield* readPingOneUser({ envId, token, userId: "user-123" })
+```
+
+**Mutation vs Read Operations:**
+
+| Operation Type | Examples | RetryService | CacheService |
+|----------------|----------|--------------|--------------|
+| **Mutations** | create, update, delete, addMember, removeMember | ✅ Yes | ❌ No |
+| **Reads** | read, list, listMembers | ✅ Yes | ✅ Yes |
+
+#### Service Access Pattern
+
+HTTP client functions access services via **dependency injection** using `yield*`:
+
+```typescript
+// Mutation operation (create, update, delete)
+export const createPingOneUser = (payload) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService  // Inject retry service
+    const apiBaseUrl = yield* getApiBaseUrl()  // Get configurable URL
+
+    const httpRequest = /* Build HTTP request */
+
+    return yield* retry.retryableRequest(httpRequest)  // Wrap with retry
+  })
+
+// Read operation (read, list)
+export const readPingOneUser = (payload) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService    // Inject retry service
+    const cache = yield* CacheService    // Inject cache service
+    const apiBaseUrl = yield* getApiBaseUrl()  // Get configurable URL
+
+    const req = HttpClientRequest.get(...).pipe(...)
+    const httpRequest = /* Build HTTP request */
+
+    // Cache wraps retry which wraps HTTP request
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+  })
+```
+
+**Benefits:**
+- Automatic retry for all API calls without manual implementation
+- Reduced API calls for frequently accessed resources
+- Transparent service integration - consumers don't need to change code
+- Easy to test with mock service layers
 
 ---
 
@@ -641,7 +807,7 @@ PingOne API implements rate limiting:
 
 - **Rate Limit**: Varies by endpoint and subscription tier
 - **Headers**: Check `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers
-- **Retry**: Implement exponential backoff on `429 Too Many Requests`
+- **Retry**: ✅ **Automatic** - RetryService handles `429 Too Many Requests` with exponential backoff and respects `Retry-After` header
 
 ### GitHub API
 
@@ -649,7 +815,7 @@ GitHub API rate limits:
 
 - **Authenticated**: 5,000 requests per hour
 - **Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-- **Retry**: Wait until `X-RateLimit-Reset` timestamp
+- **Retry**: Manual implementation required (GitHub client does not currently use RetryService)
 
 ---
 
@@ -657,11 +823,13 @@ GitHub API rate limits:
 
 1. **Always validate inputs** using Effect Schema before API calls
 2. **Handle errors gracefully** with proper error types
-3. **Use environment variables** for sensitive credentials
-4. **Implement retry logic** for transient failures
-5. **Log requests and responses** for debugging (exclude sensitive data)
-6. **Cache frequently accessed data** to reduce API calls
+3. **Use environment variables** for sensitive credentials (including `PINGONE_API_URL` for regional endpoints)
+4. ✅ **Retry logic is automatic** - RetryService handles all transient failures automatically
+5. ✅ **Caching is automatic** - CacheService handles all read operations automatically
+6. **Log requests and responses** for debugging (exclude sensitive data)
 7. **Use Effect's resource management** for cleanup and error recovery
+8. **Configure region correctly** - Set `PINGONE_API_URL` for non-US regions
+9. **Trust service integration** - Don't manually implement retry or caching logic
 
 ---
 

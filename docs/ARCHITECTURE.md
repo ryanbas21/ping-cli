@@ -1,12 +1,14 @@
 # Architecture Documentation
 
-This document describes the architecture, design patterns, and organization of the PingOne SDK CI CLI.
+This document describes the architecture, design patterns, and organization of the PingOne SDK CI CLI monorepo.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Monorepo Structure](#monorepo-structure)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
+- [Service Composition](#service-composition)
 - [Design Patterns](#design-patterns)
 - [Module Dependencies](#module-dependencies)
 - [Data Flow](#data-flow)
@@ -18,17 +20,57 @@ This document describes the architecture, design patterns, and organization of t
 
 ## Overview
 
-The PingOne SDK CI CLI is a command-line tool built with Effect library patterns that provides:
+The PingOne SDK CI CLI is a **monorepo** containing two packages built with Effect library patterns:
 
-1. **PingOne User Management**: CRUD operations for users via PingOne API
-2. **GitHub Workflow Automation**: Trigger CI/CD workflows for the Ping JavaScript SDK
+1. **`@ping/cli`**: Command-line tool for managing PingOne resources (users, groups, populations, applications)
+2. **`@ping/js-sdk-ci-cli`**: Internal tool for automating GitHub workflows for the Ping JavaScript SDK
 
 ### Design Goals
 
 - **Type Safety**: Leverage TypeScript and Effect Schema for compile-time and runtime type safety
 - **Functional Programming**: Use Effect library for composable, testable, and maintainable code
 - **Error Handling**: Structured error types with comprehensive error recovery
-- **Modularity**: Clear separation of concerns between CLI, HTTP clients, and business logic
+- **Modularity**: Clear separation of concerns between CLI, services, HTTP clients, and business logic
+- **Service Composition**: Cross-cutting concerns (retry, caching) handled via Effect Layer composition
+
+---
+
+## Monorepo Structure
+
+This project uses **pnpm workspaces** for managing multiple packages:
+
+```
+sdk-ci-cli/                     # Monorepo root
+├── packages/
+│   ├── ping-cli/              # @ping/cli - PingOne resource management
+│   │   ├── src/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── README.md
+│   └── js-sdk-ci-cli/         # @ping/js-sdk-ci-cli - GitHub workflow automation
+│       ├── src/
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── README.md
+├── docs/                      # Shared documentation
+├── pnpm-workspace.yaml        # Workspace configuration
+├── tsconfig.base.json         # Shared TypeScript config
+└── package.json               # Root package with recursive scripts
+```
+
+### Package Responsibilities
+
+#### @ping/cli
+- **Purpose**: Manage PingOne resources via API
+- **Features**: Users, Groups, Populations, Applications CRUD operations
+- **Binary**: `ping-cli`
+- **Services**: RetryService, CacheService for resilient API interactions
+
+#### @ping/js-sdk-ci-cli
+- **Purpose**: Internal GitHub workflow automation
+- **Features**: Trigger CI and publish workflows
+- **Binary**: `js-sdk-ci`
+- **Scope**: Internal development tool only
 
 ---
 
@@ -61,45 +103,174 @@ The PingOne SDK CI CLI is a command-line tool built with Effect library patterns
 
 ---
 
-## Project Structure
+## Service Composition
+
+The `@ping/cli` package uses **Effect Layer composition** to provide cross-cutting concerns like retry logic and caching. This follows Effect-ts best practices for dependency injection.
+
+### Service Architecture
 
 ```
-sdk-ci-cli/
+Application Entry Point (main.ts)
+    ↓
+Layer Composition (Layer.mergeAll)
+    ├── NodeHttpClient.layer      # HTTP client
+    ├── NodeContext.layer          # Node.js runtime
+    ├── RetryServiceLive           # Retry logic service
+    └── CacheServiceLive           # Caching service
+    ↓
+Commands (yield* services as needed)
+    ↓
+HTTP Client Functions (yield* services as needed)
+```
+
+### RetryService
+
+Provides automatic retry logic with exponential backoff for transient failures:
+
+**Location**: `packages/ping-cli/src/Services/RetryService.ts`
+
+**Features**:
+- Retries network errors, 5xx server errors, and 429 rate limits
+- Exponential backoff: 100ms base, 2x multiplier, max 30s
+- Respects `Retry-After` header from rate limit responses
+- Maximum retry duration: 2 minutes
+- Applied to all mutation operations (create, update, delete)
+- Applied to all read operations (read, list)
+
+**Usage Pattern**:
+```typescript
+export const createPingOneUser = (payload) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = /* HTTP request logic */
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+```
+
+### CacheService
+
+Provides response caching to reduce API calls:
+
+**Location**: `packages/ping-cli/src/Services/CacheService.ts`
+
+**Features**:
+- Per-resource caching (separate caches for users, groups, applications, populations)
+- Cache TTL: 5 minutes
+- Cache capacity: 100 entries per resource type
+- Automatic cache invalidation on mutations
+- Applied to all read operations (read, list)
+
+**Usage Pattern**:
+```typescript
+export const readPingOneUser = (payload) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const cache = yield* CacheService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const req = HttpClientRequest.get(...).pipe(...)
+    const httpRequest = Effect.gen(function*() {
+      /* HTTP execution logic */
+    })
+
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+  })
+```
+
+### Layer Composition in main.ts
+
+Services are provided globally via `Layer.mergeAll`:
+
+```typescript
+import { CacheServiceLive, RetryServiceLive } from "./Services/index.js"
+
+const layers = Layer.mergeAll(
+  NodeHttpClient.layer,
+  NodeContext.layer,
+  RetryServiceLive,
+  CacheServiceLive
+)
+
+PingCli(process.argv).pipe(Effect.provide(layers), NodeRuntime.runMain)
+```
+
+**Benefits**:
+- Services are memoized (single instance per application)
+- HTTP client functions access services via `yield*` (dependency injection)
+- Easy to test by providing mock layers
+- No per-effect provision (anti-pattern avoided)
+
+---
+
+## Project Structure
+
+### @ping/cli Structure
+
+```
+packages/ping-cli/
 ├── src/
 │   ├── Commands/              # CLI command implementations
-│   │   ├── PingOne/          # PingOne user management commands
+│   │   ├── PingOne/          # PingOne resource management commands
 │   │   │   ├── ConfigHelper.ts      # Shared configuration utilities
-│   │   │   ├── CreateUser.ts        # Create user command
-│   │   │   ├── ReadUser.ts          # Read user command
-│   │   │   ├── UpdateUser.ts        # Update user command
-│   │   │   ├── DeleteUser.ts        # Delete user command
-│   │   │   ├── VerifyUser.ts        # Verify user command
+│   │   │   ├── applications/        # Application commands
+│   │   │   ├── groups/              # Group commands
+│   │   │   ├── populations/         # Population commands
 │   │   │   └── index.ts             # Command aggregation
-│   │   ├── RunJSTests.ts     # GitHub CI workflow command
-│   │   └── RunPublish.ts     # GitHub publish workflow command
+│   │   └── index.ts
 │   ├── HttpClient/           # HTTP clients and API integration
-│   │   ├── PingOneClient.ts        # PingOne API client functions
-│   │   ├── PingOneSchemas.ts       # PingOne request/response schemas
-│   │   ├── PingOneTypes.ts         # PingOne TypeScript types
-│   │   ├── HttpClient.ts           # GitHub API client
-│   │   ├── schemas.ts              # GitHub workflow schemas
-│   │   └── types.ts                # GitHub workflow types
+│   │   ├── PingOneClient.ts        # User management API functions
+│   │   ├── GroupClient.ts          # Group management API functions
+│   │   ├── ApplicationClient.ts    # Application management API functions
+│   │   ├── PopulationClient.ts     # Population management API functions
+│   │   ├── PingOneSchemas.ts       # Request/response schemas
+│   │   ├── GroupSchemas.ts
+│   │   ├── ApplicationSchemas.ts
+│   │   ├── PopulationSchemas.ts
+│   │   └── *Types.ts               # TypeScript type definitions
+│   ├── Services/             # Service layer (NEW)
+│   │   ├── RetryService.ts         # Retry logic with exponential backoff
+│   │   ├── CacheService.ts         # Response caching
+│   │   └── index.ts                # Service exports
 │   ├── Errors.ts             # Custom error type definitions
 │   ├── PingCommand.ts        # Root command configuration
-│   └── main.ts               # Application entry point
-├── docs/                     # Documentation
-│   ├── API.md               # API reference
-│   └── ARCHITECTURE.md      # This file
+│   └── main.ts               # Application entry point with layer composition
+├── docs/                     # Package documentation
 ├── examples/                 # Usage examples
-│   ├── create-and-verify-user.ts
-│   ├── batch-user-operations.ts
-│   ├── error-handling.ts
-│   └── README.md
 ├── coverage/                 # Test coverage reports
 ├── dist/                     # Compiled JavaScript output
-├── README.md                # User documentation
-├── CONTRIBUTING.md          # Development guidelines
-└── CLAUDE.md                # Effect library development patterns
+├── README.md                # Package user documentation
+└── package.json
+```
+
+### @ping/js-sdk-ci-cli Structure
+
+```
+packages/js-sdk-ci-cli/
+├── src/
+│   ├── Commands/
+│   │   └── GitHub/           # GitHub workflow commands
+│   │       ├── RunJSTests.ts      # CI workflow command
+│   │       └── RunPublish.ts      # Publish workflow command
+│   ├── HttpClient/
+│   │   ├── HttpClient.ts          # GitHub API client
+│   │   ├── schemas.ts             # Workflow schemas
+│   │   └── types.ts               # Type definitions
+│   ├── Errors.ts
+│   ├── JSSdkCICommand.ts
+│   └── main.ts
+├── README.md
+└── package.json
+```
+
+### Shared Documentation
+
+```
+docs/
+├── API.md                    # API reference (both packages)
+└── ARCHITECTURE.md           # This file
 ```
 
 ### Module Responsibilities
@@ -113,6 +284,15 @@ sdk-ci-cli/
   - Format output for console display
 - **Pattern**: Each command is an Effect that handles end-to-end user workflow
 
+#### Services Layer (NEW)
+- **Purpose**: Provide cross-cutting concerns via dependency injection
+- **Responsibilities**:
+  - **RetryService**: Automatic retry logic with exponential backoff
+  - **CacheService**: Response caching to reduce API calls
+  - Centralize infrastructure concerns
+  - Enable testability via Layer composition
+- **Pattern**: Services provided globally via `Layer.mergeAll`, accessed via `yield*` in HTTP clients
+
 #### HTTP Client Layer
 - **Purpose**: Handle all HTTP API interactions
 - **Responsibilities**:
@@ -120,7 +300,10 @@ sdk-ci-cli/
   - Execute HTTP calls via Effect HttpClient
   - Validate responses against schemas
   - Map HTTP errors to custom error types
-- **Pattern**: Pure functions that return Effects, allowing composability
+  - **Integrate RetryService** for all requests (mutations and reads)
+  - **Integrate CacheService** for read operations only
+  - Use configurable API base URL from environment
+- **Pattern**: Pure functions that return Effects, accessing services via `yield*`
 
 #### Error Layer
 - **Purpose**: Define structured error types
@@ -303,27 +486,39 @@ Input Validation
 Configuration Resolution (env vars + CLI options)
     ↓
 HTTP Client Function (HttpClient/)
+    ├── yield* RetryService       # Inject retry logic
+    ├── yield* CacheService        # Inject caching (reads only)
+    └── yield* getApiBaseUrl()     # Get configurable API base URL
     ↓
 Request Schema Validation
     ↓
+Cache Check (Read Operations Only)
+    ├── Cache Hit → Return Cached Response
+    └── Cache Miss → Continue
+    ↓
 HTTP Request (@effect/platform HttpClient)
+    ↓
+Retry Logic (Automatic)
+    ├── Success → Continue
+    ├── Transient Error (5xx, 429, network) → Retry with backoff
+    └── Permanent Error (4xx) → Fail immediately
     ↓
 HTTP Response
     ↓
 Response Schema Validation
+    ↓
+Cache Update (Read Operations Only)
     ↓
 Result or Error
     ↓
 Console Output
 ```
 
-### Example: Create User Flow
+### Example: Create User Flow (with Services)
 
 ```typescript
 // 1. User runs CLI command
-// Development: pnpm start p1 create_user john.doe john@example.com ...
-// Production:  pingid p1 create_user john.doe john@example.com ...
-$ pnpm start p1 create_user john.doe john@example.com \
+$ ping-cli create_user john.doe john@example.com \
     --environment-id env-123 \
     --population-id pop-456
 
@@ -337,20 +532,61 @@ validateUsername(username) // Effect<string, PingOneValidationError>
 // 4. Resolve configuration
 getEnvironmentId(cliOption) // Effect<string, PingOneAuthError>
 getToken(cliOption) // Effect<string, PingOneAuthError>
+getApiBaseUrl() // Effect<string> - reads PINGONE_API_URL or defaults
 
 // 5. Build user data payload
 { username, email, population: { id: popId }, ... }
 
-// 6. Call HTTP client
+// 6. Call HTTP client with service integration
 createPingOneUser({ envId, token, userData })
-  // Validates request against PingOneCreateUserRequest schema
-  // Makes HTTP POST request
-  // Validates response against PingOneCreateUserResponse schema
+  // Inside createPingOneUser:
+  // - yield* RetryService (inject retry logic)
+  // - yield* getApiBaseUrl() (configurable API URL)
+  // - Validates request against PingOneCreateUserRequest schema
+  // - Makes HTTP POST to ${apiBaseUrl}/environments/${envId}/users
+  // - RetryService automatically retries on transient errors (5xx, 429, network)
+  // - Validates response against PingOneCreateUserResponse schema
   // Returns Effect<UserResponse, PingOneApiError>
 
 // 7. Handle result
 Success: Console.log("User created: {user.id}")
 Failure: Console.error("Failed: {error.message}")
+  // If transient error, already retried automatically
+  // If permanent error (4xx), fails immediately
+```
+
+### Example: Read User Flow (with Caching)
+
+```typescript
+// 1. User runs CLI command
+$ ping-cli read_user user-123
+
+// 2. HTTP client called with caching
+readPingOneUser({ envId, token, userId })
+  // Inside readPingOneUser:
+  // - yield* RetryService (inject retry logic)
+  // - yield* CacheService (inject caching)
+  // - yield* getApiBaseUrl() (configurable API URL)
+  // - Creates HttpClientRequest.get(...)
+  // - Calls cache.getCached(req, httpRequest)
+
+// 3. Cache checks for cached response
+CacheService.getCached(req, httpRequest)
+  // Key: hash of request URL + headers
+  // Check users cache (separate from groups, apps, populations)
+  // If found and not expired (< 5 min old): return cached response
+  // If not found or expired: execute httpRequest with retry
+
+// 4. If cache miss, execute HTTP request
+  // - Makes HTTP GET to ${apiBaseUrl}/environments/${envId}/users/${userId}
+  // - RetryService retries on transient errors
+  // - Validates response schema
+  // - Stores response in cache
+  // - Returns response
+
+// 5. Result
+Cache Hit: Returns immediately without API call
+Cache Miss: Makes API call, stores in cache, returns response
 ```
 
 ---
@@ -548,46 +784,36 @@ it.effect("should fail with PingOneApiError on 401", () =>
 
 ### Short-term
 
-1. **Service Layer Abstraction**
-   - Convert HTTP client functions into Effect services
-   - Enable easier testing and mocking
-   - Improve dependency injection
-
-2. **Configuration Service**
-   - Centralize all configuration logic
-   - Provide typed configuration object
-   - Support multiple environments
-
-3. **Enhanced Error Types**
+1. **Enhanced Error Types**
    - More specific error subtypes (e.g., `RateLimitError`, `ResourceNotFoundError`)
-   - Include retry-after information
+   - Include more detailed retry-after information
    - Add error recovery suggestions
 
-4. **Request/Response Logging**
+2. **Request/Response Logging**
    - Add structured logging layer
    - Log all HTTP requests/responses
-   - Redact sensitive information
+   - Redact sensitive information (tokens, credentials)
+
+3. **Configuration Service**
+   - Further centralize configuration logic
+   - Provide typed configuration object with validation
+   - Support environment profiles (dev, staging, prod)
 
 ### Medium-term
 
 1. **Batch Operations Service**
    - Dedicated service for bulk operations
-   - Built-in concurrency control
-   - Progress reporting
+   - Built-in concurrency control with semaphores
+   - Progress reporting and streaming results
 
-2. **Caching Layer**
-   - Cache frequently accessed resources
-   - Implement TTL-based invalidation
-   - Reduce API calls
-
-3. **Retry and Circuit Breaker**
-   - Implement sophisticated retry policies
+2. **Circuit Breaker Pattern**
    - Add circuit breaker for failing endpoints
-   - Exponential backoff with jitter
+   - Prevent cascading failures
+   - Auto-recovery after cooldown period
 
-4. **Performance Monitoring**
+3. **Performance Monitoring**
    - Track API call latency
-   - Monitor error rates
+   - Monitor error rates and cache hit rates
    - Generate performance reports
 
 ### Long-term

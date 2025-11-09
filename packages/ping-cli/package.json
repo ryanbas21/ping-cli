@@ -1,0 +1,45 @@
+{
+  "name": "@ping/cli",
+  "version": "0.0.0",
+  "description": "A CLI tool for managing PingOne resources",
+  "main": "dist/main.js",
+  "bin": {
+    "ping-cli": "dist/main.js"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p ./tsconfig.prod.json",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "cli",
+    "pingone",
+    "effect",
+    "typescript"
+  ],
+  "author": "ryanbas21",
+  "license": "ISC",
+  "dependencies": {
+    "@effect/cli": "^0.72.0",
+    "@effect/platform": "^0.93.0",
+    "@effect/platform-node": "^0.100.0",
+    "dotenv": "^17.2.3",
+    "effect": "^3.19.2"
+  },
+  "devDependencies": {
+    "@effect/vitest": "^0.27.0",
+    "@types/node": "^24.10.0",
+    "@vitest/coverage-v8": "^4.0.8",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.8"
+  }
+}

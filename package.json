@@ -1,48 +1,30 @@
 {
-  "name": "ping-cli",
+  "name": "ping-workspace",
   "version": "0.0.0",
-  "description": "PingOne SDK CLI - A comprehensive command-line tool for managing PingOne resources",
-  "main": "dist/main.js",
-  "bin": {
-    "ping-cli": "dist/main.js"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "homepage": "https://github.com/ryanbas21/ping-cli#readme",
+  "private": true,
+  "description": "Monorepo for PingOne CLI tools",
   "repository": {
     "type": "git",
     "url": "https://github.com/ryanbas21/ping-cli"
   },
-  "scripts": {
-    "build": "tsc -p ./tsconfig.prod.json",
-    "test": "vitest run",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage",
-    "docs": "docgen"
-  },
-  "keywords": [
-    "cli",
-    "effect",
-    "typescript"
-  ],
   "author": "ryanbas21",
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
-  "dependencies": {
-    "@changesets/changelog-github": "^0.5.1",
-    "@effect/cli": "^0.72.0",
-    "@effect/platform": "^0.93.0",
-    "@effect/platform-node": "^0.100.0",
-    "dotenv": "^17.2.3",
-    "effect": "^3.19.2"
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' build",
+    "test": "pnpm -r --filter './packages/*' test",
+    "lint": "pnpm -r --filter './packages/*' lint",
+    "lint:fix": "pnpm -r --filter './packages/*' lint:fix",
+    "test:watch": "pnpm -r --filter './packages/*' test:watch",
+    "test:coverage": "pnpm -r --filter './packages/*' test:coverage",
+    "clean": "pnpm -r --filter './packages/*' clean",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
+    "@changesets/changelog-github": "^0.5.1",
     "@effect/docgen": "^0.5.2",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.55.2",
@@ -50,7 +32,6 @@
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
     "@eslint/markdown": "^7.5.1",
-    "@types/dotenv": "^8.2.3",
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
@@ -59,6 +40,7 @@
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
+    "typescript": "^5.7.2",
     "typescript-eslint": "^8.46.3",
     "vitest": "^4.0.8"
   }
