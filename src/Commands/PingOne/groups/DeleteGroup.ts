@@ -11,6 +11,11 @@ const groupId = Args.text({ name: "groupId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to delete a PingOne group by ID.
+ *
+ * @since 0.0.1
+ */
 export const deleteGroupCommand = Command.make(
   "delete_group",
   {

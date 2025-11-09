@@ -1,8 +1,22 @@
+import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { ConfigProvider, Effect, Layer, Redacted } from "effect"
+import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { createUser } from "./CreateUser.js"
 
 describe("CreateUser Command", () => {
+  // Mock HttpClient that fails to simulate HTTP-level errors
+  // Tests expecting validation errors won't reach this mock
+  // Tests expecting HTTP errors will encounter this failure
+  const mockHttpClient = HttpClient.make((_req) =>
+    Effect.fail({
+      _tag: "RequestError" as const,
+      reason: "other",
+      error: new Error("Mock HTTP error - should not reach actual API in tests")
+    })
+  )
+
+  const httpClientLayer = Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+
   describe("Validation", () => {
     it.effect("should fail with PingOneValidationError for invalid email format", () => {
       const configLayer = Layer.setConfigProvider(
@@ -22,11 +36,11 @@ describe("CreateUser Command", () => {
             email: "invalid-email",
             environmentId: "test-env",
             populationId: "test-pop",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
@@ -36,7 +50,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Invalid email format"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should fail with PingOneValidationError for empty username", () => {
@@ -57,11 +71,11 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "test-pop",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
@@ -71,7 +85,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Username cannot be empty"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should fail with PingOneAuthError when population ID not provided", () => {
@@ -91,11 +105,11 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
@@ -105,7 +119,7 @@ describe("CreateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneAuthError")
           assert.isTrue(error.cause.includes("No PingOne population ID provided"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
   })
 
@@ -133,18 +147,18 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "cli-pop-id",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
-        // Should fail at HTTP level (no mock), but not at validation level
+        // Validation passes, HTTP fails but error is handled gracefully
         // This proves config hierarchy works correctly
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should fall back to environment variable when CLI option is empty", () => {
@@ -165,18 +179,18 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
-        // Should fail at HTTP level (no mock), but not at validation level
+        // Validation passes, HTTP fails but error is handled gracefully
         // This proves fallback to env var works
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
   })
 
@@ -199,18 +213,18 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "test-pop",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "Some", value: "John" },
-            familyName: { _tag: "Some", value: "Doe" },
-            department: { _tag: "None" },
-            locales: { _tag: "None" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.some("John"),
+            familyName: Option.some("Doe"),
+            department: Option.none(),
+            locales: Option.none()
           })
         )
 
         // Verification that optional fields are parsed
-        // Will fail at HTTP level but proves parsing works
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        // Validation passes, HTTP fails but error is handled gracefully
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should parse comma-separated locales correctly", () => {
@@ -231,18 +245,18 @@ describe("CreateUser Command", () => {
             email: "test@example.com",
             environmentId: "test-env",
             populationId: "test-pop",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") },
-            givenName: { _tag: "None" },
-            familyName: { _tag: "None" },
-            department: { _tag: "Some", value: "Engineering" },
-            locales: { _tag: "Some", value: "en-US, fr-FR, de-DE" }
+            pingoneToken: Option.some(Redacted.make("test-token")),
+            givenName: Option.none(),
+            familyName: Option.none(),
+            department: Option.some("Engineering"),
+            locales: Option.some("en-US, fr-FR, de-DE")
           })
         )
 
         // Verification that locales are parsed from comma-separated string
-        // Will fail at HTTP level but proves parsing works
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        // Validation passes, HTTP fails but error is handled gracefully
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
   })
 })

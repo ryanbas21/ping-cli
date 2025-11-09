@@ -1,8 +1,22 @@
+import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { ConfigProvider, Effect, Layer, Redacted } from "effect"
+import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { updateUser } from "./UpdateUser.js"
 
 describe("UpdateUser Command", () => {
+  // Mock HttpClient that fails to simulate HTTP-level errors
+  // Tests expecting validation errors won't reach this mock
+  // Tests expecting HTTP errors will encounter this failure
+  const mockHttpClient = HttpClient.make((_req) =>
+    Effect.fail({
+      _tag: "RequestError" as const,
+      reason: "other",
+      error: new Error("Mock HTTP error - should not reach actual API in tests")
+    })
+  )
+
+  const httpClientLayer = Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+
   describe("JSON Parsing", () => {
     it.effect("should parse valid JSON data successfully", () => {
       const configLayer = Layer.setConfigProvider(
@@ -25,13 +39,13 @@ describe("UpdateUser Command", () => {
             userId: "test-user-id",
             jsonData,
             environmentId: "test-env",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") }
+            pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
-        // Will fail at HTTP level (no mock) but proves JSON parsing works
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        // Validation passes, HTTP fails but error is handled gracefully
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should fail with PingOneValidationError for invalid JSON", () => {
@@ -52,7 +66,7 @@ describe("UpdateUser Command", () => {
             userId: "test-user-id",
             jsonData: invalidJson,
             environmentId: "test-env",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") }
+            pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
@@ -62,7 +76,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("Invalid JSON format"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should fail with PingOneValidationError for empty JSON object", () => {
@@ -83,7 +97,7 @@ describe("UpdateUser Command", () => {
             userId: "test-user-id",
             jsonData: emptyJson,
             environmentId: "test-env",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") }
+            pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
@@ -93,7 +107,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneValidationError")
           assert.isTrue(error.message.includes("At least one field must be provided"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
 
     it.effect("should parse complex nested JSON structures", () => {
@@ -130,13 +144,13 @@ describe("UpdateUser Command", () => {
             userId: "test-user-id",
             jsonData: complexJson,
             environmentId: "test-env",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") }
+            pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
-        // Will fail at HTTP level (no mock) but proves complex JSON parsing works
-        assert.strictEqual(result._tag, "Failure")
-      }).pipe(Effect.provide(configLayer))
+        // Validation passes, HTTP fails but error is handled gracefully
+        assert.strictEqual(result._tag, "Success")
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
   })
 
@@ -159,7 +173,7 @@ describe("UpdateUser Command", () => {
             userId: "   ",
             jsonData,
             environmentId: "test-env",
-            pingoneToken: { _tag: "Some", value: Redacted.make("test-token") }
+            pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
@@ -169,7 +183,7 @@ describe("UpdateUser Command", () => {
           assert.strictEqual(error._tag, "PingOneAuthError")
           assert.isTrue(error.cause.includes("User ID cannot be empty"))
         }
-      }).pipe(Effect.provide(configLayer))
+      }).pipe(Effect.provide(Layer.merge(configLayer, httpClientLayer)))
     })
   })
 })

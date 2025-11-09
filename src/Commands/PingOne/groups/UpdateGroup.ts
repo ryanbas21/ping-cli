@@ -18,6 +18,11 @@ const description = Options.text("description").pipe(Options.optional)
 const userFilter = Options.text("user-filter").pipe(Options.optional)
 const externalId = Options.text("external-id").pipe(Options.optional)
 
+/**
+ * Command to update a PingOne group.
+ *
+ * @since 0.0.1
+ */
 export const updateGroupCommand = Command.make(
   "update_group",
   {

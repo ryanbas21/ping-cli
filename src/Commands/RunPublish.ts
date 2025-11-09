@@ -12,6 +12,11 @@ const prerelease = Args.text({ name: "prerelease" }).pipe(Args.optional)
 const access = Args.text({ name: "npm-access" }).pipe(Args.optional)
 const ghToken = Args.redacted({ name: "gh-token" }).pipe(Args.optional)
 
+/**
+ * Command to trigger the publish workflow for the JS SDK.
+ *
+ * @since 0.0.1
+ */
 export const RunPublish = Command.make(
   "RunPublish",
   { ghToken, tag, ref, branch, prerelease, access },

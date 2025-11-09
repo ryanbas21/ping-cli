@@ -14,6 +14,11 @@ const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t
 // Optional query parameters
 const expand = Options.text("expand").pipe(Options.optional)
 
+/**
+ * Command to read/retrieve a PingOne group by ID.
+ *
+ * @since 0.0.1
+ */
 export const readGroupCommand = Command.make(
   "read_group",
   {

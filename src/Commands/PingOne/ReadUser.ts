@@ -12,6 +12,11 @@ const userId = Args.text({ name: "userId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to read/retrieve a PingOne user by ID.
+ *
+ * @since 0.0.1
+ */
 export const readUser = Command.make(
   "read_user",
   {

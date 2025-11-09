@@ -13,6 +13,11 @@ const name = Options.text("name").pipe(Options.optional)
 const description = Options.text("description").pipe(Options.optional)
 const enabled = Options.boolean("enabled").pipe(Options.optional)
 
+/**
+ * Command to update a PingOne application.
+ *
+ * @since 0.0.1
+ */
 export const updateApplicationCommand = Command.make(
   "update_application",
   {

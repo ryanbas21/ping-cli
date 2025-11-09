@@ -18,6 +18,11 @@ const populationId = Options.text("population-id").pipe(Options.withAlias("p"), 
 const userFilter = Options.text("user-filter").pipe(Options.optional)
 const externalId = Options.text("external-id").pipe(Options.optional)
 
+/**
+ * Command to create a new PingOne group.
+ *
+ * @since 0.0.1
+ */
 export const createGroupCommand = Command.make(
   "create_group",
   {

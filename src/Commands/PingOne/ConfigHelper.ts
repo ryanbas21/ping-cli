@@ -2,8 +2,10 @@ import { Config, Effect, Predicate, Redacted } from "effect"
 import { PingOneAuthError } from "../../Errors"
 
 /**
- * Gets PingOne environment ID from CLI option or environment variable
+ * Gets PingOne environment ID from CLI option or environment variable.
  * Priority: CLI option > PINGONE_ENV_ID env var
+ *
+ * @since 0.0.1
  */
 export const getEnvironmentId = (cliOption: string) =>
   Effect.if(
@@ -24,8 +26,10 @@ export const getEnvironmentId = (cliOption: string) =>
   )
 
 /**
- * Gets PingOne access token from CLI option or environment variable
+ * Gets PingOne access token from CLI option or environment variable.
  * Priority: CLI option > PINGONE_TOKEN env var
+ *
+ * @since 0.0.1
  */
 export const getToken = (
   cliOption: { readonly _tag: "Some"; readonly value: Redacted.Redacted<string> } | { readonly _tag: "None" }

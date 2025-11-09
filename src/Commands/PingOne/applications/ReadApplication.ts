@@ -9,6 +9,11 @@ const applicationId = Args.text({ name: "applicationId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to read/retrieve a PingOne application by ID.
+ *
+ * @since 0.0.1
+ */
 export const readApplicationCommand = Command.make(
   "read_application",
   {

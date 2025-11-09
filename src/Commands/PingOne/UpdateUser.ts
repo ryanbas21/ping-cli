@@ -13,6 +13,11 @@ const jsonData = Args.text({ name: "jsonData" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to update a PingOne user with new data.
+ *
+ * @since 0.0.1
+ */
 export const updateUser = Command.make(
   "update_user",
   {

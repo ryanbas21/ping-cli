@@ -20,6 +20,11 @@ const familyName = Options.text("family-name").pipe(Options.optional)
 const department = Options.text("department").pipe(Options.optional)
 const locales = Options.text("locales").pipe(Options.optional)
 
+/**
+ * Command to create a new PingOne user.
+ *
+ * @since 0.0.1
+ */
 export const createUser = Command.make(
   "create_user",
   {

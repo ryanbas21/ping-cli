@@ -13,6 +13,11 @@ const verificationCode = Args.text({ name: "verificationCode" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to verify a PingOne user with a verification code.
+ *
+ * @since 0.0.1
+ */
 export const verifyUser = Command.make(
   "verify_user",
   {

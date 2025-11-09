@@ -16,6 +16,11 @@ const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t
 const name = Options.text("name").pipe(Options.optional)
 const description = Options.text("description").pipe(Options.optional)
 
+/**
+ * Command to update a PingOne population.
+ *
+ * @since 0.0.1
+ */
 export const updatePopulationCommand = Command.make(
   "update_population",
   {

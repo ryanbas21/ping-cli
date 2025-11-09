@@ -14,6 +14,11 @@ const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t
 // Optional query parameters
 const limit = Options.integer("limit").pipe(Options.withAlias("l"), Options.optional)
 
+/**
+ * Command to list members of a PingOne group.
+ *
+ * @since 0.0.1
+ */
 export const listGroupMembersCommand = Command.make(
   "list_members",
   {

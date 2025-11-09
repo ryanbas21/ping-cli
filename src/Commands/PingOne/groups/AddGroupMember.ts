@@ -12,6 +12,11 @@ const userId = Args.text({ name: "userId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to add a user to a PingOne group.
+ *
+ * @since 0.0.1
+ */
 export const addGroupMemberCommand = Command.make(
   "add_member",
   {

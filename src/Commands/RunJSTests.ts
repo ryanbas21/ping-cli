@@ -11,6 +11,11 @@ const ghToken = Args.redacted({ name: "GH_TOKEN" })
 const ref = Args.text({ name: "ref" })
 const workflowId = Args.text({ name: "workflowId" })
 
+/**
+ * Command to trigger the CI workflow for running JS SDK tests.
+ *
+ * @since 0.0.1
+ */
 export const runJSTests = Command.make(
   "RunJSTests",
   { baseUrl, ghToken, ref, workflowId },
@@ -64,6 +69,11 @@ export const runJSTests = Command.make(
     })
 )
 
+/**
+ * CLI runner for the RunJSTests command.
+ *
+ * @since 0.0.1
+ */
 export const cli = Command.run(runJSTests, {
   name: "JS SDK Cli",
   version: "v0.0.1"

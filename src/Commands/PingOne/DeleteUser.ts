@@ -12,6 +12,11 @@ const userId = Args.text({ name: "userId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to delete a PingOne user by ID.
+ *
+ * @since 0.0.1
+ */
 export const deleteUser = Command.make(
   "delete_user",
   {

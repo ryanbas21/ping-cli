@@ -12,6 +12,11 @@ const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t
 const limit = Options.integer("limit").pipe(Options.withAlias("l"), Options.optional)
 const filter = Options.text("filter").pipe(Options.optional)
 
+/**
+ * Command to list PingOne populations with optional filtering and pagination.
+ *
+ * @since 0.0.1
+ */
 export const listPopulationsCommand = Command.make(
   "list_populations",
   {

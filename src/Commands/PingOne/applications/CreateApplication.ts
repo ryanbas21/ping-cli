@@ -14,6 +14,11 @@ const type = Options.text("type").pipe(Options.withDefault("WEB_APP"))
 const protocol = Options.text("protocol").pipe(Options.withDefault("OPENID_CONNECT"))
 const enabled = Options.boolean("enabled").pipe(Options.withDefault(true))
 
+/**
+ * Command to create a new PingOne application.
+ *
+ * @since 0.0.1
+ */
 export const createApplicationCommand = Command.make(
   "create_application",
   {

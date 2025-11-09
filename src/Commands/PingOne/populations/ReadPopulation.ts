@@ -11,6 +11,11 @@ const populationId = Args.text({ name: "populationId" })
 const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
+/**
+ * Command to read/retrieve a PingOne population by ID.
+ *
+ * @since 0.0.1
+ */
 export const readPopulationCommand = Command.make(
   "read_population",
   {

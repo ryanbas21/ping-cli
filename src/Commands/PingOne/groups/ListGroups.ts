@@ -13,6 +13,11 @@ const limit = Options.integer("limit").pipe(Options.withAlias("l"), Options.opti
 const filter = Options.text("filter").pipe(Options.optional)
 const expand = Options.text("expand").pipe(Options.optional)
 
+/**
+ * Command to list PingOne groups with optional filtering, expansion, and pagination.
+ *
+ * @since 0.0.1
+ */
 export const listGroupsCommand = Command.make(
   "list_groups",
   {
