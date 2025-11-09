@@ -1,6 +1,6 @@
-______________________________________________________________________
-
-## "p1-cli": patch
+---
+"p1-cli": patch
+---
 
 Initial release of PingOne SDK CI CLI - a comprehensive command-line tool for managing PingOne resources.
 
@@ -29,6 +29,6 @@ Initial release of PingOne SDK CI CLI - a comprehensive command-line tool for ma
 - Effect library patterns throughout
 - Automated CI/CD pipeline
 
-______________________________________________________________________
+---
 
 **IMPORTANT DISCLAIMER**: This is completely unsupported and is NOT an official release of a Ping product. This tool is provided as-is for development and testing purposes only. Use at your own risk.
