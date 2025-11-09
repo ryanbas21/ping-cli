@@ -1,5 +1,5 @@
 {
-  "name": "@ping/js-sdk-ci-cli",
+  "name": "js-sdk-ci-cli",
   "version": "0.1.0",
   "description": "A CLI tool for triggering JS SDK CI workflows",
   "main": "dist/main.js",

@@ -1,4 +1,4 @@
-# @ping/cli
+# ping-cli
 
 Command-line tool for managing PingOne resources via the PingOne Management API.
 
@@ -21,7 +21,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 pnpm install
 
 # Build the CLI
-pnpm --filter '@ping/cli' build
+pnpm --filter 'ping-cli' build
 ```
 
 ## Configuration

@@ -95,7 +95,7 @@ export const createPingOneUser = (payload) =>
 
 ### Service Integration
 
-The `@ping/cli` package uses **Effect Layer composition** to provide cross-cutting concerns. All HTTP client functions integrate with these services automatically.
+The `ping-cli` package uses **Effect Layer composition** to provide cross-cutting concerns. All HTTP client functions integrate with these services automatically.
 
 #### RetryService
 

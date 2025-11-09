@@ -1,5 +1,5 @@
 {
-  "name": "@ping/cli",
+  "name": "ping-cli",
   "version": "0.0.0",
   "description": "A CLI tool for managing PingOne resources",
   "main": "dist/main.js",

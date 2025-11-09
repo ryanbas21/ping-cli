@@ -22,8 +22,8 @@ This document describes the architecture, design patterns, and organization of t
 
 The PingOne SDK CI CLI is a **monorepo** containing two packages built with Effect library patterns:
 
-1. **`@ping/cli`**: Command-line tool for managing PingOne resources (users, groups, populations, applications)
-2. **`@ping/js-sdk-ci-cli`**: Internal tool for automating GitHub workflows for the Ping JavaScript SDK
+1. **`ping-cli`**: Command-line tool for managing PingOne resources (users, groups, populations, applications)
+2. **`js-sdk-ci-cli`**: Internal tool for automating GitHub workflows for the Ping JavaScript SDK
 
 ### Design Goals
 
@@ -42,12 +42,12 @@ This project uses **pnpm workspaces** for managing multiple packages:
 ```
 sdk-ci-cli/                     # Monorepo root
 ├── packages/
-│   ├── ping-cli/              # @ping/cli - PingOne resource management
+│   ├── ping-cli/              # ping-cli - PingOne resource management
 │   │   ├── src/
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   └── README.md
-│   └── js-sdk-ci-cli/         # @ping/js-sdk-ci-cli - GitHub workflow automation
+│   └── js-sdk-ci-cli/         # js-sdk-ci-cli - GitHub workflow automation
 │       ├── src/
 │       ├── package.json
 │       ├── tsconfig.json
@@ -60,13 +60,13 @@ sdk-ci-cli/                     # Monorepo root
 
 ### Package Responsibilities
 
-#### @ping/cli
+#### ping-cli
 - **Purpose**: Manage PingOne resources via API
 - **Features**: Users, Groups, Populations, Applications CRUD operations
 - **Binary**: `ping-cli`
 - **Services**: RetryService, CacheService for resilient API interactions
 
-#### @ping/js-sdk-ci-cli
+#### js-sdk-ci-cli
 - **Purpose**: Internal GitHub workflow automation
 - **Features**: Trigger CI and publish workflows
 - **Binary**: `js-sdk-ci`
@@ -105,7 +105,7 @@ sdk-ci-cli/                     # Monorepo root
 
 ## Service Composition
 
-The `@ping/cli` package uses **Effect Layer composition** to provide cross-cutting concerns like retry logic and caching. This follows Effect-ts best practices for dependency injection.
+The `ping-cli` package uses **Effect Layer composition** to provide cross-cutting concerns like retry logic and caching. This follows Effect-ts best practices for dependency injection.
 
 ### Service Architecture
 
@@ -207,7 +207,7 @@ PingCli(process.argv).pipe(Effect.provide(layers), NodeRuntime.runMain)
 
 ## Project Structure
 
-### @ping/cli Structure
+### ping-cli Structure
 
 ```
 packages/ping-cli/
@@ -245,7 +245,7 @@ packages/ping-cli/
 └── package.json
 ```
 
-### @ping/js-sdk-ci-cli Structure
+### js-sdk-ci-cli Structure
 
 ```
 packages/js-sdk-ci-cli/

@@ -1,4 +1,4 @@
-# @ping/js-sdk-ci-cli
+# js-sdk-ci-cli
 
 Internal CLI tool for automating GitHub workflows related to the Ping JavaScript SDK development and release process.
 
@@ -17,7 +17,7 @@ Internal CLI tool for automating GitHub workflows related to the Ping JavaScript
 pnpm install
 
 # Build the CLI
-pnpm --filter '@ping/js-sdk-ci-cli' build
+pnpm --filter 'js-sdk-ci-cli' build
 ```
 
 ## Configuration
