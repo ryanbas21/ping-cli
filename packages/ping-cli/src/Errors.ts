@@ -8,7 +8,7 @@
  * - Provide context for debugging and logging
  * - Support error recovery strategies
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 import * as Data from "effect/Data"
 

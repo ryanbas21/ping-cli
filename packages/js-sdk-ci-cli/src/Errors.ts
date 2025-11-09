@@ -4,7 +4,7 @@
  * Defines structured error types for the JS SDK CI CLI using Effect's Data.TaggedError.
  * These errors provide type-safe error handling throughout the application.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 import * as Data from "effect/Data"
 
