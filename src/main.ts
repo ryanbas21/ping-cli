@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { NodeContext, NodeHttpClient, NodeRuntime } from "@effect/platform-node"
 import { config } from "dotenv"
 import * as Effect from "effect/Effect"
