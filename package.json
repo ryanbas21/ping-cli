@@ -1,6 +1,6 @@
 {
   "name": "ping-cli",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "PingOne SDK CLI - A comprehensive command-line tool for managing PingOne resources",
   "main": "dist/main.js",
   "bin": {
