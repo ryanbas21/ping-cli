@@ -184,3 +184,43 @@ export const PingOneVerifyUserRequest = Schema.Struct({
  * @since 0.0.1
  */
 export const PingOneVerifyUserResponse = PingOneCreateUserResponse
+
+/**
+ * Schema for setting a user's password
+ *
+ * @since 0.0.1
+ */
+export const PingOneSetPasswordRequest = Schema.Struct({
+  value: Schema.String,
+  forceChange: Schema.optional(Schema.Boolean)
+})
+
+/**
+ * Schema for set password response
+ *
+ * @since 0.0.1
+ */
+export const PingOneSetPasswordResponse = Schema.Struct({
+  id: Schema.String,
+  environment: PingOneEnvironmentSchema,
+  status: Schema.String
+})
+
+/**
+ * Schema for password reset/recovery request
+ *
+ * @since 0.0.1
+ */
+export const PingOnePasswordResetRequest = Schema.Struct({
+  email: Schema.String
+})
+
+/**
+ * Schema for password reset/recovery response
+ *
+ * @since 0.0.1
+ */
+export const PingOnePasswordResetResponse = Schema.Struct({
+  id: Schema.String,
+  status: Schema.String
+})

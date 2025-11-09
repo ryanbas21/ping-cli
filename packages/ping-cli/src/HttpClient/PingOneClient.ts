@@ -16,7 +16,11 @@ import { CacheService, RetryService } from "../Services/index.js"
 import {
   PingOneCreateUserRequest,
   PingOneCreateUserResponse,
+  PingOnePasswordResetRequest,
+  PingOnePasswordResetResponse,
   PingOneReadUserResponse,
+  PingOneSetPasswordRequest,
+  PingOneSetPasswordResponse,
   PingOneUpdateUserRequest,
   PingOneUpdateUserResponse,
   PingOneVerifyUserRequest,
@@ -25,7 +29,9 @@ import {
 import type {
   CreateUserPayload,
   DeleteUserPayload,
+  PasswordResetPayload,
   ReadUserPayload,
+  SetPasswordPayload,
   UpdateUserPayload,
   VerifyUserPayload
 } from "./PingOneTypes.js"
@@ -292,6 +298,171 @@ export const verifyPingOneUser = <S extends Schema.Schema.Type<typeof PingOneVer
         })
       ),
       Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneVerifyUserResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+
+/**
+ * Sets a user's password in PingOne
+ *
+ * Makes a PUT request to set or update a user's password. Can optionally require
+ * the user to change their password on next login by setting forceChange to true.
+ *
+ * @param payload - Set password payload
+ * @param payload.envId - PingOne environment ID containing the user
+ * @param payload.token - PingOne access token with user:password:set permissions
+ * @param payload.userId - Unique identifier of the user
+ * @param payload.passwordData - Password data containing the new password value and optional forceChange flag
+ * @returns Effect that yields the password set response with user ID and status
+ * @throws {PingOneApiError} When API request fails (e.g., 400 if password doesn't meet policy, 404 if user not found)
+ * @see {@link PingOneSetPasswordRequest} for request schema definition
+ * @see {@link PingOneSetPasswordResponse} for response schema definition
+ * @since 0.0.1
+ * @category API Client
+ */
+export const setPingOneUserPassword = <S extends Schema.Schema.Type<typeof PingOneSetPasswordRequest>>(
+  { envId, token, userId, passwordData }: SetPasswordPayload<S>
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.put(
+      `${apiBaseUrl}/environments/${envId}/users/${userId}/password`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.set+json"),
+      HttpClientRequest.schemaBodyJson(PingOneSetPasswordRequest)(passwordData),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneSetPasswordResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+
+/**
+ * Initiates a password recovery flow for a user
+ *
+ * Makes a POST request to trigger a password recovery flow. PingOne will send
+ * a recovery code/link to the user's email address. This is a self-service operation
+ * that users can initiate themselves.
+ *
+ * @param payload - Password recovery payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token (or can be unauthenticated based on policy)
+ * @param payload.resetData - Reset data containing the user's email address
+ * @returns Effect that yields the password recovery response with recovery ID and status
+ * @throws {PingOneApiError} When API request fails (e.g., 404 if email not found)
+ * @see {@link PingOnePasswordResetRequest} for request schema definition
+ * @see {@link PingOnePasswordResetResponse} for response schema definition
+ * @since 0.0.1
+ * @category API Client
+ */
+export const recoverPingOneUserPassword = <S extends Schema.Schema.Type<typeof PingOnePasswordResetRequest>>(
+  { envId, token, resetData }: PasswordResetPayload<S>
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.post(
+      `${apiBaseUrl}/environments/${envId}/users/password`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.recover+json"),
+      HttpClientRequest.schemaBodyJson(PingOnePasswordResetRequest)(resetData),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOnePasswordResetResponse)(response))
+    )
+
+    return yield* retry.retryableRequest(httpRequest)
+  })
+
+/**
+ * Initiates a password reset flow (admin-initiated)
+ *
+ * Similar to password recovery but initiated by an administrator rather than the user.
+ * Makes a POST request to trigger a password reset flow. PingOne will send a reset
+ * code/link to the specified email address.
+ *
+ * @param payload - Password reset payload
+ * @param payload.envId - PingOne environment ID
+ * @param payload.token - PingOne access token with user:password:reset permissions
+ * @param payload.resetData - Reset data containing the user's email address
+ * @returns Effect that yields the password reset response with reset ID and status
+ * @throws {PingOneApiError} When API request fails (e.g., 404 if email not found)
+ * @see {@link PingOnePasswordResetRequest} for request schema definition
+ * @see {@link PingOnePasswordResetResponse} for response schema definition
+ * @since 0.0.1
+ * @category API Client
+ */
+export const resetPingOneUserPassword = <S extends Schema.Schema.Type<typeof PingOnePasswordResetRequest>>(
+  { envId, token, resetData }: PasswordResetPayload<S>
+) =>
+  Effect.gen(function*() {
+    const retry = yield* RetryService
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const httpRequest = HttpClientRequest.post(
+      `${apiBaseUrl}/environments/${envId}/users/password`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.reset+json"),
+      HttpClientRequest.schemaBodyJson(PingOnePasswordResetRequest)(resetData),
+      Effect.flatMap((req) =>
+        HttpClient.pipe(
+          Effect.flatMap((client) => client.execute(req))
+        )
+      ),
+      Effect.flatMap((response) =>
+        Effect.if(response.status >= 200 && response.status < 300, {
+          onTrue: () => Effect.succeed(response),
+          onFalse: () =>
+            Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: `PingOne API request failed with status ${response.status}`
+              })
+            )
+        })
+      ),
+      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOnePasswordResetResponse)(response))
     )
 
     return yield* retry.retryableRequest(httpRequest)

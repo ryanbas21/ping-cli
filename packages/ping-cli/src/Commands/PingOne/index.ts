@@ -6,6 +6,9 @@ import { deleteUser } from "./DeleteUser.js"
 import { groupsCommand } from "./groups/index.js"
 import { populationsCommand } from "./populations/index.js"
 import { readUser } from "./ReadUser.js"
+import { recoverPassword } from "./RecoverPassword.js"
+import { resetPassword } from "./ResetPassword.js"
+import { setPassword } from "./SetPassword.js"
 import { updateUser } from "./UpdateUser.js"
 import { verifyUser } from "./VerifyUser.js"
 
@@ -20,6 +23,9 @@ const p1Subcommands = Array.make(
   updateUser,
   deleteUser,
   verifyUser,
+  setPassword,
+  resetPassword,
+  recoverPassword,
   groupsCommand,
   populationsCommand,
   applicationsCommand

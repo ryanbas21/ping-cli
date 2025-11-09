@@ -2,6 +2,8 @@ import type * as Schema from "effect/Schema"
 import type {
   PingOneCreateUserRequest,
   PingOneCreateUserResponse,
+  PingOnePasswordResetRequest,
+  PingOneSetPasswordRequest,
   PingOneUpdateUserRequest,
   PingOneVerifyUserRequest
 } from "./PingOneSchemas.js"
@@ -90,3 +92,40 @@ export type PingOneUpdateUserData = Schema.Schema.Type<typeof PingOneUpdateUserR
  * @since 0.0.1
  */
 export type PingOneVerifyUserData = Schema.Schema.Type<typeof PingOneVerifyUserRequest>
+
+/**
+ * TypeScript interface for PingOne set password payload
+ *
+ * @since 0.0.1
+ */
+export interface SetPasswordPayload<S> {
+  readonly envId: string
+  readonly token: string
+  readonly userId: string
+  readonly passwordData: S
+}
+
+/**
+ * TypeScript interface for PingOne password reset payload
+ *
+ * @since 0.0.1
+ */
+export interface PasswordResetPayload<S> {
+  readonly envId: string
+  readonly token: string
+  readonly resetData: S
+}
+
+/**
+ * Type alias for PingOne set password request data
+ *
+ * @since 0.0.1
+ */
+export type PingOneSetPasswordData = Schema.Schema.Type<typeof PingOneSetPasswordRequest>
+
+/**
+ * Type alias for PingOne password reset request data
+ *
+ * @since 0.0.1
+ */
+export type PingOnePasswordResetData = Schema.Schema.Type<typeof PingOnePasswordResetRequest>
