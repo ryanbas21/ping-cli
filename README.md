@@ -483,6 +483,115 @@ pnpm start RunPublish \
   --npm-access public
 ```
 
+## Shell Completions
+
+The p1-cli supports tab completion for bash, zsh, fish, and sh shells. Completions provide intelligent suggestions for commands, subcommands, options, and flags as you type.
+
+### Quick Install
+
+Choose the installation method for your shell:
+
+#### Bash
+
+Add the following line to your `~/.bashrc`:
+
+```bash
+eval "$(p1-cli --completions bash)"
+```
+
+Then reload your shell configuration:
+
+```bash
+source ~/.bashrc
+```
+
+#### Zsh
+
+Add the following line to your `~/.zshrc`:
+
+```bash
+eval "$(p1-cli --completions zsh)"
+```
+
+Then reload your shell configuration:
+
+```bash
+source ~/.zshrc
+```
+
+#### Fish
+
+Generate and save the completion script:
+
+```bash
+p1-cli --completions fish > ~/.config/fish/completions/p1-cli.fish
+```
+
+Fish will automatically load completions on next shell start.
+
+#### Sh (POSIX)
+
+Add the following line to your `~/.profile` or shell configuration file:
+
+```bash
+eval "$(p1-cli --completions sh)"
+```
+
+Then reload your shell configuration:
+
+```bash
+source ~/.profile
+```
+
+### System-Wide Installation (Optional)
+
+For completions available to all users on the system:
+
+#### Bash (System-Wide)
+
+```bash
+p1-cli --completions bash | sudo tee /etc/bash_completion.d/p1-cli
+```
+
+#### Zsh (System-Wide)
+
+```bash
+p1-cli --completions zsh | sudo tee /usr/local/share/zsh/site-functions/_p1-cli
+```
+
+### Verification
+
+After installation, restart your shell or source your configuration file. Test completions by typing:
+
+```bash
+p1-cli <TAB>
+```
+
+You should see available commands like `p1`, help options, and global flags.
+
+Try command-specific completions:
+
+```bash
+p1-cli p1 <TAB>              # Shows user management commands
+p1-cli p1 create_user <TAB>  # Shows required/optional flags
+p1-cli p1 groups <TAB>       # Shows group subcommands
+```
+
+### Troubleshooting
+
+**Completions not working?**
+
+1. **Verify installation**: Check that the eval line was added to your shell config file
+2. **Restart shell**: Close and reopen your terminal, or run `source ~/.bashrc` (or equivalent)
+3. **Check PATH**: Ensure `p1-cli` is in your PATH: `which p1-cli`
+4. **Test generation**: Run `p1-cli --completions bash` manually to verify it outputs completion script
+
+**For development usage with `pnpm start`:**
+
+Completions work with the installed CLI command (`p1-cli`), not with `pnpm start`. For development, either:
+- Install globally: `pnpm install -g .`
+- Or use the built CLI directly: `node dist/main.js --completions bash`
+
 ## Development
 
 ### Run Tests

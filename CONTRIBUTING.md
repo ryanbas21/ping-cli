@@ -50,6 +50,21 @@ pnpm build
 pnpm test
 ```
 
+6. **(Optional) Set up shell completions**
+
+For development convenience, you can install shell completions:
+
+```bash
+# After building, install completions for your shell
+# See README.md "Shell Completions" section for detailed instructions
+
+# Example for bash:
+echo 'eval "$(node /home/programming/sdk-ci-cli/packages/ping-cli/dist/main.js --completions bash)"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Note**: Completions are auto-generated from command definitions via `@effect/cli`. When you add new commands, completions automatically update - no manual maintenance required!
+
 ## Development Workflow
 
 ### Code Standards
