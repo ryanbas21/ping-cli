@@ -40,7 +40,7 @@ p1-cli create_user --wizard
 9. `--locales` - (Optional) Comma-separated list of locales (e.g., "en,es,fr")
 
 **Example interaction:**
-```
+```bash
 $ p1-cli create_user --wizard
 
 ? Enter username: john.doe
