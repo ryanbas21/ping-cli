@@ -1,4 +1,4 @@
-import { HttpClient, HttpClientResponse } from "@effect/platform"
+import { HttpClient } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { createUser } from "./CreateUser.js"
