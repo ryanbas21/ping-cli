@@ -11,16 +11,8 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
-    "build": "pnpm -r --filter './packages/*' build",
-    "test": "pnpm -r --filter './packages/*' test",
-    "lint": "pnpm -r --filter './packages/*' lint",
-    "lint:fix": "pnpm -r --filter './packages/*' lint:fix",
-    "test:watch": "pnpm -r --filter './packages/*' test:watch",
-    "test:coverage": "pnpm -r --filter './packages/*' test:coverage",
-    "clean": "pnpm -r --filter './packages/*' clean",
-    "changeset": "changeset",
-    "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+$1"release": "pnpm build && changeset publish",
+    "docs": "docgen"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
