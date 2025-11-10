@@ -1,5 +1,77 @@
 # p1-cli
 
+## 0.1.0
+
+### Minor Changes
+
+- [#5](https://github.com/ryanbas21/ping-cli/pull/5) [`0cdbac1`](https://github.com/ryanbas21/ping-cli/commit/0cdbac132ffe0bcee78a819e0a60a490975c2dcd) Thanks [@ryanbas21](https://github.com/ryanbas21)! - Add environment management commands for discovering environment IDs
+
+  **New Commands:**
+
+  - `p1-cli p1 environments list_environments`: List all accessible environments
+  - `p1-cli p1 environments read_environment`: Read specific environment details
+
+  **Features:**
+
+  - List environments with pagination (`--limit`) and filtering (`--filter`)
+  - Discover environment IDs without needing prior knowledge
+  - Read environment details including name, type, region, and license info
+  - Commands operate at organization level (no `--environment-id` required)
+  - Automatic response caching with 5-minute TTL for GET operations
+
+  **HTTP Client:**
+
+  - New `EnvironmentClient.ts` with `listEnvironments` and `readEnvironment` functions
+  - Uses `executeCachedRequest` helper for efficient API calls
+  - Full schema validation with `EnvironmentSchemas.ts`
+
+  **Testing:**
+
+  - 5 comprehensive tests for EnvironmentClient (all passing)
+  - 3 smoke tests for environment commands (all passing)
+  - Full integration with existing test infrastructure
+
+  **Documentation:**
+
+  - Updated README with Environment Commands section
+  - Added feature to Features list
+  - Included usage examples with pagination and filtering
+
+### Patch Changes
+
+- [#2](https://github.com/ryanbas21/ping-cli/pull/2) [`c19356a`](https://github.com/ryanbas21/ping-cli/commit/c19356a5d8b89594634b3678ca1fe9fa4100e99b) Thanks [@ryanbas21](https://github.com/ryanbas21)! - Code quality improvements: Remove type assertions and eliminate HTTP duplication
+
+  **CacheService Type Safety:**
+
+  - Removed all 6 instances of `as unknown` type assertions
+  - Properly typed cache with generic `CachedResponse` type
+  - Full type safety throughout cache implementation
+
+  **HTTP Request Helpers:**
+
+  - Created reusable helpers in `src/HttpClient/helpers.ts`:
+    - `executeRequest`: Standard HTTP requests with schema validation
+    - `executeCachedRequest`: GET requests with automatic caching
+    - `executeVoidRequest`: DELETE/POST operations returning void
+  - Helpers use proper Effect combinators (`Effect.flatMap`, `Effect.if`) and pipe composition
+  - Centralized error handling and retry logic
+
+  **Client Refactoring:**
+  Refactored all HTTP client files to use the new helpers:
+
+  - **PingOneClient.ts**: 851 → 628 lines (223 lines saved, 26.2% reduction)
+  - **GroupClient.ts**: 436 → 302 lines (134 lines saved, 30.7% reduction)
+  - **ApplicationClient.ts**: 283 → 194 lines (89 lines saved, 31.4% reduction)
+  - **PopulationClient.ts**: 283 → 194 lines (89 lines saved, 31.4% reduction)
+
+  **Total Impact:**
+
+  - **535 lines of duplicated code eliminated** across 4 client files
+  - **Average 30% reduction** in client file size
+  - All 166 tests passing
+  - Zero new linting errors introduced
+  - Improved maintainability and consistency
+
 ## 0.0.1
 
 ### Patch Changes
