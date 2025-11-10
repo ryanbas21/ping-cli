@@ -63,7 +63,7 @@ jobs:
         run: pnpm test
       - name: Build project
         run: pnpm build
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
@@ -73,6 +73,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+      - name: Publish to GitHub Package Registry
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          # Configure GPR authentication
+          cat > packages/ping-cli/.npmrc << EOF
+          @ryanbas21:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+          EOF
+          
+          # Temporarily update package name for GPR (scoped required)
+          cd packages/ping-cli
+          cp package.json package.json.backup
+          npm pkg set name="@ryanbas21/p1-cli"
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+          
+          # Publish to GPR
+          pnpm publish --registry https://npm.pkg.github.com --no-git-checks
+          
+          # Restore original package.json
+          mv package.json.backup package.json
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docs:
     name: Deploy Documentation

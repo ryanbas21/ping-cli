@@ -40,6 +40,10 @@
     "url": "https://github.com/ryanbas21/ping-cli/issues"
   },
   "homepage": "https://github.com/ryanbas21/ping-cli#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "dependencies": {
     "@effect/cli": "^0.72.1",
     "@effect/platform": "^0.93.0",
