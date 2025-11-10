@@ -24,6 +24,33 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Generate documentation
         run: pnpm docgen
+      - name: Fix Jekyll config
+        run: |
+          cat > api_docs/_config.yml << 'EOF'
+          remote_theme: mikearnaldi/just-the-docs
+          
+          # Enable or disable the site search
+          search_enabled: true
+          
+          # Aux links for the upper right navigation
+          aux_links:
+            "ping-cli on GitHub": "https://github.com/ryanbas21/ping-cli"
+          EOF
+          
+          cat > api_docs/index.md << 'EOF'
+          ---
+          title: Home
+          nav_order: 1
+          ---
+          
+          # ping-cli Documentation
+          
+          Welcome to the ping-cli API documentation.
+          
+          ## Getting Started
+          
+          Browse the [modules](/docs/modules) to explore the API.
+          EOF
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
