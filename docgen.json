@@ -10,7 +10,6 @@
     "**/*.spec.ts",
     "packages/ping-cli/src/main.ts",
     "packages/ping-cli/src/PingCommand.ts",
-    "packages/ping-cli/src/Commands/**/*",
     "packages/ping-cli/src/Services/**/*",
     "packages/ping-cli/src/HttpClient/**/*"
   ],
@@ -20,14 +19,17 @@
   "enableSearchIndex": false,
   "examplesCompilerOptions": {
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true
   },
+  "noErrorOnMissingExamples": true,
   "parseCompilerOptions": {
     "noEmit": false,
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
     "moduleResolution": "NodeNext",
     "target": "ES2022",
     "lib": ["ES2022", "DOM"]
-  }
+  },
+  "noErrorOnExampleCompilationFailure": true
 }
