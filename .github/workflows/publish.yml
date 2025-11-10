@@ -29,7 +29,6 @@ jobs:
     needs: install
     outputs:
       published: ${{ steps.changesets.outputs.published }}
-      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
     permissions:
       contents: write
       pull-requests: write
@@ -76,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
       - name: Create git tags for published packages
-        if: steps.changesets.outputs.publishedPackages != '[]'
+        if: steps.changesets.outputs.published == 'true'
         run: |
           echo "Published packages: ${{ steps.changesets.outputs.publishedPackages }}"
           # Extract package info and create tags
@@ -93,7 +92,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to GitHub Package Registry
-        if: steps.changesets.outputs.publishedPackages != '[]'
+        if: steps.changesets.outputs.published == 'true'
         run: |
           # Configure GPR authentication
           cat > packages/ping-cli/.npmrc << EOF
@@ -119,7 +118,7 @@ jobs:
     name: Deploy Documentation
     runs-on: ubuntu-latest
     needs: [install, publish]
-    if: needs.publish.outputs.publishedPackages != '[]'
+    if: needs.publish.outputs.published == 'true'
     permissions:
       contents: read
       pages: write
