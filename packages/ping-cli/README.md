@@ -11,6 +11,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - [Configuration](#configuration)
   - [Regional API Endpoints](#regional-api-endpoints)
 - [Usage](#usage)
+  - [Environment Commands](#environment-commands)
   - [User Commands](#user-commands)
   - [Bulk Operations](#bulk-operations)
     - [Bulk Import Users](#bulk-import-users)
@@ -43,6 +44,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - **Groups Management**: Create, read, update, delete groups with member management
 - **Populations Management**: Complete CRUD operations for managing user populations
 - **Applications Management**: Create and manage OAuth/OIDC applications with full lifecycle support
+- **Environments Management**: List and read PingOne environments to discover environment IDs
 - **Automatic Retry Logic**: Transient error handling with exponential backoff
 - **Response Caching**: Configurable caching for read operations to reduce API calls
 - **Reusable HTTP Helpers**: Centralized request handling with `executeRequest`, `executeCachedRequest`, and `executeVoidRequest`
@@ -108,6 +110,56 @@ Set `PINGONE_API_URL` to use different PingOne regions:
 - **Canada**: `https://api.pingone.ca/v1`
 
 ## Usage
+
+### Environment Commands
+
+Discover and manage PingOne environments. These commands help you find your environment ID, which is required for other CLI operations.
+
+```bash
+# List all environments your token has access to
+p1-cli p1 environments list_environments \
+  --pingone-token <token>
+
+# List environments with pagination
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --limit 10
+
+# List environments with filter (production only)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'type eq "PRODUCTION"'
+
+# List environments with filter (sandbox only)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'type eq "SANDBOX"'
+
+# List environments by region
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'region eq "NA"'
+
+# List environments by name (contains)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'name sw "Dev"'
+
+# Read a specific environment by ID
+p1-cli p1 environments read_environment <environment-id> \
+  --pingone-token <token>
+```
+
+**Filter Operators:**
+- `eq` - Equals (exact match)
+- `ne` - Not equals
+- `sw` - Starts with
+- `ew` - Ends with
+- `co` - Contains
+- `and` - Logical AND
+- `or` - Logical OR
+
+**Note:** Environment commands only require a `--pingone-token` (not an `--environment-id`) since they operate at the organization level.
 
 ### User Commands
 
