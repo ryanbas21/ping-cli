@@ -23,6 +23,8 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
   - [Service Composition](#service-composition)
   - [Layer Composition](#layer-composition)
   - [HTTP Client Functions](#http-client-functions)
+    - [Helper Functions](#helper-functions)
+    - [Usage in Client Functions](#usage-in-client-functions)
 - [Error Handling](#error-handling)
   - [Error Types](#error-types)
   - [Error Context](#error-context)
@@ -43,6 +45,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - **Applications Management**: Create and manage OAuth/OIDC applications with full lifecycle support
 - **Automatic Retry Logic**: Transient error handling with exponential backoff
 - **Response Caching**: Configurable caching for read operations to reduce API calls
+- **Reusable HTTP Helpers**: Centralized request handling with `executeRequest`, `executeCachedRequest`, and `executeVoidRequest`
 - **Type-Safe**: Built with Effect library for robust error handling and type safety
 - **Schema Validation**: Request/response validation using Effect Schema
 - **Multi-Region Support**: Configurable API base URL for different PingOne regions
@@ -415,35 +418,125 @@ const layers = Layer.mergeAll(
 
 ### HTTP Client Functions
 
-All HTTP client functions (`src/HttpClient/*Client.ts`) use the services:
+All HTTP client functions (`src/HttpClient/*Client.ts`) use reusable helper functions from `src/HttpClient/helpers.ts` that encapsulate common patterns:
 
-**Mutation operations:**
+#### Helper Functions
+
+**executeRequest** - Standard HTTP requests with schema validation:
 ```typescript
-export const createUser = (payload) =>
+export const executeRequest = <A, I, R>(
+  request: HttpClientRequest.HttpClientRequest,
+  responseSchema: Schema.Schema<A, I, R>
+): Effect.Effect<
+  A,
+  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
+  HttpClient.HttpClient | RetryService | R
+>
+```
+
+**executeCachedRequest** - GET requests with automatic caching:
+```typescript
+export const executeCachedRequest = <A, I, R>(
+  request: HttpClientRequest.HttpClientRequest,
+  responseSchema: Schema.Schema<A, I, R>
+): Effect.Effect<
+  A,
+  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
+  HttpClient.HttpClient | RetryService | CacheService | R
+>
+```
+
+**executeVoidRequest** - DELETE/POST operations returning void:
+```typescript
+export const executeVoidRequest = (
+  request: HttpClientRequest.HttpClientRequest
+): Effect.Effect<
+  HttpClientResponseType.HttpClientResponse,
+  PingOneApiError | HttpClientError.HttpClientError,
+  HttpClient.HttpClient | RetryService
+>
+```
+
+#### Usage in Client Functions
+
+**Create operations (mutation with schema validation):**
+```typescript
+export const createPopulation = <S extends Schema.Schema.Type<typeof CreatePopulationRequestSchema>>(
+  { envId, token, populationData }: { envId: string; token: string; populationData: S }
+) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = /* HTTP request logic */
+    const request = yield* HttpClientRequest.post(
+      `${apiBaseUrl}/environments/${envId}/populations`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json"),
+      HttpClientRequest.setHeader("Content-Type", "application/json"),
+      HttpClientRequest.schemaBodyJson(CreatePopulationRequestSchema)(populationData)
+    )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, PopulationSchema)
   })
 ```
 
-**Read operations:**
+**Read operations (cached with schema validation):**
 ```typescript
-export const readUser = (payload) =>
+export const readPopulation = ({
+  envId,
+  token,
+  populationId
+}: {
+  envId: string
+  token: string
+  populationId: string
+}) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const req = /* HTTP request setup */
-    const httpRequest = /* HTTP execution logic */
+    const request = HttpClientRequest.get(
+      `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, PopulationSchema)
   })
 ```
+
+**Delete operations (void response):**
+```typescript
+export const deletePopulation = ({
+  envId,
+  token,
+  populationId
+}: {
+  envId: string
+  token: string
+  populationId: string
+}) =>
+  Effect.gen(function*() {
+    const apiBaseUrl = yield* getApiBaseUrl()
+
+    const request = HttpClientRequest.del(
+      `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
+
+    yield* executeVoidRequest(request)
+    return undefined
+  })
+```
+
+**Benefits of Helper Functions:**
+- **Code Reduction**: Eliminated 535+ lines of duplicated code across client files
+- **Consistent Error Handling**: Centralized error handling for HTTP operations
+- **Automatic Retry Logic**: Built-in retry with exponential backoff
+- **Type Safety**: Full type inference and error type unions
+- **Maintainability**: Changes to HTTP patterns require updates in one place
 
 ## Error Handling
 
