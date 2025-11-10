@@ -132,11 +132,18 @@ const shouldInvalidate = (method: string): boolean => {
 }
 
 /**
+ * Type representing cached response data.
+ *
+ * @since 0.0.1
+ */
+type CachedResponse = unknown
+
+/**
  * Type representing a cache instance for a specific resource type.
  *
  * @since 0.0.1
  */
-type ResourceCache = Cache.Cache<string, unknown, never>
+type ResourceCache = Cache.Cache<string, CachedResponse, never>
 
 /**
  * Live implementation of CacheService.
@@ -150,29 +157,33 @@ type ResourceCache = Cache.Cache<string, unknown, never>
 export const CacheServiceLive = Layer.effect(
   CacheService,
   Effect.gen(function*() {
+    // Lookup function that returns a placeholder - actual values are set via cache.set()
+    const lookup = (_key: string): Effect.Effect<CachedResponse, never, never> =>
+      Effect.succeed<CachedResponse>(undefined)
+
     // Create separate cache instances for each resource type
-    const usersCache = yield* Cache.make({
+    const usersCache = yield* Cache.make<string, CachedResponse, never>({
       capacity: 100,
       timeToLive: Duration.minutes(5),
-      lookup: (key: string) => Effect.succeed(key as unknown)
+      lookup
     })
 
-    const groupsCache = yield* Cache.make({
+    const groupsCache = yield* Cache.make<string, CachedResponse, never>({
       capacity: 100,
       timeToLive: Duration.minutes(5),
-      lookup: (key: string) => Effect.succeed(key as unknown)
+      lookup
     })
 
-    const applicationsCache = yield* Cache.make({
+    const applicationsCache = yield* Cache.make<string, CachedResponse, never>({
       capacity: 100,
       timeToLive: Duration.minutes(5),
-      lookup: (key: string) => Effect.succeed(key as unknown)
+      lookup
     })
 
-    const populationsCache = yield* Cache.make({
+    const populationsCache = yield* Cache.make<string, CachedResponse, never>({
       capacity: 100,
       timeToLive: Duration.minutes(5),
-      lookup: (key: string) => Effect.succeed(key as unknown)
+      lookup
     })
 
     /**
@@ -229,6 +240,7 @@ export const CacheServiceLive = Layer.effect(
           const cached = yield* cache.get(cacheKey).pipe(Effect.option)
 
           if (cached._tag === "Some") {
+            // Safe cast: we stored type A in the cache
             return cached.value as A
           }
 
