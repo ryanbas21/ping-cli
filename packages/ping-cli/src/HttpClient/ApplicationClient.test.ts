@@ -344,7 +344,7 @@ describe("ApplicationClient", () => {
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
-          const error = result.cause.error
+          const error = result.cause.error as PingOneApiError
           assert.strictEqual(error._tag, "PingOneApiError")
           assert.strictEqual(error.status, 404)
         }
