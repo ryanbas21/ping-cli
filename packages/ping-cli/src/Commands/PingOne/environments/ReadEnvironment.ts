@@ -41,7 +41,12 @@ export const readEnvironmentCommand = Command.make(
             }\nType: ${env.type}\nRegion: ${env.region}\nLicense: ${env.license.name} (${env.license.id})\nCreated: ${createdAt}\nUpdated: ${updatedAt}`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to read environment ${environmentId}: ${error._tag}`))
+        Effect.catchAll((error) => {
+          const errorMsg = `Failed to read environment ${environmentId}: ${error._tag}`
+          const statusMsg = "status" in error ? ` (HTTP ${error.status})` : ""
+          const detailMsg = "message" in error ? `\n  Details: ${error.message}` : ""
+          return Console.error(`${errorMsg}${statusMsg}${detailMsg}`)
+        })
       )
     })
 )

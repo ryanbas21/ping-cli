@@ -54,7 +54,12 @@ export const listEnvironmentsCommand = Command.make(
             }`
           )
         }),
-        Effect.catchAll((error) => Console.error(`Failed to list environments: ${error._tag}`))
+        Effect.catchAll((error) => {
+          const errorMsg = `Failed to list environments: ${error._tag}`
+          const statusMsg = "status" in error ? ` (HTTP ${error.status})` : ""
+          const detailMsg = "message" in error ? `\n  Details: ${error.message}` : ""
+          return Console.error(`${errorMsg}${statusMsg}${detailMsg}`)
+        })
       )
     })
 )

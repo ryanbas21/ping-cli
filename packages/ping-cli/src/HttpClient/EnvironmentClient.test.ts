@@ -265,5 +265,60 @@ describe("EnvironmentClient", () => {
         assert.strictEqual(environments.length, 0)
       }).pipe(Effect.provide(dependencies))
     })
+
+    it.effect("should support filter parameter", () => {
+      const mockResponse = {
+        _embedded: {
+          environments: [
+            {
+              id: "env-prod-123",
+              name: "Production Environment",
+              type: "PRODUCTION",
+              region: "NA",
+              license: {
+                id: "lic-123",
+                name: "Production License"
+              },
+              createdAt: "2024-01-01T00:00:00Z",
+              updatedAt: "2024-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+
+      const mockClient = HttpClient.make((req) => {
+        // Verify that the filter parameter is properly encoded in the URL
+        const url = new URL(req.url)
+        const filterParam = url.searchParams.get("filter")
+        assert.strictEqual(filterParam, "type eq \"PRODUCTION\"")
+
+        return Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      })
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* listEnvironments({
+          token: "test-token",
+          filter: "type eq \"PRODUCTION\""
+        })
+
+        const environments = result._embedded.environments
+        assert.strictEqual(environments.length, 1)
+        assert.strictEqual(environments[0].type, "PRODUCTION")
+        assert.strictEqual(environments[0].name, "Production Environment")
+      }).pipe(Effect.provide(dependencies))
+    })
   })
 })

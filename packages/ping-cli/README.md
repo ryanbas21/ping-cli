@@ -159,6 +159,13 @@ p1-cli p1 environments read_environment <environment-id> \
 - `and` - Logical AND
 - `or` - Logical OR
 
+**Pagination Limitations:**
+- The `--limit` parameter controls the maximum number of results returned in a single request
+- Currently, cursor-based pagination for fetching additional pages is not supported
+- If your organization has more environments than the limit specified, only the first N results will be returned
+- To retrieve all environments when you have many, you may need to use filtering to narrow results
+- Results are cached for 5 minutes to improve performance and reduce API load
+
 **Note:** Environment commands only require a `--pingone-token` (not an `--environment-id`) since they operate at the organization level.
 
 ### User Commands
