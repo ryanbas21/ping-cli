@@ -9,6 +9,7 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "src/main.ts",
+    "src/index.ts",
     "src/Services/**/*",
     "src/HttpClient/**/*"
   ],
