@@ -44,6 +44,8 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           fail-on-cache-miss: true
+      - name: Build project
+        run: pnpm build
       - name: Run tests
         run: pnpm test
       - name: Upload coverage reports
