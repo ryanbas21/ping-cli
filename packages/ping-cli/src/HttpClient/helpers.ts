@@ -6,9 +6,9 @@
  *
  * @since 0.0.2
  */
-import type { HttpClientRequest, HttpClientResponse as HttpClientResponseType } from "@effect/platform"
+import type { HttpClientError, HttpClientRequest, HttpClientResponse as HttpClientResponseType } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
-import type { ParseError, Schema } from "effect"
+import type { ParseResult, Schema } from "effect"
 import { Effect } from "effect"
 import { PingOneApiError } from "../Errors.js"
 import { CacheService, RetryService } from "../Services/index.js"
@@ -34,7 +34,7 @@ export const executeRequest = <A, I, R>(
   responseSchema: Schema.Schema<A, I, R>
 ): Effect.Effect<
   A,
-  PingOneApiError | ParseError,
+  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
   HttpClient.HttpClient | RetryService | R
 > =>
   RetryService.pipe(
@@ -79,7 +79,7 @@ export const executeCachedRequest = <A, I, R>(
   responseSchema: Schema.Schema<A, I, R>
 ): Effect.Effect<
   A,
-  PingOneApiError | ParseError,
+  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
   HttpClient.HttpClient | RetryService | CacheService | R
 > =>
   Effect.gen(function*() {
@@ -106,7 +106,7 @@ export const executeVoidRequest = (
   request: HttpClientRequest.HttpClientRequest
 ): Effect.Effect<
   HttpClientResponseType.HttpClientResponse,
-  PingOneApiError,
+  PingOneApiError | HttpClientError.HttpClientError,
   HttpClient.HttpClient | RetryService
 > =>
   RetryService.pipe(
