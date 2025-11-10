@@ -6,19 +6,17 @@
  *
  * @since 0.0.1
  */
-import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import { HttpClient } from "@effect/platform/HttpClient"
+import { HttpClientRequest } from "@effect/platform"
 import type { Schema } from "effect"
 import { Effect } from "effect"
 import { getApiBaseUrl } from "../Commands/PingOne/ConfigHelper.js"
-import { PingOneApiError } from "../Errors.js"
-import { CacheService, RetryService } from "../Services/index.js"
 import {
   ApplicationSchema,
   CreateApplicationRequestSchema,
   ListApplicationsResponseSchema,
   UpdateApplicationRequestSchema
 } from "./ApplicationSchemas.js"
+import { executeCachedRequest, executeRequest, executeVoidRequest } from "./helpers.js"
 
 /**
  * Creates an application in PingOne via API
@@ -35,37 +33,18 @@ export const createApplication = <S extends Schema.Schema.Type<typeof CreateAppl
   { envId, token, applicationData }: { envId: string; token: string; applicationData: S }
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.post(
+    const request = yield* HttpClientRequest.post(
       `${apiBaseUrl}/environments/${envId}/applications`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(CreateApplicationRequestSchema)(applicationData),
-      Effect.flatMap((req) =>
-        HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(req))
-        )
-      ),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(ApplicationSchema)(response))
+      HttpClientRequest.schemaBodyJson(CreateApplicationRequestSchema)(applicationData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, ApplicationSchema)
   })
 
 /**
@@ -89,31 +68,16 @@ export const readApplication = ({
   applicationId: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const req = HttpClientRequest.get(
+    const request = HttpClientRequest.get(
       `${apiBaseUrl}/environments/${envId}/applications/${applicationId}`
-    ).pipe(HttpClientRequest.bearerToken(token), HttpClientRequest.accept("application/json"))
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(ApplicationSchema)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, ApplicationSchema)
   })
 
 /**
@@ -140,8 +104,6 @@ export const listApplications = ({
   filter?: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
     const url = new URL(`${apiBaseUrl}/environments/${envId}/applications`)
@@ -153,28 +115,12 @@ export const listApplications = ({
       url.searchParams.set("filter", filter)
     }
 
-    const req = HttpClientRequest.get(url.toString()).pipe(
+    const request = HttpClientRequest.get(url.toString()).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json")
     )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(ListApplicationsResponseSchema)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, ListApplicationsResponseSchema)
   })
 
 /**
@@ -198,37 +144,18 @@ export const updateApplication = <S extends Schema.Schema.Type<typeof UpdateAppl
   }: { envId: string; token: string; applicationId: string; applicationData: S }
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.patch(
+    const request = yield* HttpClientRequest.patch(
       `${apiBaseUrl}/environments/${envId}/applications/${applicationId}`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(UpdateApplicationRequestSchema)(applicationData),
-      Effect.flatMap((req) =>
-        HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(req))
-        )
-      ),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(ApplicationSchema)(response))
+      HttpClientRequest.schemaBodyJson(UpdateApplicationRequestSchema)(applicationData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, ApplicationSchema)
   })
 
 /**
@@ -252,31 +179,15 @@ export const deleteApplication = ({
   applicationId: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = Effect.gen(function*() {
-      const req = HttpClientRequest.del(
-        `${apiBaseUrl}/environments/${envId}/applications/${applicationId}`
-      ).pipe(
-        HttpClientRequest.bearerToken(token),
-        HttpClientRequest.accept("application/json")
-      )
+    const request = HttpClientRequest.del(
+      `${apiBaseUrl}/environments/${envId}/applications/${applicationId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return undefined
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* retry.retryableRequest(httpRequest)
+    yield* executeVoidRequest(request)
+    return undefined
   })

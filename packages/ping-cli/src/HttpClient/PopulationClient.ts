@@ -6,13 +6,11 @@
  *
  * @since 0.0.1
  */
-import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import { HttpClient } from "@effect/platform/HttpClient"
+import { HttpClientRequest } from "@effect/platform"
 import type { Schema } from "effect"
 import { Effect } from "effect"
 import { getApiBaseUrl } from "../Commands/PingOne/ConfigHelper.js"
-import { PingOneApiError } from "../Errors.js"
-import { CacheService, RetryService } from "../Services/index.js"
+import { executeCachedRequest, executeRequest, executeVoidRequest } from "./helpers.js"
 import {
   CreatePopulationRequestSchema,
   ListPopulationsResponseSchema,
@@ -35,37 +33,18 @@ export const createPopulation = <S extends Schema.Schema.Type<typeof CreatePopul
   { envId, token, populationData }: { envId: string; token: string; populationData: S }
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.post(
+    const request = yield* HttpClientRequest.post(
       `${apiBaseUrl}/environments/${envId}/populations`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(CreatePopulationRequestSchema)(populationData),
-      Effect.flatMap((req) =>
-        HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(req))
-        )
-      ),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PopulationSchema)(response))
+      HttpClientRequest.schemaBodyJson(CreatePopulationRequestSchema)(populationData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, PopulationSchema)
   })
 
 /**
@@ -89,31 +68,16 @@ export const readPopulation = ({
   populationId: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const req = HttpClientRequest.get(
+    const request = HttpClientRequest.get(
       `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
-    ).pipe(HttpClientRequest.bearerToken(token), HttpClientRequest.accept("application/json"))
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(PopulationSchema)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, PopulationSchema)
   })
 
 /**
@@ -140,8 +104,6 @@ export const listPopulations = ({
   filter?: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
     const url = new URL(`${apiBaseUrl}/environments/${envId}/populations`)
@@ -153,28 +115,12 @@ export const listPopulations = ({
       url.searchParams.set("filter", filter)
     }
 
-    const req = HttpClientRequest.get(url.toString()).pipe(
+    const request = HttpClientRequest.get(url.toString()).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json")
     )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(ListPopulationsResponseSchema)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, ListPopulationsResponseSchema)
   })
 
 /**
@@ -198,37 +144,18 @@ export const updatePopulation = <S extends Schema.Schema.Type<typeof UpdatePopul
   }: { envId: string; token: string; populationId: string; populationData: S }
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.patch(
+    const request = yield* HttpClientRequest.patch(
       `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(UpdatePopulationRequestSchema)(populationData),
-      Effect.flatMap((req) =>
-        HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(req))
-        )
-      ),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PopulationSchema)(response))
+      HttpClientRequest.schemaBodyJson(UpdatePopulationRequestSchema)(populationData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, PopulationSchema)
   })
 
 /**
@@ -252,31 +179,15 @@ export const deletePopulation = ({
   populationId: string
 }) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = Effect.gen(function*() {
-      const req = HttpClientRequest.del(
-        `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
-      ).pipe(
-        HttpClientRequest.bearerToken(token),
-        HttpClientRequest.accept("application/json")
-      )
+    const request = HttpClientRequest.del(
+      `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return undefined
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* retry.retryableRequest(httpRequest)
+    yield* executeVoidRequest(request)
+    return undefined
   })

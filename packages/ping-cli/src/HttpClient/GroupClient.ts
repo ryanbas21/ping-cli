@@ -7,13 +7,10 @@
  *
  * @since 0.0.1
  */
-import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import { HttpClient } from "@effect/platform/HttpClient"
+import { HttpClientRequest } from "@effect/platform"
 import type { Schema } from "effect"
 import { Effect } from "effect"
 import { getApiBaseUrl } from "../Commands/PingOne/ConfigHelper.js"
-import { PingOneApiError } from "../Errors.js"
-import { CacheService, RetryService } from "../Services/index.js"
 import {
   PingOneCreateGroupRequest,
   PingOneCreateGroupResponse,
@@ -33,6 +30,7 @@ import type {
   RemoveGroupMemberPayload,
   UpdateGroupPayload
 } from "./GroupTypes.js"
+import { executeCachedRequest, executeRequest, executeVoidRequest } from "./helpers.js"
 
 /**
  * Creates a group in PingOne via API
@@ -56,33 +54,18 @@ export const createGroup = <S extends Schema.Schema.Type<typeof PingOneCreateGro
   { envId, token, groupData }: CreateGroupPayload<S>
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.post(
+    const request = yield* HttpClientRequest.post(
       `${apiBaseUrl}/environments/${envId}/groups`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(PingOneCreateGroupRequest)(groupData),
-      Effect.flatMap((req) => HttpClient.pipe(Effect.flatMap((client) => client.execute(req)))),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneCreateGroupResponse)(response))
+      HttpClientRequest.schemaBodyJson(PingOneCreateGroupRequest)(groupData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, PingOneCreateGroupResponse)
   })
 
 /**
@@ -104,35 +87,17 @@ export const createGroup = <S extends Schema.Schema.Type<typeof PingOneCreateGro
  */
 export const readGroup = ({ envId, token, groupId, expand }: ReadGroupPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
     const baseUrl = `${apiBaseUrl}/environments/${envId}/groups/${groupId}`
     const url = expand ? `${baseUrl}?expand=${expand}` : baseUrl
 
-    const req = HttpClientRequest.get(url).pipe(
+    const request = HttpClientRequest.get(url).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json")
     )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(PingOneReadGroupResponse)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, PingOneReadGroupResponse)
   })
 
 /**
@@ -155,8 +120,6 @@ export const readGroup = ({ envId, token, groupId, expand }: ReadGroupPayload) =
  */
 export const listGroups = ({ envId, token, limit, filter, expand }: ListGroupsPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
     const baseUrl = `${apiBaseUrl}/environments/${envId}/groups`
@@ -168,28 +131,12 @@ export const listGroups = ({ envId, token, limit, filter, expand }: ListGroupsPa
 
     const url = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl
 
-    const req = HttpClientRequest.get(url).pipe(
+    const request = HttpClientRequest.get(url).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json")
     )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(PingOneListGroupsResponse)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, PingOneListGroupsResponse)
   })
 
 /**
@@ -215,33 +162,18 @@ export const updateGroup = <S extends Schema.Schema.Type<typeof PingOneUpdateGro
   { envId, token, groupId, groupData }: UpdateGroupPayload<S>
 ) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = HttpClientRequest.patch(
+    const request = yield* HttpClientRequest.patch(
       `${apiBaseUrl}/environments/${envId}/groups/${groupId}`
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
       HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(PingOneUpdateGroupRequest)(groupData),
-      Effect.flatMap((req) => HttpClient.pipe(Effect.flatMap((client) => client.execute(req)))),
-      Effect.flatMap((response) =>
-        Effect.if(response.status >= 200 && response.status < 300, {
-          onTrue: () => Effect.succeed(response),
-          onFalse: () =>
-            Effect.fail(
-              new PingOneApiError({
-                status: response.status,
-                message: `PingOne API request failed with status ${response.status}`
-              })
-            )
-        })
-      ),
-      Effect.flatMap((response) => HttpClientResponse.schemaBodyJson(PingOneUpdateGroupResponse)(response))
+      HttpClientRequest.schemaBodyJson(PingOneUpdateGroupRequest)(groupData)
     )
 
-    return yield* retry.retryableRequest(httpRequest)
+    return yield* executeRequest(request, PingOneUpdateGroupResponse)
   })
 
 /**
@@ -261,33 +193,17 @@ export const updateGroup = <S extends Schema.Schema.Type<typeof PingOneUpdateGro
  */
 export const deleteGroup = ({ envId, token, groupId }: DeleteGroupPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = Effect.gen(function*() {
-      const req = HttpClientRequest.del(
-        `${apiBaseUrl}/environments/${envId}/groups/${groupId}`
-      ).pipe(
-        HttpClientRequest.bearerToken(token),
-        HttpClientRequest.accept("application/json")
-      )
+    const request = HttpClientRequest.del(
+      `${apiBaseUrl}/environments/${envId}/groups/${groupId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status === 204) {
-        return undefined
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* retry.retryableRequest(httpRequest)
+    yield* executeVoidRequest(request)
+    return undefined
   })
 
 /**
@@ -308,33 +224,17 @@ export const deleteGroup = ({ envId, token, groupId }: DeleteGroupPayload) =>
  */
 export const addGroupMember = ({ envId, token, groupId, userId }: AddGroupMemberPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = Effect.gen(function*() {
-      const req = HttpClientRequest.post(
-        `${apiBaseUrl}/environments/${envId}/groups/${groupId}/users/${userId}`
-      ).pipe(
-        HttpClientRequest.bearerToken(token),
-        HttpClientRequest.accept("application/json")
-      )
+    const request = HttpClientRequest.post(
+      `${apiBaseUrl}/environments/${envId}/groups/${groupId}/users/${userId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status === 201 || (response.status >= 200 && response.status < 300)) {
-        return undefined
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* retry.retryableRequest(httpRequest)
+    yield* executeVoidRequest(request)
+    return undefined
   })
 
 /**
@@ -355,33 +255,17 @@ export const addGroupMember = ({ envId, token, groupId, userId }: AddGroupMember
  */
 export const removeGroupMember = ({ envId, token, groupId, userId }: RemoveGroupMemberPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = Effect.gen(function*() {
-      const req = HttpClientRequest.del(
-        `${apiBaseUrl}/environments/${envId}/groups/${groupId}/users/${userId}`
-      ).pipe(
-        HttpClientRequest.bearerToken(token),
-        HttpClientRequest.accept("application/json")
-      )
+    const request = HttpClientRequest.del(
+      `${apiBaseUrl}/environments/${envId}/groups/${groupId}/users/${userId}`
+    ).pipe(
+      HttpClientRequest.bearerToken(token),
+      HttpClientRequest.accept("application/json")
+    )
 
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status === 204) {
-        return undefined
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* retry.retryableRequest(httpRequest)
+    yield* executeVoidRequest(request)
+    return undefined
   })
 
 /**
@@ -403,33 +287,15 @@ export const removeGroupMember = ({ envId, token, groupId, userId }: RemoveGroup
  */
 export const listGroupMembers = ({ envId, token, groupId, limit }: ListGroupMembersPayload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
     const apiBaseUrl = yield* getApiBaseUrl()
 
     const baseUrl = `${apiBaseUrl}/environments/${envId}/groups/${groupId}/users`
     const url = limit !== undefined ? `${baseUrl}?limit=${limit}` : baseUrl
 
-    const req = HttpClientRequest.get(url).pipe(
+    const request = HttpClientRequest.get(url).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json")
     )
 
-    const httpRequest = Effect.gen(function*() {
-      const client = yield* HttpClient
-      const response = yield* client.execute(req)
-
-      if (response.status >= 200 && response.status < 300) {
-        return yield* HttpClientResponse.schemaBodyJson(PingOneListGroupMembersResponse)(response)
-      }
-
-      return yield* Effect.fail(
-        new PingOneApiError({
-          status: response.status,
-          message: `PingOne API request failed with status ${response.status}`
-        })
-      )
-    })
-
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    return yield* executeCachedRequest(request, PingOneListGroupMembersResponse)
   })
