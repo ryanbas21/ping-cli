@@ -77,17 +77,7 @@ jobs:
       - name: Create git tags for published packages
         if: steps.changesets.outputs.published == 'true'
         run: |
-          echo "Published packages: ${{ steps.changesets.outputs.publishedPackages }}"
-          # Extract package info and create tags
-          echo '${{ steps.changesets.outputs.publishedPackages }}' | \
-          node -e "
-            const packages = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-            packages.forEach(pkg => {
-              const tag = \`\${pkg.name}@\${pkg.version}\`;
-              console.log(\`Creating tag: \${tag}\`);
-              require('child_process').execSync(\`git tag \${tag}\`, { stdio: 'inherit' });
-            });
-          "
+          changeset tag
           git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
