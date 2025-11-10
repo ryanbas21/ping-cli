@@ -67,12 +67,13 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm -r publish; changeset tag
+          publish: pnpm -r publish && changeset tag
           title: 'chore: release package'
           commit: 'chore: release package'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish to GitHub Package Registry
         if: steps.changesets.outputs.published == 'true'
         run: |
