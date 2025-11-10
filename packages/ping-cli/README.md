@@ -11,7 +11,12 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - [Configuration](#configuration)
   - [Regional API Endpoints](#regional-api-endpoints)
 - [Usage](#usage)
+  - [Environment Commands](#environment-commands)
   - [User Commands](#user-commands)
+  - [User Status Management](#user-status-management)
+  - [Password Management](#password-management)
+  - [MFA Operations](#mfa-operations)
+  - [Session Management](#session-management)
   - [Bulk Operations](#bulk-operations)
     - [Bulk Import Users](#bulk-import-users)
     - [Bulk Export Users](#bulk-export-users)
@@ -38,11 +43,16 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 
 ## Features
 
-- **User Management**: Full CRUD operations for PingOne users with verification support
+- **User Management**: Full CRUD operations for PingOne users with verification and listing support
+- **User Status Management**: Enable, disable, lock, and unlock user accounts
+- **Password Management**: Set, reset, and recover user passwords with admin and self-service flows
+- **MFA Operations**: Enable/disable MFA, list and delete MFA devices for users
+- **Session Management**: List active sessions and revoke specific user sessions
 - **Bulk Operations**: Import, export, and delete users in bulk with CSV/JSON support and parallel processing
 - **Groups Management**: Create, read, update, delete groups with member management
 - **Populations Management**: Complete CRUD operations for managing user populations
 - **Applications Management**: Create and manage OAuth/OIDC applications with full lifecycle support
+- **Environments Management**: List and read PingOne environments to discover environment IDs
 - **Automatic Retry Logic**: Transient error handling with exponential backoff
 - **Response Caching**: Configurable caching for read operations to reduce API calls
 - **Reusable HTTP Helpers**: Centralized request handling with `executeRequest`, `executeCachedRequest`, and `executeVoidRequest`
@@ -109,6 +119,63 @@ Set `PINGONE_API_URL` to use different PingOne regions:
 
 ## Usage
 
+### Environment Commands
+
+Discover and manage PingOne environments. These commands help you find your environment ID, which is required for other CLI operations.
+
+```bash
+# List all environments your token has access to
+p1-cli p1 environments list_environments \
+  --pingone-token <token>
+
+# List environments with pagination
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --limit 10
+
+# List environments with filter (production only)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'type eq "PRODUCTION"'
+
+# List environments with filter (sandbox only)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'type eq "SANDBOX"'
+
+# List environments by region
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'region eq "NA"'
+
+# List environments by name (contains)
+p1-cli p1 environments list_environments \
+  --pingone-token <token> \
+  --filter 'name sw "Dev"'
+
+# Read a specific environment by ID
+p1-cli p1 environments read_environment <environment-id> \
+  --pingone-token <token>
+```
+
+**Filter Operators:**
+- `eq` - Equals (exact match)
+- `ne` - Not equals
+- `sw` - Starts with
+- `ew` - Ends with
+- `co` - Contains
+- `and` - Logical AND
+- `or` - Logical OR
+
+**Pagination Limitations:**
+- The `--limit` parameter controls the maximum number of results returned in a single request
+- Currently, cursor-based pagination for fetching additional pages is not supported
+- If your organization has more environments than the limit specified, only the first N results will be returned
+- To retrieve all environments when you have many, you may need to use filtering to narrow results
+- Results are cached for 5 minutes to improve performance and reduce API load
+
+**Note:** Environment commands only require a `--pingone-token` (not an `--environment-id`) since they operate at the organization level.
+
 ### User Commands
 
 ```bash
@@ -140,7 +207,120 @@ p1-cli p1 delete_user <user-id> \
 p1-cli p1 verify_user <user-id> <verification-code> \
   --environment-id <env-id> \
   --pingone-token <token>
+
+# List users with optional filtering
+p1-cli p1 list_users \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --limit 20 \
+  --filter 'email eq "john@example.com"'
 ```
+
+### User Status Management
+
+Control user account status and authentication capabilities:
+
+```bash
+# Enable a user account
+p1-cli p1 enable_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Disable a user account
+p1-cli p1 disable_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Lock a user account (prevents authentication)
+p1-cli p1 lock_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Unlock a user account (allows authentication)
+p1-cli p1 unlock_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+```
+
+**Note:** Lock/unlock controls the `account.canAuthenticate` flag, while enable/disable controls the `enabled` flag.
+
+### Password Management
+
+Manage user passwords with set, reset, and recovery operations:
+
+```bash
+# Set a user's password directly (admin operation)
+p1-cli p1 set_password <user-id> <password> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Set password and force change on next login
+p1-cli p1 set_password <user-id> <password> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --force-change
+
+# Reset password (admin-initiated, sends reset email)
+p1-cli p1 reset_password <email> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Recover password (self-service, sends recovery email)
+p1-cli p1 recover_password <email> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+```
+
+**Note:**
+- `set_password` - Direct password change by administrator
+- `reset_password` - Admin-initiated password reset flow (sends email)
+- `recover_password` - Self-service password recovery flow (sends email)
+
+### MFA Operations
+
+Manage multi-factor authentication for users:
+
+```bash
+# Enable MFA for a user
+p1-cli p1 enable_mfa <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# Disable MFA for a user
+p1-cli p1 disable_mfa <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+
+# List MFA devices for a user
+p1-cli p1 list_mfa_devices <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --limit 10
+
+# Delete a specific MFA device
+p1-cli p1 delete_mfa_device <user-id> <device-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+```
+
+### Session Management
+
+Manage and monitor user sessions:
+
+```bash
+# List active sessions for a user
+p1-cli p1 list_sessions <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --limit 10
+
+# Revoke a specific session
+p1-cli p1 revoke_session <user-id> <session-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
+```
+
+**Note:** Session management is useful for security operations like force logout or investigating active sessions.
 
 ### Bulk Operations
 

@@ -6,6 +6,7 @@ import { bulkExportUsersCommand } from "./Commands/PingOne/BulkExportUsers.js"
 import { bulkImportUsersCommand } from "./Commands/PingOne/BulkImportUsers.js"
 import { createUser } from "./Commands/PingOne/CreateUser.js"
 import { deleteUser } from "./Commands/PingOne/DeleteUser.js"
+import { environmentsCommand } from "./Commands/PingOne/environments/index.js"
 import { groupsCommand } from "./Commands/PingOne/groups/index.js"
 import { populationsCommand } from "./Commands/PingOne/populations/index.js"
 import { readUser } from "./Commands/PingOne/ReadUser.js"
@@ -28,7 +29,8 @@ const pingCommands = Array.make(
   bulkDeleteUsersCommand,
   groupsCommand,
   populationsCommand,
-  applicationsCommand
+  applicationsCommand,
+  environmentsCommand
 )
 
 /**
