@@ -22,7 +22,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish",
-    "docgen": "pnpm exec docgen"
+    "docgen": "cd packages/ping-cli && pnpm exec docgen"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",

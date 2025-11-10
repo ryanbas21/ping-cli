@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/@effect/docgen/schema.json",
+  "name": "p1-cli",
+  "projectHomepage": "https://github.com/ryanbas21/ping-cli",
+  "homepage": "https://ryanbas21.github.io/ping-cli",
+  "srcDir": "src",
+  "outDir": "../../api_docs",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/main.ts",
+    "src/PingCommand.ts",
+    "src/Services/**/*",
+    "src/HttpClient/**/*"
+  ],
+  "enforceDescriptions": false,
+  "enforceExamples": false,
+  "enforceVersion": false,
+  "enableSearchIndex": false,
+  "examplesCompilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true
+  },
+  "noErrorOnMissingExamples": true,
+  "parseCompilerOptions": {
+    "noEmit": false,
+    "strict": false,
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"]
+  },
+  "noErrorOnExampleCompilationFailure": true
+}
