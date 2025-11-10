@@ -2,11 +2,18 @@
   "name": "p1-cli",
   "version": "0.1.0",
   "description": "A CLI tool for managing PingOne resources",
-  "main": "dist/main.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "p1-cli": "dist/main.js"
   },
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md",

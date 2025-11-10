@@ -60,14 +60,14 @@ describe("CLI Bin Entry Point", () => {
         main: string
       }
 
-      expect(pkg.main).toBe("dist/main.js")
+      expect(pkg.main).toBe("dist/index.js")
     })
 
     it("should include dist in files array", async () => {
       const { readFile } = await import("node:fs/promises")
       const pkgPath = resolve(__dirname, "../package.json")
       const pkg = JSON.parse(await readFile(pkgPath, "utf-8")) as {
-        files: string[]
+        files: Array<string>
       }
 
       expect(pkg.files).toContain("dist")
