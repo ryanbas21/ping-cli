@@ -2,6 +2,38 @@
 
 Command-line tool for managing PingOne resources via the PingOne Management API.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [From npm (Recommended)](#from-npm-recommended)
+  - [From Source](#from-source)
+- [Configuration](#configuration)
+  - [Regional API Endpoints](#regional-api-endpoints)
+- [Usage](#usage)
+  - [User Commands](#user-commands)
+  - [Bulk Operations](#bulk-operations)
+    - [Bulk Import Users](#bulk-import-users)
+    - [Bulk Export Users](#bulk-export-users)
+    - [Bulk Delete Users](#bulk-delete-users)
+  - [Group Commands](#group-commands)
+  - [Population Commands](#population-commands)
+  - [Application Commands](#application-commands)
+- [Architecture](#architecture)
+  - [Service Composition](#service-composition)
+  - [Layer Composition](#layer-composition)
+  - [HTTP Client Functions](#http-client-functions)
+- [Error Handling](#error-handling)
+  - [Error Types](#error-types)
+  - [Error Context](#error-context)
+- [Development](#development)
+  - [Build](#build)
+  - [Lint](#lint)
+  - [Test](#test)
+- [API Documentation](#api-documentation)
+- [License](#license)
+- [Disclaimer](#disclaimer)
+
 ## Features
 
 - **User Management**: Full CRUD operations for PingOne users with verification support
@@ -78,22 +110,33 @@ Set `PINGONE_API_URL` to use different PingOne regions:
 
 ```bash
 # Create a user
-p1-cli create_user <username> <email> \
+p1-cli p1 create_user <username> <email> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
   --population-id <pop-id> \
   --given-name "John" \
   --family-name "Doe"
 
 # Read a user
-p1-cli read_user <user-id>
+p1-cli p1 read_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Update a user
-p1-cli update_user <user-id> '{"email": "newemail@example.com"}'
+p1-cli p1 update_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --email "newemail@example.com"
 
 # Delete a user
-p1-cli delete_user <user-id>
+p1-cli p1 delete_user <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Verify a user with a verification code
-p1-cli verify_user <user-id> <verification-code>
+p1-cli p1 verify_user <user-id> <verification-code> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 ```
 
 ### Bulk Operations
@@ -106,23 +149,27 @@ Import users from a CSV or JSON file with parallel processing:
 
 ```bash
 # Import from CSV (default format)
-p1-cli bulk_import_users users.csv \
+p1-cli p1 bulk_import_users users.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --format csv
 
 # Import from JSON
-p1-cli bulk_import_users users.json \
+p1-cli p1 bulk_import_users users.json \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --format json
 
 # Dry-run mode (preview without creating users)
-p1-cli bulk_import_users users.csv \
+p1-cli p1 bulk_import_users users.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --dry-run
 
 # Control concurrency (default: 5 parallel operations)
-p1-cli bulk_import_users users.csv \
+p1-cli p1 bulk_import_users users.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --concurrency 10
 ```
 
@@ -161,18 +208,21 @@ Export users to CSV or JSON format:
 
 ```bash
 # Export all users to CSV
-p1-cli bulk_export_users users.csv \
+p1-cli p1 bulk_export_users users.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --format csv
 
 # Export to JSON
-p1-cli bulk_export_users users.json \
+p1-cli p1 bulk_export_users users.json \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --format json
 
 # Export with filter
-p1-cli bulk_export_users active-users.csv \
+p1-cli p1 bulk_export_users active-users.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --filter 'enabled eq true' \
   --limit 1000
 ```
@@ -183,18 +233,21 @@ Delete multiple users from a file containing user IDs:
 
 ```bash
 # Delete users (requires --confirm flag for safety)
-p1-cli bulk_delete_users user-ids.csv \
+p1-cli p1 bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --confirm
 
 # Dry-run mode (preview without deleting)
-p1-cli bulk_delete_users user-ids.csv \
+p1-cli p1 bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --dry-run
 
 # Control concurrency for rate limiting
-p1-cli bulk_delete_users user-ids.csv \
+p1-cli p1 bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
+  --pingone-token <token> \
   --confirm \
   --concurrency 3
 ```
@@ -218,66 +271,110 @@ xyz-456-ghi
 
 ```bash
 # Create a group
-p1-cli groups create <name> --description "Group description"
+p1-cli p1 groups create_group <name> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --description "Group description"
 
 # Read a group
-p1-cli groups read <group-id>
+p1-cli p1 groups read_group <group-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # List all groups
-p1-cli groups list --limit 10
+p1-cli p1 groups list_groups \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --limit 10
 
 # Update a group
-p1-cli groups update <group-id> '{"name": "New Name"}'
+p1-cli p1 groups update_group <group-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --name "New Name"
 
 # Delete a group
-p1-cli groups delete <group-id>
+p1-cli p1 groups delete_group <group-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Add a member to a group
-p1-cli groups add_member <group-id> <user-id>
+p1-cli p1 groups add_member <group-id> <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Remove a member from a group
-p1-cli groups remove_member <group-id> <user-id>
+p1-cli p1 groups remove_member <group-id> <user-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # List group members
-p1-cli groups list_members <group-id>
+p1-cli p1 groups list_members <group-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 ```
 
 ### Population Commands
 
 ```bash
 # Create a population
-p1-cli populations create <name> --description "Population description"
+p1-cli p1 populations create_population <name> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --description "Population description"
 
 # Read a population
-p1-cli populations read <population-id>
+p1-cli p1 populations read_population <population-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # List all populations
-p1-cli populations list
+p1-cli p1 populations list_populations \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Update a population
-p1-cli populations update <population-id> '{"name": "New Name"}'
+p1-cli p1 populations update_population <population-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --name "New Name"
 
 # Delete a population
-p1-cli populations delete <population-id>
+p1-cli p1 populations delete_population <population-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 ```
 
 ### Application Commands
 
 ```bash
 # Create an application
-p1-cli applications create <name> <type> --description "App description"
+p1-cli p1 applications create_application <name> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --description "App description" \
+  --type "WEB_APP"
 
 # Read an application
-p1-cli applications read <application-id>
+p1-cli p1 applications read_application <application-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # List all applications
-p1-cli applications list
+p1-cli p1 applications list_applications \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Update an application
-p1-cli applications update <application-id> '{"name": "New Name"}'
+p1-cli p1 applications update_application <application-id> \
+  --environment-id <env-id> \
+  --pingone-token <token> \
+  --name "New Name"
 
 # Delete an application
-p1-cli applications delete <application-id>
+p1-cli p1 applications delete_application <application-id> \
+  --environment-id <env-id> \
+  --pingone-token <token>
 ```
 
 ## Architecture
