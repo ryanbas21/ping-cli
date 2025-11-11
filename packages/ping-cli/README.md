@@ -98,6 +98,35 @@ cd packages/ping-cli
 npm link
 ```
 
+### System Requirements
+
+**Node.js**: Version 18.x or higher recommended
+
+**Optional: Native Keychain Support** (for secure credential storage)
+
+The CLI uses [keytar](https://github.com/atom/node-keytar) for secure credential storage in system keychains:
+- **macOS**: Keychain Access (built-in)
+- **Windows**: Credential Manager (built-in)
+- **Linux**: Secret Service API (requires `libsecret`)
+
+**Installing on Linux** (for keychain support):
+```bash
+# Debian/Ubuntu
+sudo apt-get install libsecret-1-dev
+
+# Red Hat/Fedora
+sudo yum install libsecret-devel
+
+# Arch Linux
+sudo pacman -S libsecret
+```
+
+**Note**: If keytar is unavailable or keychain access fails, the CLI automatically falls back to:
+1. **Encrypted file storage** (`~/.ping-cli/credentials.enc`) - Suitable for development/testing
+2. **Environment variables** - For CI/CD environments
+
+See [OAUTH_SETUP.md](./OAUTH_SETUP.md) for detailed credential storage information.
+
 ## Authentication
 
 The PingOne CLI supports OAuth 2.0 Client Credentials flow for secure, automatic token management.

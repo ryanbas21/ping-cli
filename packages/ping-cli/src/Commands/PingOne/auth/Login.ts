@@ -27,11 +27,10 @@ const environmentId = Options.text("environment-id").pipe(
   Options.withDescription("PingOne environment ID")
 )
 
-const region = Options.text("region").pipe(
-  Options.withDefault("com"),
-  Options.optional,
+const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
+  Options.withDefault("com" as "com" | "eu" | "asia" | "ca"),
   Options.withDescription(
-    "PingOne region (com, eu, asia, ca). Defaults to 'com' for North America"
+    "PingOne region: com (North America), eu (Europe), asia (Asia Pacific), ca (Canada). Defaults to 'com'"
   )
 )
 
@@ -66,8 +65,7 @@ export const login = Command.make(
       const oauthService = yield* OAuthService
 
       // Build token endpoint based on region
-      const regionValue = region._tag === "Some" ? region.value : "com"
-      const tokenEndpoint = buildTokenEndpoint(environmentId, regionValue)
+      const tokenEndpoint = buildTokenEndpoint(environmentId, region)
 
       // Extract client secret from Redacted type
       const clientSecretValue = Redacted.value(clientSecret)
@@ -92,9 +90,14 @@ export const login = Command.make(
         yield* Console.log(
           `✓ Credentials stored securely for environment: ${environmentId}`
         )
-        yield* Console.log(
-          `✓ Region: ${regionValue === "com" ? "North America" : regionValue}`
-        )
+        const regionName = region === "com" ?
+          "North America" :
+          region === "eu" ?
+          "Europe" :
+          region === "asia" ?
+          "Asia Pacific" :
+          "Canada"
+        yield* Console.log(`✓ Region: ${regionName} (${region})`)
       }
     })
 )
