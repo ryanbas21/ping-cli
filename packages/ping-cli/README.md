@@ -274,7 +274,7 @@ p1-cli auth logout
 
 **Authentication Status Output:**
 
-```
+```text
 ✓ Authenticated
 
 Client ID: 12345678****abcd

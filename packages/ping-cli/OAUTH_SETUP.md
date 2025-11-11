@@ -102,7 +102,7 @@ p1-cli auth status
 
 You should see output similar to:
 
-```
+```text
 ✓ Authenticated
 
 Client ID: 12345678****abcd
