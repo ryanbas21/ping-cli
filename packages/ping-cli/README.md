@@ -196,6 +196,9 @@ export PINGONE_CLIENT_ID="your-client-id"
 export PINGONE_CLIENT_SECRET="your-client-secret"
 export PINGONE_ENV_ID="your-environment-id"
 
+# Optional: Configure token expiration buffer (default: 300 seconds / 5 minutes)
+export PINGONE_TOKEN_BUFFER_SECONDS="60"
+
 # Legacy: Direct token (still supported)
 export PINGONE_TOKEN="your-access-token"
 export PINGONE_ENV_ID="your-environment-id"

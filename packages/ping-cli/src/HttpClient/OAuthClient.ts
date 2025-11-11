@@ -131,10 +131,13 @@ export const exchangeCredentialsForToken = (params: {
  * Validates an OAuth access token by checking expiration.
  *
  * Determines if a cached token is still valid or needs refresh.
- * Tokens are considered expired if less than 5 minutes of validity remains.
+ * Tokens are considered expired if less than the configured buffer time remains.
+ *
+ * The buffer time can be configured via the `PINGONE_TOKEN_BUFFER_SECONDS` environment variable.
+ * Defaults to 300 seconds (5 minutes) if not set.
  *
  * @param expiresAt - Unix timestamp (milliseconds) when token expires
- * @param bufferSeconds - Buffer time before expiration to trigger refresh (default: 300 seconds / 5 minutes)
+ * @param bufferSeconds - Buffer time before expiration to trigger refresh (defaults to PINGONE_TOKEN_BUFFER_SECONDS env var or 300 seconds)
  * @returns True if token is still valid, false if expired or about to expire
  *
  * @example
@@ -145,15 +148,23 @@ export const exchangeCredentialsForToken = (params: {
  *
  * const aboutToExpire = Date.now() + 120000 // 2 minutes from now
  * const stillValid = isTokenValid(aboutToExpire)
- * // Returns: false (less than 5 minute buffer)
+ * // Returns: false (less than configured buffer)
+ *
+ * // With custom buffer via environment variable
+ * // PINGONE_TOKEN_BUFFER_SECONDS=60 p1-cli auth status
+ * // Uses 60 second buffer instead of default 300 seconds
  * ```
  *
  * @since 0.0.3
  * @category utilities
  */
-export const isTokenValid = (expiresAt: number, bufferSeconds = 300): boolean => {
+export const isTokenValid = (expiresAt: number, bufferSeconds?: number): boolean => {
   const now = Date.now()
-  const bufferMillis = bufferSeconds * 1000
+  const effectiveBuffer = bufferSeconds ??
+    (process.env.PINGONE_TOKEN_BUFFER_SECONDS
+      ? parseInt(process.env.PINGONE_TOKEN_BUFFER_SECONDS, 10)
+      : 300)
+  const bufferMillis = effectiveBuffer * 1000
   return expiresAt - now > bufferMillis
 }
 
