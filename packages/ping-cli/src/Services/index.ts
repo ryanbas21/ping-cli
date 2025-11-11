@@ -39,6 +39,10 @@
 
 export { CacheService, CacheServiceLive, type ResourceType } from "./CacheService.js"
 
+export { CredentialService, CredentialServiceLive } from "./CredentialService.js"
+
+export { OAuthService, OAuthServiceLive } from "./OAuthService.js"
+
 export { RetryService, RetryServiceLive } from "./RetryService.js"
 
 import { Layer } from "effect"

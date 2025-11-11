@@ -4,7 +4,7 @@ import { config } from "dotenv"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { PingCli } from "./PingCommand.js"
-import { CacheServiceLive, RetryServiceLive } from "./Services/index.js"
+import { CacheServiceLive, CredentialServiceLive, OAuthServiceLive, RetryServiceLive } from "./Services/index.js"
 
 // Load .env file into process.env
 config()
@@ -73,11 +73,17 @@ config()
  *
  * @since 0.0.1
  */
+const oauthLayer = OAuthServiceLive.pipe(
+  Layer.provide(Layer.mergeAll(NodeHttpClient.layer, CredentialServiceLive))
+)
+
 const layers = Layer.mergeAll(
   NodeHttpClient.layer,
   NodeContext.layer,
   RetryServiceLive,
-  CacheServiceLive
+  CacheServiceLive,
+  CredentialServiceLive,
+  oauthLayer
 )
 
 PingCli(process.argv).pipe(Effect.provide(layers), NodeRuntime.runMain)
