@@ -1,0 +1,103 @@
+/**
+ * Auth Login Command
+ *
+ * Stores OAuth client credentials securely for subsequent CLI operations.
+ * Supports both direct flag entry and interactive prompts.
+ *
+ * @since 0.0.3
+ */
+import { Command, Options } from "@effect/cli"
+import { Effect, Redacted } from "effect"
+import * as Console from "effect/Console"
+import { buildTokenEndpoint } from "../../../HttpClient/OAuthClient.js"
+import { StoredCredentials } from "../../../HttpClient/OAuthSchemas.js"
+import { OAuthService } from "../../../Services/index.js"
+
+// OAuth client credentials
+const clientId = Options.text("client-id").pipe(
+  Options.withDescription("OAuth client ID from PingOne Worker Application")
+)
+
+const clientSecret = Options.redacted("client-secret").pipe(
+  Options.withDescription("OAuth client secret from PingOne Worker Application")
+)
+
+const environmentId = Options.text("environment-id").pipe(
+  Options.withAlias("e"),
+  Options.withDescription("PingOne environment ID")
+)
+
+const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
+  Options.withDefault("com" as "com" | "eu" | "asia" | "ca"),
+  Options.withDescription(
+    "PingOne region: com (North America), eu (Europe), asia (Asia Pacific), ca (Canada). Defaults to 'com'"
+  )
+)
+
+/**
+ * Auth login command.
+ *
+ * Stores OAuth client credentials securely in the system keychain
+ * (or encrypted file as fallback). Credentials are used for all
+ * subsequent CLI operations.
+ *
+ * Usage:
+ * ```bash
+ * # Direct entry with all flags
+ * p1-cli auth login --client-id=abc --client-secret=xyz --environment-id=env-123
+ *
+ * # Interactive prompts (CLI will prompt for missing values)
+ * p1-cli auth login
+ * ```
+ *
+ * @since 0.0.3
+ */
+export const login = Command.make(
+  "login",
+  {
+    clientId,
+    clientSecret,
+    environmentId,
+    region
+  },
+  ({ clientId, clientSecret, environmentId, region }) =>
+    Effect.gen(function*() {
+      const oauthService = yield* OAuthService
+
+      // Build token endpoint based on region
+      const tokenEndpoint = buildTokenEndpoint(environmentId, region)
+
+      // Extract client secret from Redacted type
+      const clientSecretValue = Redacted.value(clientSecret)
+
+      // Create credentials object
+      const credentials = new StoredCredentials({
+        clientId,
+        clientSecret: clientSecretValue,
+        environmentId,
+        tokenEndpoint
+      })
+
+      // Store credentials
+      yield* oauthService.storeCredentials(credentials)
+
+      // Verify we can obtain a token
+      yield* Console.log("Verifying credentials...")
+      const accessToken = yield* oauthService.getAccessToken()
+
+      if (accessToken) {
+        yield* Console.log("✓ Successfully authenticated!")
+        yield* Console.log(
+          `✓ Credentials stored securely for environment: ${environmentId}`
+        )
+        const regionName = region === "com" ?
+          "North America" :
+          region === "eu" ?
+          "Europe" :
+          region === "asia" ?
+          "Asia Pacific" :
+          "Canada"
+        yield* Console.log(`✓ Region: ${regionName} (${region})`)
+      }
+    })
+)

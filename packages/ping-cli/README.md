@@ -8,9 +8,14 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - [Installation](#installation)
   - [From npm (Recommended)](#from-npm-recommended)
   - [From Source](#from-source)
+- [Authentication](#authentication)
+  - [Quick Start (OAuth)](#quick-start-oauth)
+  - [Authentication Methods](#authentication-methods)
+  - [CI/CD Integration](#cicd-integration)
 - [Configuration](#configuration)
   - [Regional API Endpoints](#regional-api-endpoints)
 - [Usage](#usage)
+  - [Authentication Commands](#authentication-commands)
   - [Environment Commands](#environment-commands)
   - [User Commands](#user-commands)
   - [User Status Management](#user-status-management)
@@ -43,6 +48,8 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 
 ## Features
 
+- **OAuth 2.0 Authentication**: Secure client credentials flow with automatic token management and refresh
+- **Cross-Platform Credential Storage**: System keychain integration (macOS, Windows, Linux) with encrypted file fallback
 - **User Management**: Full CRUD operations for PingOne users with verification and listing support
 - **User Status Management**: Enable, disable, lock, and unlock user accounts
 - **Password Management**: Set, reset, and recover user passwords with admin and self-service flows
@@ -59,6 +66,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - **Type-Safe**: Built with Effect library for robust error handling and type safety
 - **Schema Validation**: Request/response validation using Effect Schema
 - **Multi-Region Support**: Configurable API base URL for different PingOne regions
+- **CI/CD Ready**: Environment variable support for automated workflows
 
 ## Installation
 
@@ -90,27 +98,182 @@ cd packages/ping-cli
 npm link
 ```
 
-## Configuration
+### System Requirements
 
-The CLI uses environment variables for configuration. Create a `.env` file in the project root:
+**Node.js**: Version 18.x or higher recommended
+
+**Optional: Native Keychain Support** (for secure credential storage)
+
+The CLI uses [keytar](https://github.com/atom/node-keytar) for secure credential storage in system keychains:
+- **macOS**: Keychain Access (built-in)
+- **Windows**: Credential Manager (built-in)
+- **Linux**: Secret Service API (requires `libsecret`)
+
+**Installing on Linux** (for keychain support):
+```bash
+# Debian/Ubuntu
+sudo apt-get install libsecret-1-dev
+
+# Red Hat/Fedora
+sudo yum install libsecret-devel
+
+# Arch Linux
+sudo pacman -S libsecret
+```
+
+**Note**: If keytar is unavailable or keychain access fails, the CLI automatically falls back to:
+1. **Encrypted file storage** (`~/.ping-cli/credentials.enc`) - Suitable for development/testing
+2. **Environment variables** - For CI/CD environments
+
+See [OAUTH_SETUP.md](./OAUTH_SETUP.md) for detailed credential storage information.
+
+## Authentication
+
+The PingOne CLI supports OAuth 2.0 Client Credentials flow for secure, automatic token management.
+
+### Quick Start (OAuth)
+
+1. **Create a Worker Application** in PingOne ([detailed setup guide](./OAUTH_SETUP.md))
+2. **Authenticate the CLI**:
 
 ```bash
-# Required: PingOne Environment ID
-PINGONE_ENV_ID=your-environment-id
+p1-cli auth login \
+  --client-id="your-client-id" \
+  --client-secret="your-client-secret" \
+  --environment-id="your-environment-id" \
+  --region="com"
+```
 
-# Required: OAuth 2.0 Access Token
-PINGONE_TOKEN=your-access-token
+Or use interactive mode (CLI will prompt for missing values):
 
+```bash
+p1-cli auth login
+```
+
+3. **Verify authentication**:
+
+```bash
+p1-cli auth status
+```
+
+4. **Use the CLI** (tokens are managed automatically):
+
+```bash
+p1-cli users list --environment-id="your-env-id"
+```
+
+For complete setup instructions including PingOne Worker Application configuration, see [OAUTH_SETUP.md](./OAUTH_SETUP.md).
+
+### Authentication Methods
+
+The CLI supports three authentication methods with automatic fallback priority:
+
+#### 1. OAuth Client Credentials (Recommended)
+
+Store credentials once, tokens are managed automatically:
+
+```bash
+# Store credentials
+p1-cli auth login --client-id="..." --client-secret="..." --environment-id="..." --region="com"
+
+# Use CLI commands (no token needed)
+p1-cli users list --environment-id="your-env-id"
+```
+
+**Benefits:**
+- Automatic token refresh
+- Secure credential storage (system keychain)
+- No manual token management
+- Best for interactive use
+
+#### 2. Environment Variables
+
+Set credentials via environment variables for CI/CD:
+
+```bash
+# For OAuth (preferred)
+export PINGONE_CLIENT_ID="your-client-id"
+export PINGONE_CLIENT_SECRET="your-client-secret"
+export PINGONE_ENV_ID="your-environment-id"
+
+# Optional: Configure token expiration buffer (default: 300 seconds / 5 minutes)
+export PINGONE_TOKEN_BUFFER_SECONDS="60"
+
+# Legacy: Direct token (still supported)
+export PINGONE_TOKEN="your-access-token"
+export PINGONE_ENV_ID="your-environment-id"
+
+# Use CLI
+p1-cli users list
+```
+
+**Benefits:**
+- No interactive login required
+- Perfect for CI/CD pipelines
+- Environment-specific credentials
+
+#### 3. CLI Flags
+
+Provide authentication per-command:
+
+```bash
+p1-cli users list \
+  --environment-id="your-env-id" \
+  --pingone-token="your-access-token"
+```
+
+**Benefits:**
+- No stored credentials
+- Useful for one-off commands
+- Backward compatible
+
+### Authentication Priority
+
+The CLI checks authentication in this order:
+
+1. `--pingone-token` CLI flag (if provided)
+2. `PINGONE_TOKEN` environment variable
+3. OAuth service (stored credentials from `auth login`)
+
+If none are available, the CLI will prompt you to run `p1-cli auth login`.
+
+### CI/CD Integration
+
+For automated environments (GitHub Actions, GitLab CI, etc.):
+
+```yaml
+# Example: GitHub Actions
+env:
+  PINGONE_CLIENT_ID: ${{ secrets.PINGONE_CLIENT_ID }}
+  PINGONE_CLIENT_SECRET: ${{ secrets.PINGONE_CLIENT_SECRET }}
+  PINGONE_ENV_ID: ${{ secrets.PINGONE_ENV_ID }}
+
+steps:
+  - name: List Users
+    run: p1-cli users list
+```
+
+**Security Best Practices:**
+- Store credentials in CI/CD secrets (never in code)
+- Use separate Worker Applications per environment
+- Rotate credentials regularly
+- Grant minimum required permissions
+
+## Configuration
+
+Optional configuration via environment variables:
+
+```bash
 # Optional: PingOne API Base URL (defaults to North America)
 PINGONE_API_URL=https://api.pingone.com/v1
 
-# Optional: Population ID (can be provided per-command via --population-id)
+# Optional: Default population ID
 PINGONE_POPULATION_ID=your-default-population-id
 ```
 
 ### Regional API Endpoints
 
-Set `PINGONE_API_URL` to use different PingOne regions:
+The CLI automatically configures the correct API endpoint based on the region you specify during `auth login`. You can also override it manually:
 
 - **North America** (default): `https://api.pingone.com/v1`
 - **Europe**: `https://api.pingone.eu/v1`
@@ -118,6 +281,40 @@ Set `PINGONE_API_URL` to use different PingOne regions:
 - **Canada**: `https://api.pingone.ca/v1`
 
 ## Usage
+
+### Authentication Commands
+
+Manage OAuth authentication and view authentication status:
+
+```bash
+# Login with OAuth client credentials
+p1-cli auth login \
+  --client-id="your-client-id" \
+  --client-secret="your-client-secret" \
+  --environment-id="your-environment-id" \
+  --region="com"
+
+# Login with interactive prompts
+p1-cli auth login
+
+# Check authentication status
+p1-cli auth status
+
+# Logout (clear stored credentials)
+p1-cli auth logout
+```
+
+**Authentication Status Output:**
+
+```text
+✓ Authenticated
+
+Client ID: 12345678****abcd
+Environment: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+✓ Access token is valid
+  Expires: 1/10/2025, 3:30:00 PM
+```
 
 ### Environment Commands
 

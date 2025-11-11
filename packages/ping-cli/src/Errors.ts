@@ -150,3 +150,68 @@ export class RateLimitError extends Data.TaggedError("RateLimitError")<{
   readonly limit: number
   readonly remaining: number
 }> {}
+
+/**
+ * OAuth flow error
+ *
+ * Thrown when OAuth client credentials flow fails at any step.
+ * Includes the specific step where failure occurred for debugging.
+ *
+ * @example
+ * ```ts
+ * new OAuthFlowError({
+ *   message: "Failed to exchange client credentials for access token",
+ *   cause: "Invalid client_secret provided",
+ *   step: "token_exchange",
+ *   context: {
+ *     clientId: "abc123",
+ *     environmentId: "env-456"
+ *   }
+ * })
+ * ```
+ *
+ * @since 0.0.3
+ */
+export class OAuthFlowError extends Data.TaggedError("OAuthFlowError")<{
+  readonly message: string
+  readonly cause: string
+  readonly step:
+    | "token_exchange"
+    | "token_refresh"
+    | "token_validation"
+    | "credential_retrieval"
+    | "credential_storage"
+    | "credential_deletion"
+  readonly context?: {
+    readonly clientId?: string
+    readonly environmentId?: string
+    readonly tokenEndpoint?: string
+  }
+}> {}
+
+/**
+ * Credential storage error
+ *
+ * Thrown when credential storage operations fail (read, write, delete).
+ * Indicates which storage mechanism failed (keychain vs encrypted file).
+ *
+ * @example
+ * ```ts
+ * new CredentialStorageError({
+ *   message: "Failed to save credentials to system keychain",
+ *   storage: "keychain",
+ *   operation: "write",
+ *   cause: "Access denied to macOS Keychain",
+ *   fallbackAvailable: true
+ * })
+ * ```
+ *
+ * @since 0.0.3
+ */
+export class CredentialStorageError extends Data.TaggedError("CredentialStorageError")<{
+  readonly message: string
+  readonly storage: "keychain" | "encrypted_file" | "environment"
+  readonly operation: "read" | "write" | "delete"
+  readonly cause: string
+  readonly fallbackAvailable?: boolean
+}> {}

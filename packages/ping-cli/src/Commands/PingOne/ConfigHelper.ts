@@ -1,5 +1,6 @@
 import { Config, Effect, Predicate, Redacted } from "effect"
 import { PingOneAuthError } from "../../Errors.js"
+import { OAuthService } from "../../Services/index.js"
 
 /**
  * Default PingOne API base URL.
@@ -54,11 +55,15 @@ export const getEnvironmentId = (cliOption: string) =>
   )
 
 /**
- * Gets PingOne OAuth 2.0 access token from CLI option or environment variable.
- * Priority: CLI option > PINGONE_TOKEN env var
+ * Gets PingOne OAuth 2.0 access token from CLI option, environment variable, or OAuth service.
+ * Priority: CLI option > PINGONE_TOKEN env var > OAuth service (stored credentials)
  *
- * The access token should be obtained from the PingOne Management API and have
- * appropriate scopes for the operations you intend to perform.
+ * The access token can be:
+ * 1. Provided directly via --pingone-token flag (for backward compatibility)
+ * 2. Set via PINGONE_TOKEN environment variable (for CI/CD pipelines)
+ * 3. Automatically obtained via OAuth client credentials flow using stored credentials
+ *
+ * For the OAuth flow, use `p1-cli auth login` to store your client credentials first.
  *
  * @since 0.0.1
  */
@@ -66,7 +71,7 @@ export const getToken = (
   cliOption: { readonly _tag: "Some"; readonly value: Redacted.Redacted<string> } | { readonly _tag: "None" }
 ) =>
   Effect.gen(function*() {
-    // Check if CLI option was provided
+    // Check if CLI option was provided (direct token)
     if (cliOption._tag === "Some") {
       const tokenValue = Redacted.value(cliOption.value)
       if (Predicate.isTruthy(tokenValue)) {
@@ -74,14 +79,24 @@ export const getToken = (
       }
     }
 
-    // Fall back to environment variable
-    return yield* Config.string("PINGONE_TOKEN").pipe(
+    // Fall back to PINGONE_TOKEN environment variable
+    const envToken = yield* Config.string("PINGONE_TOKEN").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envToken) {
+      return envToken
+    }
+
+    // Fall back to OAuth service (uses stored credentials)
+    const oauthService = yield* OAuthService
+    return yield* oauthService.getAccessToken().pipe(
       Effect.catchAll(() =>
         Effect.fail(
           new PingOneAuthError({
-            message: "No PingOne OAuth 2.0 access token provided",
+            message: "No PingOne authentication configured",
             cause:
-              "Set PINGONE_TOKEN environment variable with your OAuth 2.0 access token from PingOne Management API, or use --pingone-token flag",
+              "Run 'p1-cli auth login' to configure OAuth credentials, or set PINGONE_TOKEN environment variable, or use --pingone-token flag",
             context: {
               accessTokenProvided: false
             }

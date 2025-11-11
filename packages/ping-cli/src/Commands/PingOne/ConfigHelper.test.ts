@@ -105,7 +105,7 @@ describe("ConfigHelper", () => {
         const result = yield* getToken(cliOption)
 
         assert.strictEqual(result, "token-from-cli")
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
 
     it.effect("should prioritize CLI option over environment variable", () => {
       const configLayer = Layer.mergeAll(
@@ -163,7 +163,7 @@ describe("ConfigHelper", () => {
       }).pipe(Effect.provide(configLayer))
     })
 
-    it.effect("should fail with PingOneAuthError when neither CLI nor env var provided", () => {
+    it.effect("should fall back to OAuth service when neither CLI nor env var provided", () => {
       const configLayer = Layer.mergeAll(
         Layer.setConfigProvider(
           ConfigProvider.fromMap(new Map()) // Empty config
@@ -173,14 +173,10 @@ describe("ConfigHelper", () => {
 
       return Effect.gen(function*() {
         const cliOption = { _tag: "None" as const }
-        const result = yield* getToken(cliOption).pipe(Effect.exit)
+        const result = yield* getToken(cliOption)
 
-        assert.strictEqual(result._tag, "Failure")
-        if (result._tag === "Failure" && result.cause._tag === "Fail") {
-          const error = result.cause.error
-          assert.strictEqual(error._tag, "PingOneAuthError")
-          assert.isTrue(error.message.includes("No PingOne OAuth 2.0 access token provided"))
-        }
+        // Should succeed with mock OAuth token since MockOAuthServiceLive provides one
+        assert.strictEqual(result, "test-oauth-token")
       }).pipe(Effect.provide(configLayer))
     })
 
@@ -196,7 +192,7 @@ describe("ConfigHelper", () => {
 
         // Should return the actual token value (unwrapped from Redacted)
         assert.strictEqual(result, secretToken)
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
   })
 
   describe("Configuration hierarchy integration", () => {
@@ -250,7 +246,7 @@ describe("ConfigHelper", () => {
       }).pipe(Effect.provide(configLayer))
     })
 
-    it.effect("should fail gracefully when no configuration source available", () => {
+    it.effect("should fall back to OAuth for token when no configuration source available", () => {
       const configLayer = Layer.mergeAll(
         Layer.setConfigProvider(
           ConfigProvider.fromMap(new Map()) // Empty config
@@ -261,11 +257,12 @@ describe("ConfigHelper", () => {
       return Effect.gen(function*() {
         const envIdResult = yield* getEnvironmentId("").pipe(Effect.exit)
 
-        const tokenResult = yield* getToken({ _tag: "None" as const }).pipe(Effect.exit)
+        const tokenResult = yield* getToken({ _tag: "None" as const })
 
-        // Both should fail with PingOneAuthError
+        // envId should fail (no fallback available)
         assert.strictEqual(envIdResult._tag, "Failure")
-        assert.strictEqual(tokenResult._tag, "Failure")
+        // token should succeed (OAuth service fallback)
+        assert.strictEqual(tokenResult, "test-oauth-token")
       }).pipe(Effect.provide(configLayer))
     })
   })

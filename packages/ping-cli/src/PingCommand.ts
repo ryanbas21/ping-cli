@@ -1,6 +1,7 @@
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { applicationsCommand } from "./Commands/PingOne/applications/index.js"
+import { authCommand } from "./Commands/PingOne/auth/index.js"
 import { bulkDeleteUsersCommand } from "./Commands/PingOne/BulkDeleteUsers.js"
 import { bulkExportUsersCommand } from "./Commands/PingOne/BulkExportUsers.js"
 import { bulkImportUsersCommand } from "./Commands/PingOne/BulkImportUsers.js"
@@ -19,6 +20,7 @@ import { verifyUser } from "./Commands/PingOne/VerifyUser.js"
  * @since 0.0.1
  */
 const pingCommands = Array.make(
+  authCommand,
   createUser,
   readUser,
   updateUser,
