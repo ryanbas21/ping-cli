@@ -16,7 +16,7 @@ import * as Schema from "effect/Schema"
  *
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"
+ * import { Schema } from "effect"
  *
  * const request = {
  *   grant_type: "client_credentials",
@@ -44,7 +44,7 @@ export class OAuthTokenRequest extends Schema.Class<OAuthTokenRequest>("OAuthTok
  *
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"
+ * import { Schema } from "effect"
  *
  * const response = {
  *   access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -72,7 +72,7 @@ export class OAuthTokenResponse extends Schema.Class<OAuthTokenResponse>("OAuthT
  *
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"
+ * import { Schema } from "effect"
  *
  * const errorResponse = {
  *   error: "invalid_client",
@@ -98,7 +98,7 @@ export class OAuthErrorResponse extends Schema.Class<OAuthErrorResponse>("OAuthE
  *
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"
+ * import { Schema } from "effect"
  *
  * const storedCreds = {
  *   clientId: "abc123",
@@ -128,7 +128,7 @@ export class StoredCredentials extends Schema.Class<StoredCredentials>("StoredCr
  *
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"
+ * import { Schema } from "effect"
  *
  * const cachedToken = {
  *   accessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
