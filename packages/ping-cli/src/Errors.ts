@@ -175,7 +175,13 @@ export class RateLimitError extends Data.TaggedError("RateLimitError")<{
 export class OAuthFlowError extends Data.TaggedError("OAuthFlowError")<{
   readonly message: string
   readonly cause: string
-  readonly step: "token_exchange" | "token_refresh" | "token_validation"
+  readonly step:
+    | "token_exchange"
+    | "token_refresh"
+    | "token_validation"
+    | "credential_retrieval"
+    | "credential_storage"
+    | "credential_deletion"
   readonly context?: {
     readonly clientId?: string
     readonly environmentId?: string
