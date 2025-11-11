@@ -115,10 +115,10 @@ p1-cli auth login \
   --region="com"
 ```
 
-Or use interactive wizard mode:
+Or use interactive mode (CLI will prompt for missing values):
 
 ```bash
-p1-cli auth login --wizard
+p1-cli auth login
 ```
 
 3. **Verify authentication**:
@@ -262,8 +262,8 @@ p1-cli auth login \
   --environment-id="your-environment-id" \
   --region="com"
 
-# Login with interactive wizard
-p1-cli auth login --wizard
+# Login with interactive prompts
+p1-cli auth login
 
 # Check authentication status
 p1-cli auth status

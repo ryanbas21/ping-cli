@@ -204,10 +204,25 @@ const deleteFromKeychain = (): Effect.Effect<void, CredentialStorageError> =>
 /**
  * Generates an encryption key derived from machine-specific information.
  *
- * Uses hostname and home directory to create a deterministic key.
- * Not cryptographically strong but provides basic encryption for fallback storage.
+ * Uses hostname and home directory to create a deterministic key via scrypt KDF.
  *
- * @returns 32-byte encryption key
+ * **Security Note**: This provides obfuscation and machine-binding for the encrypted
+ * file fallback, not cryptographic protection against attackers with file system access.
+ * The encrypted file is primarily a convenience fallback for environments where system
+ * keychain access is unavailable (e.g., minimal Linux installations without Secret Service).
+ *
+ * **For production environments**, use the system keychain (preferred method), which
+ * provides proper OS-level credential protection:
+ * - macOS: Keychain Access with encryption and access control
+ * - Windows: Windows Credential Manager with DPAPI
+ * - Linux: Secret Service API (GNOME Keyring, KWallet) with keyring encryption
+ *
+ * The encrypted file fallback is acceptable for:
+ * - Development environments
+ * - Minimal server installations
+ * - Temporary credential storage
+ *
+ * @returns 32-byte encryption key derived from machine-specific data
  */
 const generateEncryptionKey = (): Buffer => {
   const machineId = `${os.hostname()}-${os.homedir()}`

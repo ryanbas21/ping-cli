@@ -2,7 +2,7 @@
  * Auth Login Command
  *
  * Stores OAuth client credentials securely for subsequent CLI operations.
- * Supports wizard mode for interactive credential entry.
+ * Supports both direct flag entry and interactive prompts.
  *
  * @since 0.0.3
  */
@@ -44,11 +44,11 @@ const region = Options.text("region").pipe(
  *
  * Usage:
  * ```bash
- * # Direct entry
+ * # Direct entry with all flags
  * p1-cli auth login --client-id=abc --client-secret=xyz --environment-id=env-123
  *
- * # Wizard mode (interactive prompts)
- * p1-cli auth login --wizard
+ * # Interactive prompts (CLI will prompt for missing values)
+ * p1-cli auth login
  * ```
  *
  * @since 0.0.3

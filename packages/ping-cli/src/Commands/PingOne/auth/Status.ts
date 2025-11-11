@@ -62,7 +62,7 @@ export const status = Command.make("status", {}, () =>
     if (!authStatus.hasCredentials) {
       yield* Console.log("❌ Not authenticated")
       yield* Console.log("")
-      yield* Console.log("Run 'p1-cli auth login --wizard' to authenticate")
+      yield* Console.log("Run 'p1-cli auth login' to authenticate")
       return
     }
 

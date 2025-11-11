@@ -162,7 +162,7 @@ export const OAuthServiceLive = Layer.effect(
                 new OAuthFlowError({
                   message: "Failed to retrieve credentials",
                   cause: error.message,
-                  step: "token_exchange"
+                  step: "credential_retrieval"
                 })
             )
           )
@@ -184,7 +184,7 @@ export const OAuthServiceLive = Layer.effect(
               new OAuthFlowError({
                 message: "Failed to store credentials",
                 cause: error.message,
-                step: "token_exchange"
+                step: "credential_storage"
               })
           )
         ),
@@ -196,7 +196,7 @@ export const OAuthServiceLive = Layer.effect(
               new OAuthFlowError({
                 message: "Failed to retrieve credentials",
                 cause: error.message,
-                step: "token_exchange"
+                step: "credential_retrieval"
               })
           )
         ),
@@ -209,7 +209,7 @@ export const OAuthServiceLive = Layer.effect(
                 new OAuthFlowError({
                   message: "Failed to delete credentials",
                   cause: error.message,
-                  step: "token_exchange"
+                  step: "credential_deletion"
                 })
             )
           )

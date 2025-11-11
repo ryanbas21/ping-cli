@@ -82,15 +82,19 @@ p1-cli auth login \
   --region="com"
 ```
 
-### Interactive Mode (Wizard)
+### Interactive Mode
 
-For a guided setup experience, use wizard mode:
+For a guided setup experience, run the command without flags and the CLI will interactively prompt you for each required value:
 
 ```bash
-p1-cli auth login --wizard
+p1-cli auth login
 ```
 
-The wizard will prompt you for each required value interactively.
+The CLI will prompt you for:
+- Client ID
+- Client Secret
+- Environment ID
+- Region (defaults to 'com' if not specified)
 
 ## Step 7: Verify Authentication
 
