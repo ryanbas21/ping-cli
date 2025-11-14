@@ -99,6 +99,51 @@ describe("GroupClient", () => {
           assert.strictEqual(error.status, 403)
         }
       }))
+
+    it.effect("should handle create response without custom field (Canada region)", () =>
+      Effect.gen(function*() {
+        const groupData = {
+          name: "Canada Team",
+          description: "Team in Canada region"
+        }
+
+        const mockResponse = {
+          id: "group-ca-456",
+          name: "Canada Team",
+          description: "Team in Canada region",
+          environment: { id: "env-ca" }
+          // NO custom, createdAt, updatedAt fields
+        }
+
+        const mockClient = HttpClient.make((req) =>
+          Effect.succeed(
+            HttpClientResponse.fromWeb(
+              req,
+              new Response(JSON.stringify(mockResponse), {
+                status: 201,
+                headers: { "content-type": "application/json" }
+              })
+            )
+          )
+        )
+
+        const testLayer = Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, mockClient),
+          MockServicesLive
+        )
+
+        const result = yield* createGroup({
+          envId: "env-ca",
+          token: "test-token",
+          groupData
+        }).pipe(Effect.provide(testLayer))
+
+        assert.strictEqual(result.id, "group-ca-456")
+        assert.strictEqual(result.name, "Canada Team")
+        assert.strictEqual(result.custom, undefined)
+        assert.strictEqual(result.createdAt, undefined)
+        assert.strictEqual(result.updatedAt, undefined)
+      }))
   })
 
   describe("readGroup", () => {
@@ -175,6 +220,47 @@ describe("GroupClient", () => {
         }
       }).pipe(Effect.provide(dependencies))
     })
+
+    it.effect("should handle group without custom field (Canada region)", () => {
+      const mockResponse = {
+        id: "group-ca-123",
+        name: "Canada Engineering",
+        description: "Engineering team in Canada region",
+        environment: { id: "env-ca" }
+        // NO custom, createdAt, updatedAt fields
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* readGroup({
+          envId: "env-ca",
+          token: "test-token",
+          groupId: "group-ca-123"
+        })
+
+        assert.strictEqual(result.id, "group-ca-123")
+        assert.strictEqual(result.name, "Canada Engineering")
+        assert.strictEqual(result.custom, undefined)
+        assert.strictEqual(result.createdAt, undefined)
+        assert.strictEqual(result.updatedAt, undefined)
+      }).pipe(Effect.provide(dependencies))
+    })
   })
 
   describe("listGroups", () => {
@@ -231,6 +317,96 @@ describe("GroupClient", () => {
         assert.strictEqual(result._embedded.groups[0].name, "Group 1")
       }).pipe(Effect.provide(dependencies))
     })
+
+    it.effect("should handle groups without custom field (Canada region)", () => {
+      const mockResponse = {
+        _embedded: {
+          groups: [
+            {
+              id: "group-ca-1",
+              name: "Canada Group 1",
+              description: "Group from Canada region",
+              environment: { id: "env-ca" }
+              // NO custom, createdAt, updatedAt fields
+            },
+            {
+              id: "group-ca-2",
+              name: "Canada Group 2",
+              environment: { id: "env-ca" }
+              // NO custom, createdAt, updatedAt, description fields
+            }
+          ]
+        },
+        count: 2
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* listGroups({
+          envId: "env-ca",
+          token: "test-token",
+          limit: 10
+        })
+
+        assert.strictEqual(result._embedded.groups.length, 2)
+        assert.strictEqual(result._embedded.groups[0].id, "group-ca-1")
+        assert.strictEqual(result._embedded.groups[0].custom, undefined)
+        assert.strictEqual(result._embedded.groups[0].createdAt, undefined)
+        assert.strictEqual(result._embedded.groups[0].updatedAt, undefined)
+        assert.strictEqual(result._embedded.groups[1].description, undefined)
+      }).pipe(Effect.provide(dependencies))
+    })
+
+    it.effect("should handle empty groups list", () => {
+      const mockResponse = {
+        _embedded: {
+          groups: []
+        },
+        count: 0
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* listGroups({
+          envId: "env-123",
+          token: "test-token"
+        })
+
+        assert.strictEqual(result._embedded.groups.length, 0)
+      }).pipe(Effect.provide(dependencies))
+    })
   })
 
   describe("updateGroup", () => {
@@ -275,6 +451,51 @@ describe("GroupClient", () => {
 
         assert.strictEqual(result.name, "Updated Group Name")
         assert.strictEqual(result.description, "Updated description")
+      }).pipe(Effect.provide(dependencies))
+    })
+
+    it.effect("should handle update response without custom field (Canada region)", () => {
+      const mockResponse = {
+        id: "group-ca-789",
+        name: "Updated Canada Group",
+        description: "Updated in Canada region",
+        environment: { id: "env-ca" }
+        // NO custom, createdAt, updatedAt fields
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* updateGroup({
+          envId: "env-ca",
+          token: "test-token",
+          groupId: "group-ca-789",
+          groupData: {
+            name: "Updated Canada Group",
+            description: "Updated in Canada region"
+          }
+        })
+
+        assert.strictEqual(result.id, "group-ca-789")
+        assert.strictEqual(result.name, "Updated Canada Group")
+        assert.strictEqual(result.custom, undefined)
+        assert.strictEqual(result.createdAt, undefined)
+        assert.strictEqual(result.updatedAt, undefined)
       }).pipe(Effect.provide(dependencies))
     })
   })

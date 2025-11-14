@@ -36,30 +36,34 @@ export const listPopulationsCommand = Command.make(
       const filterParam = filter._tag === "Some" ? filter.value : undefined
 
       // List populations
-      return yield* listPopulations({
-        envId,
-        token,
-        limit: limitParam,
-        filter: filterParam
-      }).pipe(
-        Effect.flatMap((response) => {
-          const populations = response._embedded.populations
-          const count = response.count || populations.length
+      const result = yield* Effect.either(
+        listPopulations({
+          envId,
+          token,
+          limit: limitParam,
+          filter: filterParam
+        })
+      )
 
-          return Console.log(
-            `Found ${count} population(s):\n\n${
-              populations
-                .map(
-                  (population, index) =>
-                    `${index + 1}. ${population.name} (${population.id})${
-                      population.description ? `\n   Description: ${population.description}` : ""
-                    }\n   Default: ${population.default}`
-                )
-                .join("\n\n")
-            }`
-          )
-        }),
-        Effect.catchAll((error) => Console.error(`Failed to list populations: ${error._tag}`))
+      if (result._tag === "Left") {
+        return yield* Console.error(`Error: ${JSON.stringify(result.left, null, 2)}`)
+      }
+
+      const response = result.right
+      const populations = response._embedded.populations
+      const count = response.count || populations.length
+
+      return yield* Console.log(
+        `Found ${count} population(s):\n\n${
+          populations
+            .map(
+              (population, index) =>
+                `${index + 1}. ${population.name} (${population.id})${
+                  population.description ? `\n   Description: ${population.description}` : ""
+                }\n   Default: ${population.default}`
+            )
+            .join("\n\n")
+        }`
       )
     })
 )

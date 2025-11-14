@@ -6,11 +6,25 @@ import { bulkDeleteUsersCommand } from "./Commands/PingOne/BulkDeleteUsers.js"
 import { bulkExportUsersCommand } from "./Commands/PingOne/BulkExportUsers.js"
 import { bulkImportUsersCommand } from "./Commands/PingOne/BulkImportUsers.js"
 import { createUser } from "./Commands/PingOne/CreateUser.js"
+import { deleteMfaDevice } from "./Commands/PingOne/DeleteMfaDevice.js"
 import { deleteUser } from "./Commands/PingOne/DeleteUser.js"
+import { disableMfa } from "./Commands/PingOne/DisableMfa.js"
+import { disableUser } from "./Commands/PingOne/DisableUser.js"
+import { enableMfa } from "./Commands/PingOne/EnableMfa.js"
+import { enableUser } from "./Commands/PingOne/EnableUser.js"
 import { environmentsCommand } from "./Commands/PingOne/environments/index.js"
 import { groupsCommand } from "./Commands/PingOne/groups/index.js"
+import { listMfaDevices } from "./Commands/PingOne/ListMfaDevices.js"
+import { listSessions } from "./Commands/PingOne/ListSessions.js"
+import { listUsers } from "./Commands/PingOne/ListUsers.js"
+import { lockUser } from "./Commands/PingOne/LockUser.js"
 import { populationsCommand } from "./Commands/PingOne/populations/index.js"
 import { readUser } from "./Commands/PingOne/ReadUser.js"
+import { recoverPassword } from "./Commands/PingOne/RecoverPassword.js"
+import { resetPassword } from "./Commands/PingOne/ResetPassword.js"
+import { revokeSession } from "./Commands/PingOne/RevokeSession.js"
+import { setPassword } from "./Commands/PingOne/SetPassword.js"
+import { unlockUser } from "./Commands/PingOne/UnlockUser.js"
 import { updateUser } from "./Commands/PingOne/UpdateUser.js"
 import { verifyUser } from "./Commands/PingOne/VerifyUser.js"
 
@@ -26,6 +40,20 @@ const pingCommands = Array.make(
   updateUser,
   deleteUser,
   verifyUser,
+  listUsers,
+  enableUser,
+  disableUser,
+  lockUser,
+  unlockUser,
+  listSessions,
+  revokeSession,
+  enableMfa,
+  disableMfa,
+  listMfaDevices,
+  deleteMfaDevice,
+  setPassword,
+  resetPassword,
+  recoverPassword,
   bulkImportUsersCommand,
   bulkExportUsersCommand,
   bulkDeleteUsersCommand,

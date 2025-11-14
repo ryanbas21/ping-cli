@@ -218,10 +218,18 @@ export const CacheServiceLive = Layer.effect(
         // If method is mutating, invalidate cache and bypass
         if (shouldInvalidate(request.method)) {
           const cache = getCacheForResource(resourceType)
-          const cacheKey = generateCacheKey(request)
+          const url = new URL(request.url)
 
           return Effect.gen(function*() {
-            yield* cache.invalidate(cacheKey)
+            // Invalidate all cache entries that match this URL path
+            // This ensures GET requests are invalidated when DELETE/PUT/PATCH occurs
+            const keys = yield* cache.keys
+            const matchingKeys = keys.filter((key) => key.includes(url.pathname))
+
+            yield* Effect.forEach(matchingKeys, (key) => cache.invalidate(key), {
+              concurrency: "unbounded"
+            })
+
             return yield* compute
           })
         }
@@ -239,7 +247,7 @@ export const CacheServiceLive = Layer.effect(
           // Try to get from cache
           const cached = yield* cache.get(cacheKey).pipe(Effect.option)
 
-          if (cached._tag === "Some") {
+          if (cached._tag === "Some" && cached.value !== undefined) {
             // Safe cast: we stored type A in the cache
             return cached.value as A
           }

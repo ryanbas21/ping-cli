@@ -70,7 +70,16 @@ export const PingOneCreateUserResponse = Schema.Struct({
   locales: Schema.optional(Schema.Array(Schema.String)),
   updatedAt: Schema.String,
   username: Schema.String,
-  department: Schema.optional(Schema.String)
+  department: Schema.optional(Schema.String),
+  account: Schema.optional(Schema.Struct({
+    canAuthenticate: Schema.optional(Schema.Boolean),
+    status: Schema.optional(Schema.String)
+  })),
+  identityProvider: Schema.optional(Schema.Struct({
+    type: Schema.String
+  })),
+  verifyStatus: Schema.optional(Schema.String),
+  _links: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
 })
 
 /**

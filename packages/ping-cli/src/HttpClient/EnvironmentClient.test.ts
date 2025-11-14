@@ -320,5 +320,104 @@ describe("EnvironmentClient", () => {
         assert.strictEqual(environments[0].name, "Production Environment")
       }).pipe(Effect.provide(dependencies))
     })
+
+    it.effect("should handle environments with license missing name field", () => {
+      const mockResponse = {
+        _embedded: {
+          environments: [
+            {
+              id: "env-canada-123",
+              name: "Canada Environment",
+              description: "Environment in Canada region",
+              type: "PRODUCTION",
+              region: "CA",
+              license: {
+                id: "lic-canada-123"
+                // name is intentionally missing (Canada region doesn't return it)
+              },
+              createdAt: "2024-01-01T00:00:00Z",
+              updatedAt: "2024-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* listEnvironments({
+          token: "test-token"
+        })
+
+        const environments = result._embedded.environments
+        assert.strictEqual(environments.length, 1)
+        assert.strictEqual(environments[0].id, "env-canada-123")
+        assert.strictEqual(environments[0].region, "CA")
+        assert.strictEqual(environments[0].license.id, "lic-canada-123")
+        // Verify license.name is undefined (not present in response)
+        assert.strictEqual(environments[0].license.name, undefined)
+      }).pipe(Effect.provide(dependencies))
+    })
+
+    it.effect("should handle environment without license name in readEnvironment", () => {
+      const mockResponse = {
+        id: "env-canada-456",
+        name: "Canada Sandbox",
+        description: "Sandbox in Canada",
+        type: "SANDBOX",
+        region: "CA",
+        license: {
+          id: "lic-canada-456"
+          // name is intentionally missing
+        },
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z"
+      }
+
+      const mockClient = HttpClient.make((req) =>
+        Effect.succeed(
+          HttpClientResponse.fromWeb(
+            req,
+            new Response(JSON.stringify(mockResponse), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          )
+        )
+      )
+
+      const dependencies = Layer.mergeAll(
+        Layer.succeed(HttpClient.HttpClient, mockClient),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* readEnvironment({
+          token: "test-token",
+          environmentId: "env-canada-456"
+        })
+
+        assert.strictEqual(result.id, "env-canada-456")
+        assert.strictEqual(result.region, "CA")
+        assert.strictEqual(result.license.id, "lic-canada-456")
+        // Verify license.name is undefined (not present in response)
+        assert.strictEqual(result.license.name, undefined)
+      }).pipe(Effect.provide(dependencies))
+    })
   })
 })

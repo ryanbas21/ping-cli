@@ -11,7 +11,7 @@ import type { HttpClientError } from "@effect/platform"
 import type { ParseResult } from "effect"
 import { Effect } from "effect"
 import { OAuthFlowError } from "../Errors.js"
-import { OAuthErrorResponse, OAuthTokenRequest, OAuthTokenResponse } from "./OAuthSchemas.js"
+import { OAuthErrorResponse, OAuthTokenResponse } from "./OAuthSchemas.js"
 
 /**
  * Builds the PingOne OAuth token endpoint URL for a given environment.
@@ -80,20 +80,16 @@ export const exchangeCredentialsForToken = (params: {
   HttpClient.HttpClient
 > =>
   Effect.gen(function*() {
-    const tokenRequest = new OAuthTokenRequest({
-      grant_type: "client_credentials",
-      client_id: params.clientId,
-      client_secret: params.clientSecret
-    })
-
-    const urlEncodedBody = `grant_type=${encodeURIComponent(tokenRequest.grant_type)}&client_id=${
-      encodeURIComponent(tokenRequest.client_id)
-    }&client_secret=${encodeURIComponent(tokenRequest.client_secret)}`
+    // Use Basic Authentication (Authorization header) instead of body parameters
+    // This is required for PingOne Canada and some other regions
+    const credentials = `${params.clientId}:${params.clientSecret}`
+    const base64Credentials = Buffer.from(credentials).toString("base64")
 
     const request = HttpClientRequest.post(params.tokenEndpoint).pipe(
+      HttpClientRequest.bodyText("grant_type=client_credentials"),
       HttpClientRequest.setHeader("Content-Type", "application/x-www-form-urlencoded"),
       HttpClientRequest.setHeader("Accept", "application/json"),
-      HttpClientRequest.bodyText(urlEncodedBody)
+      HttpClientRequest.setHeader("Authorization", `Basic ${base64Credentials}`)
     )
 
     const client = yield* HttpClient.HttpClient

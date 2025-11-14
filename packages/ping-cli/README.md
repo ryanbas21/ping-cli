@@ -15,6 +15,7 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
 - [Configuration](#configuration)
   - [Regional API Endpoints](#regional-api-endpoints)
 - [Usage](#usage)
+  - [Common Usage Patterns](#common-usage-patterns)
   - [Authentication Commands](#authentication-commands)
   - [Environment Commands](#environment-commands)
   - [User Commands](#user-commands)
@@ -29,6 +30,8 @@ Command-line tool for managing PingOne resources via the PingOne Management API.
   - [Group Commands](#group-commands)
   - [Population Commands](#population-commands)
   - [Application Commands](#application-commands)
+- [Known Limitations](#known-limitations)
+  - [OAuth Permission Scopes](#oauth-permission-scopes)
 - [Architecture](#architecture)
   - [Service Composition](#service-composition)
   - [Layer Composition](#layer-composition)
@@ -156,13 +159,20 @@ p1-cli auth login
 p1-cli auth status
 ```
 
-4. **Use the CLI** (tokens are managed automatically):
+4. **Use the CLI** (authentication is automatic after login):
 
 ```bash
-p1-cli users list --environment-id="your-env-id"
+# Authentication flags are optional when you've logged in
+p1-cli list_users --environment-id="your-env-id"
+
+# Or with stored credentials, environment ID is optional too if set via env var
+export PINGONE_ENV_ID="your-env-id"
+p1-cli list_users
 ```
 
 For complete setup instructions including PingOne Worker Application configuration, see [OAUTH_SETUP.md](./OAUTH_SETUP.md).
+
+**Note:** After running `auth login`, you don't need to provide `--pingone-token` flags - the CLI automatically manages tokens for you.
 
 ### Authentication Methods
 
@@ -282,6 +292,28 @@ The CLI automatically configures the correct API endpoint based on the region yo
 
 ## Usage
 
+### Common Usage Patterns
+
+Once authenticated with `p1-cli auth login`, most commands can be run with minimal flags:
+
+```bash
+# Set your environment ID once (optional but convenient)
+export PINGONE_ENV_ID="your-environment-id"
+
+# Now commands are simple
+p1-cli list_users
+p1-cli create_user john.doe john@example.com --population-id="pop-123"
+p1-cli groups list_groups
+p1-cli populations list_populations
+
+# Authentication flags (--pingone-token) are automatically handled
+# Environment ID flag (--environment-id) is optional if PINGONE_ENV_ID is set
+```
+
+**All examples below show explicit flags for clarity, but remember:**
+- `--pingone-token` is optional when you've run `auth login`
+- `--environment-id` is optional when `PINGONE_ENV_ID` environment variable is set
+
 ### Authentication Commands
 
 Manage OAuth authentication and view authentication status:
@@ -322,36 +354,36 @@ Discover and manage PingOne environments. These commands help you find your envi
 
 ```bash
 # List all environments your token has access to
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token>
 
 # List environments with pagination
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token> \
   --limit 10
 
 # List environments with filter (production only)
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token> \
   --filter 'type eq "PRODUCTION"'
 
 # List environments with filter (sandbox only)
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token> \
   --filter 'type eq "SANDBOX"'
 
 # List environments by region
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token> \
   --filter 'region eq "NA"'
 
 # List environments by name (contains)
-p1-cli p1 environments list_environments \
+p1-cli environments list_environments \
   --pingone-token <token> \
   --filter 'name sw "Dev"'
 
 # Read a specific environment by ID
-p1-cli p1 environments read_environment <environment-id> \
+p1-cli environments read_environment <environment-id> \
   --pingone-token <token>
 ```
 
@@ -377,7 +409,7 @@ p1-cli p1 environments read_environment <environment-id> \
 
 ```bash
 # Create a user
-p1-cli p1 create_user <username> <email> \
+p1-cli create_user <username> <email> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --population-id <pop-id> \
@@ -385,28 +417,32 @@ p1-cli p1 create_user <username> <email> \
   --family-name "Doe"
 
 # Read a user
-p1-cli p1 read_user <user-id> \
+p1-cli read_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
-# Update a user
-p1-cli p1 update_user <user-id> \
+# Update a user (accepts JSON data)
+p1-cli update_user <user-id> <json-data> \
   --environment-id <env-id> \
-  --pingone-token <token> \
-  --email "newemail@example.com"
+  --pingone-token <token>
+
+# Update user example
+p1-cli update_user abc123 '{"email":"newemail@example.com"}' \
+  --environment-id <env-id> \
+  --pingone-token <token>
 
 # Delete a user
-p1-cli p1 delete_user <user-id> \
+p1-cli delete_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Verify a user with a verification code
-p1-cli p1 verify_user <user-id> <verification-code> \
+p1-cli verify_user <user-id> <verification-code> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List users with optional filtering
-p1-cli p1 list_users \
+p1-cli list_users \
   --environment-id <env-id> \
   --pingone-token <token> \
   --limit 20 \
@@ -419,22 +455,22 @@ Control user account status and authentication capabilities:
 
 ```bash
 # Enable a user account
-p1-cli p1 enable_user <user-id> \
+p1-cli enable_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Disable a user account
-p1-cli p1 disable_user <user-id> \
+p1-cli disable_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Lock a user account (prevents authentication)
-p1-cli p1 lock_user <user-id> \
+p1-cli lock_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Unlock a user account (allows authentication)
-p1-cli p1 unlock_user <user-id> \
+p1-cli unlock_user <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -447,23 +483,23 @@ Manage user passwords with set, reset, and recovery operations:
 
 ```bash
 # Set a user's password directly (admin operation)
-p1-cli p1 set_password <user-id> <password> \
+p1-cli set_password <user-id> <password> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Set password and force change on next login
-p1-cli p1 set_password <user-id> <password> \
+p1-cli set_password <user-id> <password> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --force-change
 
 # Reset password (admin-initiated, sends reset email)
-p1-cli p1 reset_password <email> \
+p1-cli reset_password <email> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Recover password (self-service, sends recovery email)
-p1-cli p1 recover_password <email> \
+p1-cli recover_password <email> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -479,23 +515,23 @@ Manage multi-factor authentication for users:
 
 ```bash
 # Enable MFA for a user
-p1-cli p1 enable_mfa <user-id> \
+p1-cli enable_mfa <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Disable MFA for a user
-p1-cli p1 disable_mfa <user-id> \
+p1-cli disable_mfa <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List MFA devices for a user
-p1-cli p1 list_mfa_devices <user-id> \
+p1-cli list_mfa_devices <user-id> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --limit 10
 
 # Delete a specific MFA device
-p1-cli p1 delete_mfa_device <user-id> <device-id> \
+p1-cli delete_mfa_device <user-id> <device-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -506,13 +542,13 @@ Manage and monitor user sessions:
 
 ```bash
 # List active sessions for a user
-p1-cli p1 list_sessions <user-id> \
+p1-cli list_sessions <user-id> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --limit 10
 
 # Revoke a specific session
-p1-cli p1 revoke_session <user-id> <session-id> \
+p1-cli revoke_session <user-id> <session-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -529,25 +565,25 @@ Import users from a CSV or JSON file with parallel processing:
 
 ```bash
 # Import from CSV (default format)
-p1-cli p1 bulk_import_users users.csv \
+p1-cli bulk_import_users users.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --format csv
 
 # Import from JSON
-p1-cli p1 bulk_import_users users.json \
+p1-cli bulk_import_users users.json \
   --environment-id <env-id> \
   --pingone-token <token> \
   --format json
 
 # Dry-run mode (preview without creating users)
-p1-cli p1 bulk_import_users users.csv \
+p1-cli bulk_import_users users.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --dry-run
 
 # Control concurrency (default: 5 parallel operations)
-p1-cli p1 bulk_import_users users.csv \
+p1-cli bulk_import_users users.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --concurrency 10
@@ -588,19 +624,19 @@ Export users to CSV or JSON format:
 
 ```bash
 # Export all users to CSV
-p1-cli p1 bulk_export_users users.csv \
+p1-cli bulk_export_users users.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --format csv
 
 # Export to JSON
-p1-cli p1 bulk_export_users users.json \
+p1-cli bulk_export_users users.json \
   --environment-id <env-id> \
   --pingone-token <token> \
   --format json
 
 # Export with filter
-p1-cli p1 bulk_export_users active-users.csv \
+p1-cli bulk_export_users active-users.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --filter 'enabled eq true' \
@@ -613,19 +649,19 @@ Delete multiple users from a file containing user IDs:
 
 ```bash
 # Delete users (requires --confirm flag for safety)
-p1-cli p1 bulk_delete_users user-ids.csv \
+p1-cli bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --confirm
 
 # Dry-run mode (preview without deleting)
-p1-cli p1 bulk_delete_users user-ids.csv \
+p1-cli bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --dry-run
 
 # Control concurrency for rate limiting
-p1-cli p1 bulk_delete_users user-ids.csv \
+p1-cli bulk_delete_users user-ids.csv \
   --environment-id <env-id> \
   --pingone-token <token> \
   --confirm \
@@ -651,45 +687,45 @@ xyz-456-ghi
 
 ```bash
 # Create a group
-p1-cli p1 groups create_group <name> \
+p1-cli groups create_group <name> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --description "Group description"
 
 # Read a group
-p1-cli p1 groups read_group <group-id> \
+p1-cli groups read_group <group-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List all groups
-p1-cli p1 groups list_groups \
+p1-cli groups list_groups \
   --environment-id <env-id> \
   --pingone-token <token> \
   --limit 10
 
 # Update a group
-p1-cli p1 groups update_group <group-id> \
+p1-cli groups update_group <group-id> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --name "New Name"
 
 # Delete a group
-p1-cli p1 groups delete_group <group-id> \
+p1-cli groups delete_group <group-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Add a member to a group
-p1-cli p1 groups add_member <group-id> <user-id> \
+p1-cli groups add_member <group-id> <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Remove a member from a group
-p1-cli p1 groups remove_member <group-id> <user-id> \
+p1-cli groups remove_member <group-id> <user-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List group members
-p1-cli p1 groups list_members <group-id> \
+p1-cli groups list_members <group-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -698,29 +734,29 @@ p1-cli p1 groups list_members <group-id> \
 
 ```bash
 # Create a population
-p1-cli p1 populations create_population <name> \
+p1-cli populations create_population <name> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --description "Population description"
 
 # Read a population
-p1-cli p1 populations read_population <population-id> \
+p1-cli populations read_population <population-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List all populations
-p1-cli p1 populations list_populations \
+p1-cli populations list_populations \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Update a population
-p1-cli p1 populations update_population <population-id> \
+p1-cli populations update_population <population-id> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --name "New Name"
 
 # Delete a population
-p1-cli p1 populations delete_population <population-id> \
+p1-cli populations delete_population <population-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
@@ -729,33 +765,67 @@ p1-cli p1 populations delete_population <population-id> \
 
 ```bash
 # Create an application
-p1-cli p1 applications create_application <name> \
+p1-cli applications create_application <name> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --description "App description" \
   --type "WEB_APP"
 
 # Read an application
-p1-cli p1 applications read_application <application-id> \
+p1-cli applications read_application <application-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # List all applications
-p1-cli p1 applications list_applications \
+p1-cli applications list_applications \
   --environment-id <env-id> \
   --pingone-token <token>
 
 # Update an application
-p1-cli p1 applications update_application <application-id> \
+p1-cli applications update_application <application-id> \
   --environment-id <env-id> \
   --pingone-token <token> \
   --name "New Name"
 
 # Delete an application
-p1-cli p1 applications delete_application <application-id> \
+p1-cli applications delete_application <application-id> \
   --environment-id <env-id> \
   --pingone-token <token>
 ```
+
+## Known Limitations
+
+### OAuth Permission Scopes
+
+Some CLI commands require additional OAuth scopes that may not be granted by default to Worker Applications in PingOne:
+
+**UPDATE Operations** - Require `update` scopes:
+- `update_user` - Requires `update:users` scope
+- `groups update_group` - Requires `update:groups` scope
+- `populations update_population` - Requires `update:populations` scope
+- `applications update_application` - Requires `update:applications` scope
+
+**User State Operations** - Require `user:updateStatus` scope:
+- `enable_user`, `disable_user` - Control user enabled status
+- `lock_user`, `unlock_user` - Control authentication capability
+- `enable_mfa`, `disable_mfa` - Control MFA settings
+- `set_password`, `reset_password`, `recover_password` - Password operations
+
+**Troubleshooting:**
+If you receive `403 Forbidden` or `400 Bad Request` errors for these operations:
+
+1. Verify your Worker Application has the required scopes in PingOne Admin Console
+2. Navigate to: Applications → Your Worker App → Resources
+3. Add the necessary scopes for the operations you need
+4. Run `p1-cli auth logout` and `p1-cli auth login` to get a fresh token with new scopes
+
+**Working Operations** (available with default Worker Application permissions):
+- ✅ All CREATE operations (users, groups, populations, applications)
+- ✅ All READ operations (individual and list)
+- ✅ All DELETE operations
+- ✅ Session listing and management
+- ✅ MFA device listing
+- ✅ Environment discovery
 
 ## Architecture
 
