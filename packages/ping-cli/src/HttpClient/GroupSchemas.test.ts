@@ -179,10 +179,14 @@ describe("GroupSchemas", () => {
 
         const result = yield* Schema.decodeUnknown(PingOneCreateGroupResponse)(groupWithLinks)
 
-        assert.strictEqual(
-          result._links.self.href,
-          "https://api.pingone.ca/v1/environments/env-links/groups/group-links"
-        )
+        assert.isDefined(result._links)
+        if (result._links) {
+          const self = result._links.self as { href: string } | undefined
+          assert.strictEqual(
+            self?.href,
+            "https://api.pingone.ca/v1/environments/env-links/groups/group-links"
+          )
+        }
       }))
 
     it.effect("should validate full group with all optional fields", () =>

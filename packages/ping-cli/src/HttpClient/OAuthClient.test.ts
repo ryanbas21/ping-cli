@@ -394,8 +394,9 @@ describe("OAuthClient", () => {
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
           const error = result.cause.error as OAuthFlowError
           assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.context.clientId, "my-client-id")
-          assert.strictEqual(error.context.tokenEndpoint, "https://auth.pingone.ca/env-ca/as/token")
+          assert.isDefined(error.context)
+          assert.strictEqual(error.context?.clientId, "my-client-id")
+          assert.strictEqual(error.context?.tokenEndpoint, "https://auth.pingone.ca/env-ca/as/token")
         }
       }).pipe(Effect.provide(testLayer))
     })

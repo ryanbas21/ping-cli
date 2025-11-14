@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
+import { OAuthFlowError } from "../../Errors.js"
 import { OAuthService } from "../../Services/index.js"
 import { MockCacheServiceLive, MockRetryServiceLive, MockServicesLive } from "../../test-helpers/TestLayers.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
@@ -12,7 +13,7 @@ describe("ConfigHelper", () => {
         const result = yield* getEnvironmentId(cliOption)
 
         assert.strictEqual(result, "env-from-cli")
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
 
     it.effect("should prioritize CLI option over environment variable", () => {
       const configLayer = Layer.mergeAll(
@@ -69,9 +70,23 @@ describe("ConfigHelper", () => {
       const FailingOAuthLayer = Layer.succeed(
         OAuthService,
         OAuthService.of({
-          getAccessToken: () => Effect.fail(new Error("No credentials")),
+          getAccessToken: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No credentials",
+                cause: "No stored credentials",
+                step: "credential_retrieval"
+              })
+            ),
           storeCredentials: () => Effect.void,
-          getCredentials: () => Effect.fail(new Error("No stored credentials")),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No stored credentials",
+                cause: "No credentials found",
+                step: "credential_retrieval"
+              })
+            ),
           clearAuth: () => Effect.void,
           getAuthStatus: () =>
             Effect.succeed({
@@ -116,7 +131,7 @@ describe("ConfigHelper", () => {
 
         // Should succeed with trimmed value
         assert.strictEqual(result, "  env-with-spaces  ")
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
   })
 
   describe("getToken", () => {
@@ -278,7 +293,14 @@ describe("ConfigHelper", () => {
         OAuthService.of({
           getAccessToken: () => Effect.succeed("test-oauth-token"),
           storeCredentials: () => Effect.void,
-          getCredentials: () => Effect.fail(new Error("No stored credentials")),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No stored credentials",
+                cause: "No credentials found",
+                step: "credential_retrieval"
+              })
+            ),
           clearAuth: () => Effect.void,
           getAuthStatus: () =>
             Effect.succeed({
