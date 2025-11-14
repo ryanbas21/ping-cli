@@ -1,3 +1,0 @@
-#!/bin/bash
-unset PINGONE_CLIENT_ID PINGONE_CLIENT_SECRET
-node dist/main.js "$@"

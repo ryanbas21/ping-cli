@@ -146,6 +146,21 @@ type CachedResponse = unknown
 type ResourceCache = Cache.Cache<string, CachedResponse, never>
 
 /**
+ * Type-safe wrapper for retrieving cached values.
+ *
+ * SAFETY: The cache stores values as `unknown` to support multiple response types,
+ * but each cached value is stored and retrieved with the same type `A` based on:
+ * - Unique cache key (resourceType + URL + params)
+ * - Controlled access (only this module reads/writes cache)
+ * - Type preserved through the Effect chain via function signature
+ *
+ * This function serves as the explicit type boundary where we trust the cache contract.
+ *
+ * @internal
+ */
+const fromCache = <A>(value: unknown): A => value as A
+
+/**
  * Live implementation of CacheService.
  *
  * Creates separate cache instances for each resource type with:
@@ -244,18 +259,18 @@ export const CacheServiceLive = Layer.effect(
         const cacheKey = generateCacheKey(request)
 
         return Effect.gen(function*() {
-          // Try to get from cache
+          // Check cache
           const cached = yield* cache.get(cacheKey).pipe(Effect.option)
 
-          if (cached._tag === "Some" && cached.value !== undefined) {
-            // Safe cast: we stored type A in the cache
-            return cached.value as A
+          // Cache miss - compute, store, and return
+          if (cached._tag === "None" || cached.value === undefined) {
+            const result = yield* compute
+            yield* cache.set(cacheKey, result)
+            return result
           }
 
-          // Cache miss - compute and store
-          const result = yield* compute
-          yield* cache.set(cacheKey, result)
-          return result
+          // Cache hit - retrieve with type-safe helper
+          return fromCache<A>(cached.value)
         })
       },
 
