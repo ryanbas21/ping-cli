@@ -13,6 +13,7 @@
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Ref } from "effect"
+import * as Either from "effect/Either"
 import { CredentialStorageError } from "../Errors.js"
 import { StoredCredentials } from "../HttpClient/OAuthSchemas.js"
 import { CredentialService } from "./CredentialService.js"
@@ -141,15 +142,20 @@ describe("OAuthService", () => {
       return Effect.gen(function*() {
         const oauth = yield* OAuthService
 
-        const result = yield* Effect.either(oauth.getAccessToken())
-
-        assert.isTrue(result._tag === "Left")
-        if (result._tag === "Left") {
-          const error = result.left
-          assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "credential_retrieval")
-          assert.strictEqual(error.message, "Failed to retrieve credentials")
-        }
+        yield* oauth.getAccessToken().pipe(
+          Effect.either,
+          Effect.flatMap(
+            Either.match({
+              onLeft: (error) =>
+                Effect.sync(() => {
+                  assert.strictEqual(error._tag, "OAuthFlowError")
+                  assert.strictEqual(error.step, "credential_retrieval")
+                  assert.strictEqual(error.message, "Failed to retrieve credentials")
+                }),
+              onRight: () => Effect.fail(new Error("Expected Left but got Right"))
+            })
+          )
+        )
       }).pipe(Effect.provide(OAuthServiceLive), Effect.provide(testLayer))
     })
   })
@@ -194,15 +200,20 @@ describe("OAuthService", () => {
           tokenEndpoint: "https://auth.pingone.com/test-env/as/token"
         })
 
-        const result = yield* Effect.either(oauth.storeCredentials(credentials))
-
-        assert.isTrue(result._tag === "Left")
-        if (result._tag === "Left") {
-          const error = result.left
-          assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "credential_storage")
-          assert.strictEqual(error.message, "Failed to store credentials")
-        }
+        yield* oauth.storeCredentials(credentials).pipe(
+          Effect.either,
+          Effect.flatMap(
+            Either.match({
+              onLeft: (error) =>
+                Effect.sync(() => {
+                  assert.strictEqual(error._tag, "OAuthFlowError")
+                  assert.strictEqual(error.step, "credential_storage")
+                  assert.strictEqual(error.message, "Failed to store credentials")
+                }),
+              onRight: () => Effect.fail(new Error("Expected Left but got Right"))
+            })
+          )
+        )
       }).pipe(Effect.provide(OAuthServiceLive), Effect.provide(testLayer))
     })
   })
@@ -233,14 +244,19 @@ describe("OAuthService", () => {
       return Effect.gen(function*() {
         const oauth = yield* OAuthService
 
-        const result = yield* Effect.either(oauth.getCredentials())
-
-        assert.isTrue(result._tag === "Left")
-        if (result._tag === "Left") {
-          const error = result.left
-          assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "credential_retrieval")
-        }
+        yield* oauth.getCredentials().pipe(
+          Effect.either,
+          Effect.flatMap(
+            Either.match({
+              onLeft: (error) =>
+                Effect.sync(() => {
+                  assert.strictEqual(error._tag, "OAuthFlowError")
+                  assert.strictEqual(error.step, "credential_retrieval")
+                }),
+              onRight: () => Effect.fail(new Error("Expected Left but got Right"))
+            })
+          )
+        )
       }).pipe(Effect.provide(OAuthServiceLive), Effect.provide(testLayer))
     })
   })
@@ -314,15 +330,20 @@ describe("OAuthService", () => {
       return Effect.gen(function*() {
         const oauth = yield* OAuthService
 
-        const result = yield* Effect.either(oauth.clearAuth())
-
-        assert.isTrue(result._tag === "Left")
-        if (result._tag === "Left") {
-          const error = result.left
-          assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "credential_deletion")
-          assert.strictEqual(error.message, "Failed to delete credentials")
-        }
+        yield* oauth.clearAuth().pipe(
+          Effect.either,
+          Effect.flatMap(
+            Either.match({
+              onLeft: (error) =>
+                Effect.sync(() => {
+                  assert.strictEqual(error._tag, "OAuthFlowError")
+                  assert.strictEqual(error.step, "credential_deletion")
+                  assert.strictEqual(error.message, "Failed to delete credentials")
+                }),
+              onRight: () => Effect.fail(new Error("Expected Left but got Right"))
+            })
+          )
+        )
       }).pipe(Effect.provide(OAuthServiceLive), Effect.provide(testLayer))
     })
   })

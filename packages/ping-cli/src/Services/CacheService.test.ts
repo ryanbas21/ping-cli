@@ -1,6 +1,6 @@
-import { HttpClientRequest } from "@effect/platform"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { CacheService, CacheServiceLive } from "./CacheService.js"
 
 describe("CacheService", () => {

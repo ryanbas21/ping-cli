@@ -1,4 +1,8 @@
-import { Context, Duration, Effect, Layer, Schedule } from "effect"
+import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schedule from "effect/Schedule"
 import { NetworkError, PingOneApiError, RateLimitError } from "../Errors.js"
 
 /**

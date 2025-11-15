@@ -6,10 +6,17 @@
  *
  * @since 0.0.3
  */
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
 import type { HttpClientError } from "@effect/platform"
+import * as HttpClient from "@effect/platform/HttpClient"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as HttpClientResponse from "@effect/platform/HttpClientResponse"
 import type { ParseResult } from "effect"
-import { Effect } from "effect"
+import * as DateTime from "effect/DateTime"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Number from "effect/Number"
+import * as Option from "effect/Option"
 import { OAuthFlowError } from "../Errors.js"
 import { OAuthErrorResponse, OAuthTokenResponse } from "./OAuthSchemas.js"
 
@@ -138,11 +145,12 @@ export const exchangeCredentialsForToken = (params: {
  *
  * @example
  * ```ts
- * const tokenExpiresAt = Date.now() + 3600000 // 1 hour from now
+ * const now = DateTime.unsafeNow()
+ * const tokenExpiresAt = DateTime.toEpochMillis(DateTime.add(now, { hours: 1 }))
  * const isValid = isTokenValid(tokenExpiresAt)
  * // Returns: true
  *
- * const aboutToExpire = Date.now() + 120000 // 2 minutes from now
+ * const aboutToExpire = DateTime.toEpochMillis(DateTime.add(now, { minutes: 2 }))
  * const stillValid = isTokenValid(aboutToExpire)
  * // Returns: false (less than configured buffer)
  *
@@ -155,12 +163,16 @@ export const exchangeCredentialsForToken = (params: {
  * @category utilities
  */
 export const isTokenValid = (expiresAt: number, bufferSeconds?: number): boolean => {
-  const now = Date.now()
+  const now = DateTime.toEpochMillis(DateTime.unsafeNow())
   const effectiveBuffer = bufferSeconds ??
     (process.env.PINGONE_TOKEN_BUFFER_SECONDS
-      ? parseInt(process.env.PINGONE_TOKEN_BUFFER_SECONDS, 10)
+      ? Function.pipe(
+        process.env.PINGONE_TOKEN_BUFFER_SECONDS,
+        Number.parse,
+        Option.getOrElse(() => 300)
+      )
       : 300)
-  const bufferMillis = effectiveBuffer * 1000
+  const bufferMillis = Duration.toMillis(Duration.seconds(effectiveBuffer))
   return expiresAt - now > bufferMillis
 }
 
@@ -182,10 +194,13 @@ export const isTokenValid = (expiresAt: number, bufferSeconds?: number): boolean
  * }
  *
  * const expiresAt = calculateExpirationTimestamp(tokenResponse.expires_in)
- * console.log("Token expires at:", new Date(expiresAt))
+ * console.log("Token expires at:", DateTime.unsafeMake(expiresAt))
  * ```
  *
  * @since 0.0.3
  * @category utilities
  */
-export const calculateExpirationTimestamp = (expiresIn: number): number => Date.now() + expiresIn * 1000
+export const calculateExpirationTimestamp = (expiresIn: number): number =>
+  DateTime.toEpochMillis(
+    DateTime.add(DateTime.unsafeNow(), { millis: Duration.toMillis(Duration.seconds(expiresIn)) })
+  )

@@ -1,4 +1,6 @@
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import * as HttpClient from "@effect/platform/HttpClient"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as HttpClientResponse from "@effect/platform/HttpClientResponse"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Schema } from "effect"
 import type { PingOneApiError } from "../Errors.js"

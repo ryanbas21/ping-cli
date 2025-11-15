@@ -1,5 +1,5 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect } from "effect"
+import { Effect, Record } from "effect"
 import * as Console from "effect/Console"
 import { PingOneValidationError } from "../../../Errors.js"
 import { updatePopulation } from "../../../HttpClient/PopulationClient.js"
@@ -51,7 +51,7 @@ export const updatePopulationCommand = Command.make(
       }
 
       // Validate that at least one field is provided
-      if (Object.keys(populationData).length === 0) {
+      if (Record.size(populationData as Record<string, unknown>) === 0) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "populationData",

@@ -7,7 +7,7 @@
  *
  * @since 0.0.1
  */
-import { Effect, Layer } from "effect"
+import { DateTime, Effect, Layer } from "effect"
 import { StoredCredentials } from "../HttpClient/OAuthSchemas.js"
 import { CacheService, OAuthService, RetryService } from "../Services/index.js"
 
@@ -61,7 +61,9 @@ export const MockOAuthServiceLive = Layer.succeed(
         hasValidToken: true,
         clientId: "test-client-id",
         environmentId: "test-env-id",
-        tokenExpiresAt: Date.now() + 3600000
+        tokenExpiresAt: DateTime.toEpochMillis(
+          DateTime.add(DateTime.unsafeNow(), { hours: 1 })
+        )
       })
   })
 )

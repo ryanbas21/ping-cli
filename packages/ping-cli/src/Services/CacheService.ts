@@ -1,5 +1,13 @@
-import type { HttpClientRequest } from "@effect/platform"
-import { Cache, Context, Duration, Effect, Hash, Layer } from "effect"
+import type * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as Array from "effect/Array"
+import * as Cache from "effect/Cache"
+import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Hash from "effect/Hash"
+import * as Layer from "effect/Layer"
+import * as EffectString from "effect/String"
 
 /**
  * Resource types that can be cached.
@@ -115,7 +123,7 @@ const generateCacheKey = (request: HttpClientRequest.HttpClientRequest): string 
  * @since 0.0.1
  */
 const isCacheable = (method: string): boolean => {
-  return method.toUpperCase() === "GET"
+  return Function.pipe(method, EffectString.toUpperCase) === "GET"
 }
 
 /**
@@ -127,7 +135,7 @@ const isCacheable = (method: string): boolean => {
  * @since 0.0.1
  */
 const shouldInvalidate = (method: string): boolean => {
-  const upper = method.toUpperCase()
+  const upper = Function.pipe(method, EffectString.toUpperCase)
   return upper === "POST" || upper === "PUT" || upper === "PATCH" || upper === "DELETE"
 }
 
@@ -239,7 +247,7 @@ export const CacheServiceLive = Layer.effect(
             // Invalidate all cache entries that match this URL path
             // This ensures GET requests are invalidated when DELETE/PUT/PATCH occurs
             const keys = yield* cache.keys
-            const matchingKeys = keys.filter((key) => key.includes(url.pathname))
+            const matchingKeys = Array.filter(keys, (key) => key.includes(url.pathname))
 
             yield* Effect.forEach(matchingKeys, (key) => cache.invalidate(key), {
               concurrency: "unbounded"

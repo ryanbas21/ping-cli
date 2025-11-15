@@ -26,6 +26,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "tsc": "tsc --noEmit -p tsconfig.prod.json",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist"

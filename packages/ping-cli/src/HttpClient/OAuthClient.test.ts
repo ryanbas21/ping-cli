@@ -12,8 +12,11 @@
  */
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer } from "effect"
+import { DateTime, Duration, Effect, Layer } from "effect"
 import type { OAuthFlowError } from "../Errors.js"
+
+// Helper for tests: get current time in milliseconds
+const now = (): number => DateTime.toEpochMillis(DateTime.unsafeNow())
 import {
   buildTokenEndpoint,
   calculateExpirationTimestamp,
@@ -405,7 +408,7 @@ describe("OAuthClient", () => {
   describe("isTokenValid", () => {
     it.effect("should return true for token far from expiration", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 3600000 // 1 hour from now
+        const expiresAt = now() + Duration.toMillis(Duration.hours(1)) // 1 hour from now
         const isValid = isTokenValid(expiresAt)
 
         assert.isTrue(isValid)
@@ -413,7 +416,7 @@ describe("OAuthClient", () => {
 
     it.effect("should return false for expired token", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() - 1000 // 1 second ago
+        const expiresAt = now() - 1000 // 1 second ago
         const isValid = isTokenValid(expiresAt)
 
         assert.isFalse(isValid)
@@ -421,7 +424,7 @@ describe("OAuthClient", () => {
 
     it.effect("should return false for token within default buffer (300s)", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 120000 // 2 minutes from now (less than 5 min buffer)
+        const expiresAt = now() + 120000 // 2 minutes from now (less than 5 min buffer)
         const isValid = isTokenValid(expiresAt)
 
         assert.isFalse(isValid)
@@ -429,7 +432,7 @@ describe("OAuthClient", () => {
 
     it.effect("should return true for token just outside default buffer", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 310000 // 5 min 10 sec from now (more than 5 min buffer)
+        const expiresAt = now() + 310000 // 5 min 10 sec from now (more than 5 min buffer)
         const isValid = isTokenValid(expiresAt)
 
         assert.isTrue(isValid)
@@ -437,7 +440,7 @@ describe("OAuthClient", () => {
 
     it.effect("should use custom buffer when provided", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 45000 // 45 seconds from now
+        const expiresAt = now() + Duration.toMillis(Duration.seconds(45)) // 45 seconds from now
         const isValidWith30SecBuffer = isTokenValid(expiresAt, 30)
         const isValidWith60SecBuffer = isTokenValid(expiresAt, 60)
 
@@ -454,7 +457,7 @@ describe("OAuthClient", () => {
 
     it.effect("should handle token expiring exactly at buffer boundary", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 300000 // Exactly 5 minutes (default buffer)
+        const expiresAt = now() + Duration.toMillis(Duration.minutes(5)) // Exactly 5 minutes (default buffer)
         const isValid = isTokenValid(expiresAt)
 
         // Should be false because expiresAt - now <= buffer
@@ -463,7 +466,7 @@ describe("OAuthClient", () => {
 
     it.effect("should handle very large expiration times", () =>
       Effect.gen(function*() {
-        const expiresAt = Date.now() + 86400000 // 24 hours from now
+        const expiresAt = now() + 86400000 // 24 hours from now
         const isValid = isTokenValid(expiresAt)
 
         assert.isTrue(isValid)
@@ -473,11 +476,11 @@ describe("OAuthClient", () => {
   describe("calculateExpirationTimestamp", () => {
     it.effect("should correctly calculate expiration timestamp", () =>
       Effect.gen(function*() {
-        const beforeTimestamp = Date.now()
+        const beforeTimestamp = now()
         const expiresIn = 3600 // 1 hour
 
         const expirationTimestamp = calculateExpirationTimestamp(expiresIn)
-        const afterTimestamp = Date.now()
+        const afterTimestamp = now()
 
         // Should be approximately now + expiresIn seconds
         const expectedMin = beforeTimestamp + expiresIn * 1000
@@ -489,9 +492,9 @@ describe("OAuthClient", () => {
 
     it.effect("should handle zero expires_in", () =>
       Effect.gen(function*() {
-        const beforeTimestamp = Date.now()
+        const beforeTimestamp = now()
         const expirationTimestamp = calculateExpirationTimestamp(0)
-        const afterTimestamp = Date.now()
+        const afterTimestamp = now()
 
         // Should be approximately now (within 100ms)
         assert.isTrue(expirationTimestamp >= beforeTimestamp)
@@ -501,7 +504,7 @@ describe("OAuthClient", () => {
     it.effect("should handle very large expires_in", () =>
       Effect.gen(function*() {
         const expiresIn = 86400 // 24 hours
-        const beforeTimestamp = Date.now()
+        const beforeTimestamp = now()
 
         const expirationTimestamp = calculateExpirationTimestamp(expiresIn)
 
@@ -518,9 +521,9 @@ describe("OAuthClient", () => {
         const commonValues = [300, 600, 1800, 3600, 7200, 86400]
 
         for (const expiresIn of commonValues) {
-          const beforeTimestamp = Date.now()
+          const beforeTimestamp = now()
           const expirationTimestamp = calculateExpirationTimestamp(expiresIn)
-          const afterTimestamp = Date.now()
+          const afterTimestamp = now()
 
           const expectedMin = beforeTimestamp + expiresIn * 1000
           const expectedMax = afterTimestamp + expiresIn * 1000

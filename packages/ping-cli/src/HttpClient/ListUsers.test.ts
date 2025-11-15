@@ -1,6 +1,7 @@
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import type { PingOneApiError } from "../Errors.js"
 import { MockServicesLive } from "../test-helpers/TestLayers.js"
 import { listPingOneUsers } from "./PingOneClient.js"

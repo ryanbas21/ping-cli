@@ -1,5 +1,5 @@
 import { Command, Options } from "@effect/cli"
-import { Effect } from "effect"
+import { Array, Effect } from "effect"
 import * as Console from "effect/Console"
 import { listEnvironments } from "../../../HttpClient/EnvironmentClient.js"
 import { getToken } from "../ConfigHelper.js"
@@ -43,14 +43,22 @@ export const listEnvironmentsCommand = Command.make(
 
           return Console.log(
             `Found ${environments.length} environment(s):\n\n${
-              environments
-                .map(
+              Array.join(
+                Array.map(
+                  environments,
                   (env, index) =>
                     `${index + 1}. ${env.name} (${env.id})${
-                      env.description ? `\n   Description: ${env.description}` : ""
-                    }\n   Type: ${env.type}\n   Region: ${env.region}\n   License: ${env.license.name}`
-                )
-                .join("\n\n")
+                      env.description ?
+                        `
+   Description: ${env.description}` :
+                        ""
+                    }
+   Type: ${env.type}
+   Region: ${env.region}
+   License: ${env.license.name}`
+                ),
+                "\n\n"
+              )
             }`
           )
         }),

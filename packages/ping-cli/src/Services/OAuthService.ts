@@ -6,11 +6,18 @@
  *
  * @since 0.0.3
  */
-import { HttpClient } from "@effect/platform"
-import { Context, Effect, Layer, Ref } from "effect"
+import * as HttpClient from "@effect/platform/HttpClient"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as HttpClientResponse from "@effect/platform/HttpClientResponse"
+import * as Config from "effect/Config"
+import * as Context from "effect/Context"
+import * as DateTime from "effect/DateTime"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Ref from "effect/Ref"
 import { OAuthFlowError } from "../Errors.js"
-import { calculateExpirationTimestamp, exchangeCredentialsForToken, isTokenValid } from "../HttpClient/OAuthClient.js"
-import type { StoredCredentials } from "../HttpClient/OAuthSchemas.js"
+import { OAuthErrorResponse, OAuthTokenResponse, type StoredCredentials } from "../HttpClient/OAuthSchemas.js"
 import { CachedAccessToken } from "../HttpClient/OAuthSchemas.js"
 import { CredentialService } from "./CredentialService.js"
 
@@ -99,63 +106,151 @@ export interface OAuthService {
 export const OAuthService = Context.GenericTag<OAuthService>("@services/OAuthService")
 
 /**
- * Acquires a new access token using stored credentials.
+ * Validates an OAuth access token by checking expiration.
  *
- * @param credentials - OAuth credentials
- * @returns Effect yielding cached access token or failing with OAuthFlowError
+ * @param expiresAt - Unix timestamp (milliseconds) when token expires
+ * @param bufferSeconds - Buffer time before expiration to trigger refresh
+ * @returns Effect yielding true if token is still valid, false if expired or about to expire
  */
-const acquireNewToken = (
-  credentials: StoredCredentials
-): Effect.Effect<CachedAccessToken, OAuthFlowError, HttpClient.HttpClient> =>
+const isTokenValid = (expiresAt: number, bufferSeconds?: number): Effect.Effect<boolean> =>
   Effect.gen(function*() {
-    const tokenResponse = yield* exchangeCredentialsForToken({
-      clientId: credentials.clientId,
-      clientSecret: credentials.clientSecret,
-      tokenEndpoint: credentials.tokenEndpoint
-    }).pipe(
-      Effect.mapError(
-        (error) =>
-          new OAuthFlowError({
-            message: "Failed to acquire access token",
-            cause: error._tag === "OAuthFlowError" ? error.cause : String(error),
-            step: "token_exchange"
-          })
-      )
-    )
-
-    const expiresAt = calculateExpirationTimestamp(tokenResponse.expires_in)
-
-    return new CachedAccessToken({
-      accessToken: tokenResponse.access_token,
-      expiresAt
-    })
+    const now = DateTime.toEpochMillis(DateTime.unsafeNow())
+    const effectiveBuffer = bufferSeconds ??
+      (yield* Config.number("PINGONE_TOKEN_BUFFER_SECONDS").pipe(
+        Effect.catchAll(() => Effect.succeed(300))
+      ))
+    const bufferMillis = Duration.toMillis(Duration.seconds(effectiveBuffer))
+    return expiresAt - now > bufferMillis
   })
+
+/**
+ * Calculates the expiration timestamp for an OAuth token.
+ *
+ * @param expiresIn - Seconds until token expiration (from OAuth response)
+ * @returns Unix timestamp (milliseconds) when token will expire
+ */
+const calculateExpirationTimestamp = (expiresIn: number): number =>
+  DateTime.toEpochMillis(
+    DateTime.add(DateTime.unsafeNow(), { millis: Duration.toMillis(Duration.seconds(expiresIn)) })
+  )
 
 /**
  * Live implementation of OAuthService.
  *
  * Provides OAuth token management with in-memory caching and automatic refresh.
- * Requires HttpClient and CredentialService dependencies.
+ * Yields HttpClient and CredentialService dependencies during Layer construction.
+ * All service methods return Effects with no requirements (R = never).
  *
  * @since 0.0.3
  */
 export const OAuthServiceLive = Layer.effect(
   OAuthService,
   Effect.gen(function*() {
+    // Yield all dependencies during Layer construction
     const credentialService = yield* CredentialService
     const httpClient = yield* HttpClient.HttpClient
     const tokenCache = yield* Ref.make<CachedAccessToken | undefined>(undefined)
 
+    /**
+     * Exchanges client credentials for an OAuth access token.
+     * Uses the captured httpClient from Layer construction.
+     */
+    const exchangeCredentialsForToken = (params: {
+      readonly clientId: string
+      readonly clientSecret: string
+      readonly tokenEndpoint: string
+    }): Effect.Effect<OAuthTokenResponse, OAuthFlowError> =>
+      Effect.gen(function*() {
+        const credentials = `${params.clientId}:${params.clientSecret}`
+        const base64Credentials = Buffer.from(credentials).toString("base64")
+
+        const request = HttpClientRequest.post(params.tokenEndpoint).pipe(
+          HttpClientRequest.bodyText("grant_type=client_credentials"),
+          HttpClientRequest.setHeader("Content-Type", "application/x-www-form-urlencoded"),
+          HttpClientRequest.setHeader("Accept", "application/json"),
+          HttpClientRequest.setHeader("Authorization", `Basic ${base64Credentials}`)
+        )
+
+        const response = yield* httpClient.execute(request).pipe(
+          Effect.mapError((error) =>
+            new OAuthFlowError({
+              message: "Failed to execute token request",
+              cause: String(error),
+              step: "token_exchange"
+            })
+          )
+        )
+
+        if (response.status >= 200 && response.status < 300) {
+          return yield* HttpClientResponse.schemaBodyJson(OAuthTokenResponse)(response).pipe(
+            Effect.mapError(
+              (error) =>
+                new OAuthFlowError({
+                  message: "Failed to parse token response",
+                  cause: String(error),
+                  step: "token_exchange"
+                })
+            )
+          )
+        }
+
+        const errorResponse = yield* HttpClientResponse.schemaBodyJson(OAuthErrorResponse)(response).pipe(
+          Effect.catchAll(() =>
+            Effect.succeed(
+              new OAuthErrorResponse({
+                error: "unknown_error",
+                error_description: `HTTP ${response.status}`
+              })
+            )
+          )
+        )
+
+        return yield* Effect.fail(
+          new OAuthFlowError({
+            message: "Failed to exchange client credentials for access token",
+            cause: errorResponse.error_description ?? errorResponse.error,
+            step: "token_exchange",
+            context: {
+              clientId: params.clientId,
+              tokenEndpoint: params.tokenEndpoint
+            }
+          })
+        )
+      })
+
+    /**
+     * Acquires a new access token using stored credentials.
+     */
+    const acquireNewToken = (
+      credentials: StoredCredentials
+    ): Effect.Effect<CachedAccessToken, OAuthFlowError> =>
+      Effect.gen(function*() {
+        const tokenResponse = yield* exchangeCredentialsForToken({
+          clientId: credentials.clientId,
+          clientSecret: credentials.clientSecret,
+          tokenEndpoint: credentials.tokenEndpoint
+        })
+
+        const expiresAt = calculateExpirationTimestamp(tokenResponse.expires_in)
+
+        return new CachedAccessToken({
+          accessToken: tokenResponse.access_token,
+          expiresAt
+        })
+      })
+
+    // Return service implementation with all methods having R = never
     return OAuthService.of({
       getAccessToken: () =>
         Effect.gen(function*() {
-          // Check if we have a valid cached token
           const cachedToken = yield* Ref.get(tokenCache)
-          if (cachedToken && isTokenValid(cachedToken.expiresAt)) {
-            return cachedToken.accessToken
+          if (cachedToken) {
+            const valid = yield* isTokenValid(cachedToken.expiresAt)
+            if (valid) {
+              return cachedToken.accessToken
+            }
           }
 
-          // Need to acquire new token
           const credentials = yield* credentialService.retrieve().pipe(
             Effect.mapError(
               (error) =>
@@ -167,11 +262,7 @@ export const OAuthServiceLive = Layer.effect(
             )
           )
 
-          const newToken = yield* acquireNewToken(credentials).pipe(
-            Effect.provide(Layer.succeed(HttpClient.HttpClient, httpClient))
-          )
-
-          // Cache the new token
+          const newToken = yield* acquireNewToken(credentials)
           yield* Ref.set(tokenCache, newToken)
 
           return newToken.accessToken
@@ -232,7 +323,7 @@ export const OAuthServiceLive = Layer.effect(
           }
 
           const hasValidToken = cachedToken
-            ? isTokenValid(cachedToken.expiresAt)
+            ? yield* isTokenValid(cachedToken.expiresAt)
             : false
 
           return {

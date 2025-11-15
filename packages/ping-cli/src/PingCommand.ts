@@ -1,3 +1,4 @@
+/* eslint-disable @effect/dprint */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { applicationsCommand } from "./Commands/PingOne/applications/index.js"
@@ -77,6 +78,4 @@ export const PingCommand = Command.make("p1-cli")
  * @since 0.0.1
  * @category commands
  */
-export const PingCli = PingCommand.pipe(Command.withSubcommands(pingCommands)).pipe(
-  Command.run({ name: "PingOne CLI", version: "0.1.0" })
-)
+export const PingCli = PingCommand.pipe(Command.withSubcommands(pingCommands), Command.run({ name: "PingOne CLI", version: "0.1.0" }))
