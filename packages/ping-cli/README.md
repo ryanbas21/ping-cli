@@ -843,12 +843,15 @@ Automatically retries transient failures with exponential backoff:
 
 #### CacheService
 
-Caches read operation responses to reduce API calls:
-- Per-resource caching (separate caches for users, groups, applications, populations)
-- Cache TTL: 5 minutes
-- Cache capacity: 100 entries per resource type
-- Automatic cache invalidation on mutations
-- Applied to all read operations (read, list)
+Caches read operation responses to reduce API calls with optional runtime type safety:
+- **Per-resource caching**: Separate caches for users, groups, applications, populations
+- **Cache TTL**: 5 minutes
+- **Cache capacity**: 100 entries per resource type
+- **Automatic invalidation**: Cache cleared on mutations (POST/PUT/PATCH/DELETE)
+- **Runtime validation**: Optional schema validation for cached values ensures type safety
+- **Self-healing**: Invalid cached entries are automatically recomputed
+- **Corruption protection**: Validates data integrity on cache retrieval
+- **Applied to**: All read operations (read, list)
 
 ### Layer Composition
 
@@ -881,7 +884,7 @@ export const executeRequest = <A, I, R>(
 >
 ```
 
-**executeCachedRequest** - GET requests with automatic caching:
+**executeCachedRequest** - GET requests with automatic caching and optional schema validation:
 ```typescript
 export const executeCachedRequest = <A, I, R>(
   request: HttpClientRequest.HttpClientRequest,
@@ -892,6 +895,8 @@ export const executeCachedRequest = <A, I, R>(
   HttpClient.HttpClient | RetryService | CacheService | R
 >
 ```
+
+When a schema is provided to CacheService, cached values are validated at runtime. If validation fails (e.g., due to cache corruption or API version changes), the cache entry is automatically invalidated and the value is recomputed.
 
 **executeVoidRequest** - DELETE/POST operations returning void:
 ```typescript
@@ -1055,7 +1060,7 @@ For detailed API documentation, see:
 
 ## License
 
-ISC
+MIT
 
 ## Disclaimer
 

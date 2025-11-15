@@ -7,6 +7,8 @@ import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
 import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import * as EffectString from "effect/String"
 
 /**
@@ -31,15 +33,21 @@ export interface CacheService {
    * Only caches GET requests. Other HTTP methods bypass the cache.
    * Cache invalidation occurs on POST/PUT/PATCH/DELETE to the same resource.
    *
+   * When a schema is provided, cached values are validated at runtime to ensure
+   * type safety. If validation fails, the cache entry is treated as a miss and
+   * the value is recomputed.
+   *
    * @param request - The HTTP request to cache
    * @param compute - The Effect to compute if cache miss occurs
+   * @param schema - Optional schema to validate cached values for type safety
    * @returns The cached or computed result
    *
    * @since 0.0.1
    */
   readonly getCached: <A, E, R>(
     request: HttpClientRequest.HttpClientRequest,
-    compute: Effect.Effect<A, E, R>
+    compute: Effect.Effect<A, E, R>,
+    schema?: Schema.Schema<A, unknown>
   ) => Effect.Effect<A, E, R>
 
   /**
@@ -154,19 +162,26 @@ type CachedResponse = unknown
 type ResourceCache = Cache.Cache<string, CachedResponse, never>
 
 /**
- * Type-safe wrapper for retrieving cached values.
+ * Validates a cached value using a schema.
  *
- * SAFETY: The cache stores values as `unknown` to support multiple response types,
- * but each cached value is stored and retrieved with the same type `A` based on:
- * - Unique cache key (resourceType + URL + params)
- * - Controlled access (only this module reads/writes cache)
- * - Type preserved through the Effect chain via function signature
+ * If validation succeeds, returns the typed value.
+ * If validation fails, returns None to indicate cache miss.
  *
- * This function serves as the explicit type boundary where we trust the cache contract.
+ * This provides runtime type safety for cached values, protecting against:
+ * - Cache corruption
+ * - Version mismatches
+ * - Type changes in the codebase
  *
  * @internal
  */
-const fromCache = <A>(value: unknown): A => value as A
+const validateCachedValue = <A>(
+  value: unknown,
+  schema: Schema.Schema<A, unknown>
+): Effect.Effect<Option.Option<A>, never> =>
+  Schema.decodeUnknown(schema)(value).pipe(
+    Effect.map(Option.some),
+    Effect.catchAll(() => Effect.succeed(Option.none()))
+  )
 
 /**
  * Live implementation of CacheService.
@@ -228,7 +243,8 @@ export const CacheServiceLive = Layer.effect(
     return CacheService.of({
       getCached: <A, E, R>(
         request: HttpClientRequest.HttpClientRequest,
-        compute: Effect.Effect<A, E, R>
+        compute: Effect.Effect<A, E, R>,
+        schema?: Schema.Schema<A, unknown>
       ) => {
         const url = new URL(request.url)
         const resourceType = extractResourceType(url.pathname)
@@ -277,8 +293,28 @@ export const CacheServiceLive = Layer.effect(
             return result
           }
 
-          // Cache hit - retrieve with type-safe helper
-          return fromCache<A>(cached.value)
+          // If schema provided, validate cached value
+          if (schema !== undefined) {
+            const validated = yield* validateCachedValue(cached.value, schema)
+
+            if (validated._tag === "None") {
+              // Validation failed - treat as cache miss
+              // Invalidate corrupted entry
+              yield* cache.invalidate(cacheKey)
+              // Compute fresh value
+              const result = yield* compute
+              yield* cache.set(cacheKey, result)
+              return result
+            }
+
+            // Validation succeeded - return validated value
+            return validated.value
+          }
+
+          // No schema - use legacy behavior (unsafe but backward compatible)
+          // SAFETY: When no schema is provided, we rely on cache key uniqueness
+          // and the assumption that the same key always stores/retrieves the same type A
+          return cached.value as A
         })
       },
 

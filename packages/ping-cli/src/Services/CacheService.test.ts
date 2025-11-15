@@ -1,6 +1,7 @@
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import { CacheService, CacheServiceLive } from "./CacheService.js"
 
 describe("CacheService", () => {
@@ -310,6 +311,178 @@ describe("CacheService", () => {
         yield* cache.getCached(request2, compute2)
         assert.strictEqual(callCount1, 2) // Re-executed
         assert.strictEqual(callCount2, 1) // Still cached
+      }).pipe(Effect.provide(CacheServiceLive)))
+  })
+
+  describe("Schema Validation", () => {
+    const UserSchema = Schema.Struct({
+      id: Schema.String,
+      name: Schema.String,
+      email: Schema.String
+    })
+
+    it.effect("should validate cached values with schema", () =>
+      Effect.gen(function*() {
+        const cache = yield* CacheService
+
+        const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-123")
+          .pipe(HttpClientRequest.bearerToken("test-token"))
+
+        let callCount = 0
+        const compute = Effect.sync(() => {
+          callCount++
+          return { id: "user-123", name: "Test User", email: "test@example.com" }
+        })
+
+        // First call with schema - should compute and cache
+        const result1 = yield* cache.getCached(request, compute, UserSchema)
+        assert.strictEqual(callCount, 1)
+        assert.strictEqual(result1.id, "user-123")
+        assert.strictEqual(result1.name, "Test User")
+
+        // Second call with schema - should return validated cached value
+        const result2 = yield* cache.getCached(request, compute, UserSchema)
+        assert.strictEqual(callCount, 1) // Still 1 - from cache
+        assert.strictEqual(result2.id, "user-123")
+      }).pipe(Effect.provide(CacheServiceLive)))
+
+    it.effect("should recompute when cached value fails schema validation", () =>
+      Effect.gen(function*() {
+        const cache = yield* CacheService
+
+        const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-123")
+          .pipe(HttpClientRequest.bearerToken("test-token"))
+
+        let callCount = 0
+        let returnValidData = true
+
+        const compute = Effect.sync(() => {
+          callCount++
+          if (returnValidData) {
+            // First call returns invalid data (missing email field)
+            return { id: "user-123", name: "Test User" }
+          }
+          // Second call returns valid data
+          return { id: "user-123", name: "Test User", email: "test@example.com" }
+        })
+
+        // First call without schema - caches invalid data
+        const result1 = yield* cache.getCached(request, compute)
+        assert.strictEqual(callCount, 1)
+        assert.strictEqual(result1.id, "user-123")
+
+        // Change compute to return valid data
+        returnValidData = false
+
+        // Second call WITH schema - should detect invalid cached data and recompute
+        const result2 = yield* cache.getCached(request, compute, UserSchema)
+        assert.strictEqual(callCount, 2) // Recomputed because validation failed
+        assert.strictEqual(result2.id, "user-123")
+        assert.strictEqual(result2.email, "test@example.com")
+      }).pipe(Effect.provide(CacheServiceLive)))
+
+    it.effect("should invalidate cache entry on validation failure", () =>
+      Effect.gen(function*() {
+        const cache = yield* CacheService
+
+        const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-123")
+          .pipe(HttpClientRequest.bearerToken("test-token"))
+
+        // First, cache invalid data (without schema)
+        let callCount = 0
+        const invalidCompute = Effect.sync(() => {
+          callCount++
+          return { id: "user-123", name: "Test User" } // Missing email
+        })
+
+        yield* cache.getCached(request, invalidCompute)
+        assert.strictEqual(callCount, 1)
+
+        // Try to retrieve with schema (should fail validation and recompute)
+        const validCompute = Effect.sync(() => {
+          callCount++
+          return { id: "user-123", name: "Test User", email: "test@example.com" }
+        })
+
+        const result = yield* cache.getCached(request, validCompute, UserSchema)
+        assert.strictEqual(callCount, 2) // Recomputed
+        assert.strictEqual(result.email, "test@example.com")
+
+        // Verify new valid data is now cached
+        yield* cache.getCached(request, validCompute, UserSchema)
+        assert.strictEqual(callCount, 2) // Still 2 - using cached valid data
+      }).pipe(Effect.provide(CacheServiceLive)))
+
+    it.effect("should work without schema for backward compatibility", () =>
+      Effect.gen(function*() {
+        const cache = yield* CacheService
+
+        const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-123")
+          .pipe(HttpClientRequest.bearerToken("test-token"))
+
+        let callCount = 0
+        const compute = Effect.sync(() => {
+          callCount++
+          return { id: "user-123", arbitrary: "data", canBe: "anything" }
+        })
+
+        // Works without schema (legacy behavior)
+        const result1 = yield* cache.getCached(request, compute)
+        assert.strictEqual(callCount, 1)
+        assert.strictEqual(result1.id, "user-123")
+
+        // Still cached without schema
+        yield* cache.getCached(request, compute)
+        assert.strictEqual(callCount, 1)
+      }).pipe(Effect.provide(CacheServiceLive)))
+
+    it.effect("should handle complex nested schemas", () =>
+      Effect.gen(function*() {
+        const cache = yield* CacheService
+
+        const AddressSchema = Schema.Struct({
+          street: Schema.String,
+          city: Schema.String,
+          country: Schema.String
+        })
+
+        const ComplexUserSchema = Schema.Struct({
+          id: Schema.String,
+          name: Schema.String,
+          email: Schema.String,
+          address: AddressSchema,
+          tags: Schema.Array(Schema.String)
+        })
+
+        const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-456")
+          .pipe(HttpClientRequest.bearerToken("test-token"))
+
+        let callCount = 0
+        const compute = Effect.sync(() => {
+          callCount++
+          return {
+            id: "user-456",
+            name: "Complex User",
+            email: "complex@example.com",
+            address: {
+              street: "123 Main St",
+              city: "Test City",
+              country: "US"
+            },
+            tags: ["admin", "verified"]
+          }
+        })
+
+        // Cache with complex schema
+        const result1 = yield* cache.getCached(request, compute, ComplexUserSchema)
+        assert.strictEqual(callCount, 1)
+        assert.strictEqual(result1.address.city, "Test City")
+        assert.strictEqual(result1.tags.length, 2)
+
+        // Verify cached with validation
+        const result2 = yield* cache.getCached(request, compute, ComplexUserSchema)
+        assert.strictEqual(callCount, 1) // From cache
+        assert.strictEqual(result2.address.city, "Test City")
       }).pipe(Effect.provide(CacheServiceLive)))
   })
 })
