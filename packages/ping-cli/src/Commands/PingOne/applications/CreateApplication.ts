@@ -1,6 +1,8 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as EffectString from "effect/String"
 import { PingOneValidationError } from "../../../Errors.js"
 import { createApplication } from "../../../HttpClient/ApplicationClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
@@ -32,7 +34,7 @@ export const createApplicationCommand = Command.make(
   },
   ({ name, environmentId, pingoneToken, description, type, protocol, enabled }) =>
     Effect.gen(function*() {
-      if (name.trim().length === 0) {
+      if (Function.pipe(name, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "name",

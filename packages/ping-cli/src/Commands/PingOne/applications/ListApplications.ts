@@ -1,5 +1,5 @@
 import { Command, Options } from "@effect/cli"
-import { Effect } from "effect"
+import { Array, Effect } from "effect"
 import * as Console from "effect/Console"
 import { listApplications } from "../../../HttpClient/ApplicationClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
@@ -42,15 +42,25 @@ export const listApplicationsCommand = Command.make(
           const count = response.count || applications.length
 
           return Console.log(
-            `Found ${count} application(s):\n\n${
-              applications
-                .map(
+            `Found ${count} application(s):
+
+${
+              Array.join(
+                Array.map(
+                  applications,
                   (application, index) =>
                     `${index + 1}. ${application.name} (${application.id})${
-                      application.description ? `\n   Description: ${application.description}` : ""
-                    }\n   Type: ${application.type}\n   Protocol: ${application.protocol}\n   Enabled: ${application.enabled}`
-                )
-                .join("\n\n")
+                      application.description ?
+                        `
+   Description: ${application.description}` :
+                        ""
+                    }
+   Type: ${application.type}
+   Protocol: ${application.protocol}
+   Enabled: ${application.enabled}`
+                ),
+                "\n\n"
+              )
             }`
           )
         }),

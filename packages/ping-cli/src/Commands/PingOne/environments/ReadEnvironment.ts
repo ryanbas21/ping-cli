@@ -1,7 +1,7 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect } from "effect"
 import * as Console from "effect/Console"
 import * as DateTime from "effect/DateTime"
+import * as Effect from "effect/Effect"
 import { readEnvironment } from "../../../HttpClient/EnvironmentClient.js"
 import { getToken } from "../ConfigHelper.js"
 

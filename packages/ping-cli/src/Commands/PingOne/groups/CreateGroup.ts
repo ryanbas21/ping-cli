@@ -1,6 +1,7 @@
 import { Args, Command, Options } from "@effect/cli"
 import { Effect, Predicate } from "effect"
 import * as Console from "effect/Console"
+import * as EffectString from "effect/String"
 import { PingOneValidationError } from "../../../Errors.js"
 import { createGroup } from "../../../HttpClient/GroupClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
@@ -37,7 +38,7 @@ export const createGroupCommand = Command.make(
   ({ name, environmentId, pingoneToken, description, populationId, userFilter, externalId }) =>
     Effect.gen(function*() {
       // Validate name is not empty
-      if (name.trim().length === 0) {
+      if (EffectString.isEmpty(EffectString.trim(name))) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "name",

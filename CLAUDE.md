@@ -1,6 +1,137 @@
-# Agent Instructions for Effect Library Development
+# Agent Instructions for Ping CLI Library Development
 
 ## 🚨 HIGHEST PRIORITY RULES 🚨
+
+### ALWAYS USE CLAUDE SKILLS WHEN AVAILABLE
+
+Use the available claude skills when you have them.
+
+Core Concepts & Fundamentals
+
+- core-concepts - Core concepts and fundamental patterns in Effect
+- data-types - Effect data types and their usage
+- constructors - Creating and using constructors in Effect
+- composition - Function and effect composition patterns
+- combinators - Effect combinators and composition utilities
+
+Error Handling & Control Flow
+
+- error-handling - Error handling patterns and best practices
+- error-management - Managing and recovering from errors
+- either - Using Either for error handling
+- branching - Conditional branching and control flow
+- conditional-logic - Conditional logic and branching in Effect
+- effectful-branching - Branching with effectful conditions
+- pattern-matching - Pattern matching techniques
+
+Data & Collections
+
+- collections - Working with collections in Effect
+- arrays - Working with arrays in Effect
+- set-operations - Set operations and utilities
+- tuples - Working with tuples
+- pairing - Pairing and tuple operations
+- ordering - Ordering and sorting operations
+- equality - Equality checking and comparison
+- structural-equality - Structural equality checking
+
+Optional & Absent Values
+
+- absence - Working with absence and null values in Effect
+- option - Using Option for optional values
+- optional-values - Working with optional and nullable values
+
+Type Safety & Domain Modeling
+
+- type-safety - Type safety patterns and techniques
+- branded-types - Using branded types for type safety
+- domain-modeling - Domain-driven design and modeling patterns
+- modeling-data - Data modeling patterns
+- tagged-unions - Tagged unions and discriminated unions
+- adts - Algebraic Data Types (ADTs) patterns and usage
+- type-classes - Type classes and higher-kinded types
+
+Asynchronous & Concurrent Programming
+
+- async - Asynchronous programming patterns in Effect
+- concurrency - Concurrent execution and parallelism
+- parallelism - Parallel execution patterns
+- sequencing - Sequencing effects and operations
+- callback - Working with callbacks and converting to Effect
+
+Dependency Injection & Architecture
+
+- dependency-injection - Dependency injection fundamentals
+- advanced-dependency-injection - Advanced dependency injection patterns and techniques
+- custom-layers - Creating custom layers for dependency injection
+- application-architecture - Structuring Effect applications and architectural patterns
+- application-configuration - Managing application configuration with Effect
+
+State & Side Effects
+
+- state - State management patterns
+- mutable-state - Managing mutable state in Effect
+- side-effects - Managing side effects
+- effect-results - Working with Effect results and outcomes
+
+Time & Duration
+
+- time - Time operations and utilities
+- date - Working with dates in Effect
+- duration - Working with time durations
+- modeling-time - Time modeling and temporal patterns
+
+External Integration
+
+- interop - Interoperability with other libraries and patterns
+- conversion - Type conversions and transformations
+- lifting - Lifting values and functions into Effect context
+- network-requests - Network request patterns and utilities
+- making-http-requests - Making HTTP requests with Effect
+- database-connections - Managing database connections with Effect
+- file-handling - File system operations with Effect
+
+Building Applications
+
+- building-apis - Building APIs with Effect
+- building-data-pipelines - Creating data pipelines and transformation workflows
+- batch-processing - Batch processing and bulk operations
+- distributed-systems - Building distributed systems with Effect
+- project-setup--execution - Project setup and execution patterns
+
+Observability & Monitoring
+
+- observability - Observability patterns and tools
+- logging - Logging patterns and utilities
+- metrics - Application metrics and monitoring
+- monitoring - Application monitoring and observability
+- tracing - Distributed tracing patterns
+- opentelemetry - OpenTelemetry integration
+- instrumentation - Instrumenting Effect applications
+- debugging - Debugging Effect applications
+- tooling-and-debugging - Development tooling and debugging
+
+Utilities & Helpers
+
+- checks - Validation and checking patterns
+- validation - Data validation and schema checking
+- parsing - Parsing and schema validation
+- hashing - Hashing and cryptographic operations
+- function-calls - Function call patterns and utilities
+- resource-management - Resource management and lifecycle handling
+- performance - Performance optimization patterns
+
+Specialized Domains
+
+- financial - Financial calculations and precision handling
+- numeric-precision - Handling numeric precision and decimal operations
+- scientific - Scientific computing patterns
+- security - Security patterns and best practices
+- sensitive-data - Handling sensitive data securely
+
+Testing
+
+- testing - Testing Effect applications
 
 ### ABSOLUTELY FORBIDDEN: try-catch in Effect.gen
 
@@ -55,7 +186,9 @@
 **ALWAYS use `return yield*` when yielding errors or interrupts in Effect.gen!**
 
 - When yielding `Effect.fail`, `Effect.interrupt`, or other terminal effects, always use `return yield*`
+
 - This makes it clear that the generator function terminates at that point
+
 - **MANDATORY PATTERN**:
 
   ```ts
@@ -77,6 +210,7 @@
   ```
 
 - **WRONG PATTERNS**:
+
   ```ts
   Effect.gen(function* () {
     if (someCondition) {
@@ -86,6 +220,7 @@
     }
   })
   ```
+
 - **CRITICAL**: Always use `return yield*` to make termination explicit and avoid unreachable code
 
 ## Project Overview
@@ -110,18 +245,21 @@ This is the Effect library repository, focusing on functional programming patter
 ### Structured Development Process
 
 1. **Research Phase**
+
    - Understand the codebase and existing patterns
    - Identify related modules and dependencies
    - Review test files and usage examples
    - Use multiple approaches for complex problems
 
-2. **Planning Phase**
+1. **Planning Phase**
+
    - Create detailed implementation plan
    - Identify validation checkpoints
    - Consider edge cases and error handling
    - Validate plan before implementation
 
-3. **Implementation Phase**
+1. **Implementation Phase**
+
    - Execute with frequent validation
    - **🚨 CRITICAL**: IMMEDIATELY run `pnpm lint --fix <typescript_file.ts>` after editing ANY TypeScript file
    - Run automated checks at each step
@@ -133,12 +271,12 @@ This is the Effect library repository, focusing on functional programming patter
 **ALWAYS follow this EXACT sequence when creating ANY new function:**
 
 1. **Create function** - Write the function implementation in TypeScript file
-2. **Lint TypeScript file** - Run `pnpm lint --fix <typescript_file.ts>`
-3. **Check compilation** - Run `pnpm tsc` to ensure it compiles
-4. **Lint TypeScript file again** - Run `pnpm lint --fix <typescript_file.ts>` again
-5. **Ensure compilation** - Run `pnpm tsc` again to double-check
-6. **Write test** - Create comprehensive test for the function in test file
-7. **Compile test & lint test file** - Run `pnpm tsc` then `pnpm lint --fix <test_file.ts>`
+1. **Lint TypeScript file** - Run `pnpm lint --fix <typescript_file.ts>`
+1. **Check compilation** - Run `pnpm tsc` to ensure it compiles
+1. **Lint TypeScript file again** - Run `pnpm lint --fix <typescript_file.ts>` again
+1. **Ensure compilation** - Run `pnpm tsc` again to double-check
+1. **Write test** - Create comprehensive test for the function in test file
+1. **Compile test & lint test file** - Run `pnpm tsc` then `pnpm lint --fix <test_file.ts>`
 
 **CRITICAL NOTES:**
 
@@ -282,10 +420,10 @@ Note: Use relative paths when analyzing progress:
 **Step-by-Step Process:**
 
 1. **Identify Target Files**: Use `node scripts/analyze-jsdoc.mjs` to find missing documentation
-2. **Prioritize Files**: Focus on high-impact, frequently used modules
-3. **Read and Understand**: Analyze the target file structure and purpose
-4. **Add Examples Systematically**: Follow the example structure below
-5. **Validate**: Ensure all examples compile and lint correctly
+1. **Prioritize Files**: Focus on high-impact, frequently used modules
+1. **Read and Understand**: Analyze the target file structure and purpose
+1. **Add Examples Systematically**: Follow the example structure below
+1. **Validate**: Ensure all examples compile and lint correctly
 
 **IMPORTANT: After each edit, run linting:**
 
@@ -293,9 +431,9 @@ Note: Use relative paths when analyzing progress:
 pnpm lint --fix packages/effect/src/TargetFile.ts
 ```
 
-### Scratchpad Development Workflow
+Testing
 
-For efficient example development, use the `./scratchpad/` directory:
+- testing - Testing Effect applicationsle development, use the `./scratchpad/` directory:
 
 ```bash
 # Create temporary development files
@@ -554,9 +692,6 @@ pnpm docgen
 
 # 3. Verify type checking
 pnpm check
-
-# 4. Confirm progress
-node scripts/analyze-jsdoc.mjs --file=ModifiedFile.ts
 ```
 
 **Success Criteria:**
@@ -768,61 +903,18 @@ it.effect("test", () =>
 - Only commit when explicitly requested
 - Follow conventional commit messages
 
-## Packages
-
-- `packages/effect/` - Core Effect library
-- `packages/platform-node/` - Node.js platform implementation
-- `packages/platform-node-shared/` - Shared Node.js utilities
-- `packages/platform-bun/` - Bun platform implementation
-- `packages/vitest/` - Vitest testing utilities
-
 ## Key Directories
 
 ### Core Library
 
-- `packages/effect/src/` - Core Effect library source code
-  - `collections/` - Data structures (Array, HashMap, Chunk, etc.)
-  - `concurrency/` - Concurrent operations (Fiber, Semaphore, etc.)
-  - `data/` - Core data types (Option, Either, Result, etc.)
-  - `interfaces/` - Type interfaces (Equal, Hash, Pipeable, etc.)
-  - `internal/` - Private implementation details
-  - `platform/` - Platform abstractions
-  - `streaming/` - Stream operations
-  - `schema/` - Schema validation and parsing
-  - `unstable/` - Experimental features
-- `packages/effect/test/` - Effect library test files
-- `packages/effect/dtslint/` - TypeScript definition tests
-
-### Platform Implementations
-
-- `packages/platform-node/src/` - Node.js platform source code
-- `packages/platform-node/test/` - Node.js platform tests
-- `packages/platform-node-shared/src/` - Shared Node.js utilities source
-- `packages/platform-node-shared/test/` - Shared Node.js utilities tests
-- `packages/platform-bun/src/` - Bun platform source code
-- `packages/vitest/src/` - Vitest utilities source code
-- `packages/vitest/test/` - Vitest utilities tests
-
-### Development & Build
-
-- `scripts/` - Build and maintenance scripts
-  - `analyze-jsdoc.mjs` - JSDoc coverage analysis tool
-  - `docs.mjs` - Documentation generation
-  - `version.mjs` - Version management
-- `bundle/` - Bundle size analysis files
-- `docs/` - Generated documentation files
-- `coverage/` - Test coverage reports
-- `scratchpad/` - Temporary development and testing files
-- `patches/` - Package patches for dependencies
+- `packages/ping-cli/src/` - Core ping-cli application source code
 
 ### Configuration & Specs
 
-- `.specs/` - Implementation specifications and plans organized by feature
-  - `README.md` - Specification workflow and feature tracking
-  - `spec-driven-development-integration/` - Current implementation specs
 - `.patterns/` - Development patterns and best practices
   - `README.md` - Pattern organization and usage guide
   - `effect-library-development.md` - Core Effect patterns
+  - `effect-imports` - how to import effect module from npm
   - `testing-patterns.md` - Testing strategies with @effect/vitest
   - `module-organization.md` - Module structure and naming conventions
   - `error-handling.md` - Structured error management patterns
@@ -832,7 +924,6 @@ it.effect("test", () =>
   - `commands/new-feature.md` - 5-phase spec-driven development workflow
   - `commands/done-feature.md` - Feature completion and validation workflow
 - `.github/` - GitHub Actions workflows and templates
-- `.vscode/` - VS Code workspace configuration
 - `.changeset/` - Changeset configuration for versioning
 
 ## Development Patterns Reference
@@ -841,7 +932,7 @@ The `.patterns/` directory contains comprehensive development patterns and best 
 
 ### Core Patterns to Follow:
 
-- **Effect Library Development**: Fundamental patterns, forbidden practices, and mandatory patterns
+- **Library Development**: Fundamental patterns, forbidden practices, and mandatory patterns
 - **Module Organization**: Directory structure, export patterns, naming conventions, and TypeId usage
 - **Error Handling**: Data.TaggedError usage, error transformation, and recovery patterns
 - **Testing**: @effect/vitest usage, TestClock patterns, and it.effect best practices
@@ -851,21 +942,21 @@ The `.patterns/` directory contains comprehensive development patterns and best 
 ### Pattern Usage Guidelines:
 
 1. **Before coding**: Review relevant patterns in `.patterns/` directory
-2. **During implementation**: Follow established conventions and naming patterns
-3. **For complex features**: Use patterns as templates for consistent implementation
-4. **When stuck**: Reference similar implementations in existing codebase following these patterns
+1. **During implementation**: Follow established conventions and naming patterns
+1. **For complex features**: Use patterns as templates for consistent implementation
+1. **When stuck**: Reference similar implementations in existing codebase following these patterns
 
 ## Problem-Solving Strategies
 
 ### When Encountering Complex Issues
 
 1. **Stop and Analyze**: Don't spiral into increasingly complex solutions
-2. **Break Down**: Divide complex problems into smaller, manageable parts
-3. **Use Parallel Approaches**: Launch multiple Task agents for different aspects
-4. **Research First**: Always understand existing patterns before creating new ones
-5. **Validate Frequently**: Use reality checkpoints to ensure you're on track
-6. **Simplify**: Choose the simplest solution that meets requirements
-7. **Ask for Help**: Request guidance rather than guessing
+1. **Break Down**: Divide complex problems into smaller, manageable parts
+1. **Use Parallel Approaches**: Launch multiple Task agents for different aspects
+1. **Research First**: Always understand existing patterns before creating new ones
+1. **Validate Frequently**: Use reality checkpoints to ensure you're on track
+1. **Simplify**: Choose the simplest solution that meets requirements
+1. **Ask for Help**: Request guidance rather than guessing
 
 ### Effective Task Management
 

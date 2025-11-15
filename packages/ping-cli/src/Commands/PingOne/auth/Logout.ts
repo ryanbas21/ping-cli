@@ -6,8 +6,8 @@
  * @since 0.0.3
  */
 import { Command } from "@effect/cli"
-import { Effect } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
 import { OAuthService } from "../../../Services/index.js"
 
 /**

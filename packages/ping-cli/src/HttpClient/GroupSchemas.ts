@@ -45,15 +45,16 @@ export const PingOneCreateGroupResponse = Schema.Struct({
   population: Schema.optional(GroupPopulationSchema),
   userFilter: Schema.optional(Schema.String),
   externalId: Schema.optional(Schema.String),
-  custom: Schema.Boolean,
-  createdAt: Schema.String,
-  updatedAt: Schema.String,
+  custom: Schema.optional(Schema.Boolean),
+  createdAt: Schema.optional(Schema.String),
+  updatedAt: Schema.optional(Schema.String),
   totalMemberCounts: Schema.optional(
     Schema.Struct({
       directMembers: Schema.Number,
       totalMembers: Schema.Number
     })
-  )
+  ),
+  _links: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
 })
 
 /**

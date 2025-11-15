@@ -9,7 +9,7 @@
 import type { HttpClientError, HttpClientRequest, HttpClientResponse as HttpClientResponseType } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import type { ParseResult, Schema } from "effect"
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { PingOneApiError } from "../Errors.js"
 import { CacheService, RetryService } from "../Services/index.js"
 

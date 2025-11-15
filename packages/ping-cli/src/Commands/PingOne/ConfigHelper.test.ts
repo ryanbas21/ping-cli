@@ -1,6 +1,8 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
-import { MockServicesLive } from "../../test-helpers/TestLayers.js"
+import { OAuthFlowError } from "../../Errors.js"
+import { OAuthService } from "../../Services/index.js"
+import { MockCacheServiceLive, MockRetryServiceLive, MockServicesLive } from "../../test-helpers/TestLayers.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
 
 describe("ConfigHelper", () => {
@@ -11,7 +13,7 @@ describe("ConfigHelper", () => {
         const result = yield* getEnvironmentId(cliOption)
 
         assert.strictEqual(result, "env-from-cli")
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
 
     it.effect("should prioritize CLI option over environment variable", () => {
       const configLayer = Layer.mergeAll(
@@ -64,16 +66,54 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fail with PingOneAuthError when neither CLI nor env var provided", () => {
+      // Create OAuth service that fails to get credentials
+      const FailingOAuthLayer = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          getAccessToken: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No credentials",
+                cause: "No stored credentials",
+                step: "credential_retrieval"
+              })
+            ),
+          storeCredentials: () => Effect.void,
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No stored credentials",
+                cause: "No credentials found",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false,
+              clientId: undefined,
+              environmentId: undefined,
+              tokenExpiresAt: undefined
+            })
+        })
+      )
+
       const configLayer = Layer.mergeAll(
         Layer.setConfigProvider(
           ConfigProvider.fromMap(new Map()) // Empty config
         ),
-        MockServicesLive
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        FailingOAuthLayer
       )
 
       return Effect.gen(function*() {
         const cliOption = ""
-        const result = yield* getEnvironmentId(cliOption).pipe(Effect.exit)
+        const result = yield* getEnvironmentId(cliOption).pipe(
+          Effect.provide(configLayer),
+          Effect.exit
+        )
 
         assert.strictEqual(result._tag, "Failure")
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
@@ -91,7 +131,7 @@ describe("ConfigHelper", () => {
 
         // Should succeed with trimmed value
         assert.strictEqual(result, "  env-with-spaces  ")
-      }))
+      }).pipe(Effect.provide(MockServicesLive)))
   })
 
   describe("getToken", () => {
@@ -247,11 +287,39 @@ describe("ConfigHelper", () => {
     })
 
     it.effect("should fall back to OAuth for token when no configuration source available", () => {
+      // Create OAuth service that fails to get environment ID but succeeds for token
+      const PartialOAuthLayer = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          getAccessToken: () => Effect.succeed("test-oauth-token"),
+          storeCredentials: () => Effect.void,
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "No stored credentials",
+                cause: "No credentials found",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false,
+              clientId: undefined,
+              environmentId: undefined,
+              tokenExpiresAt: undefined
+            })
+        })
+      )
+
       const configLayer = Layer.mergeAll(
         Layer.setConfigProvider(
           ConfigProvider.fromMap(new Map()) // Empty config
         ),
-        MockServicesLive
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        PartialOAuthLayer
       )
 
       return Effect.gen(function*() {

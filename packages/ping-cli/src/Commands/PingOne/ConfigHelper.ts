@@ -27,32 +27,51 @@ export const getApiBaseUrl = () =>
   )
 
 /**
- * Gets PingOne environment ID from CLI option or environment variable.
- * Priority: CLI option > PINGONE_ENV_ID env var
+ * Gets PingOne environment ID from CLI option, environment variable, or OAuth service.
+ * Priority: CLI option > PINGONE_ENV_ID env var > OAuth service (stored credentials)
+ *
+ * The environment ID can be:
+ * 1. Provided directly via --environment-id flag
+ * 2. Set via PINGONE_ENV_ID environment variable
+ * 3. Automatically obtained from stored credentials (after running 'p1-cli auth login')
  *
  * @since 0.0.1
  */
 export const getEnvironmentId = (cliOption: string) =>
-  Effect.if(
-    Predicate.isTruthy(cliOption) && cliOption.trim().length > 0,
-    {
-      onTrue: () => Effect.succeed(cliOption),
-      onFalse: () =>
-        Config.string("PINGONE_ENV_ID").pipe(
-          Effect.catchAll(() =>
-            Effect.fail(
-              new PingOneAuthError({
-                message: "No PingOne environment ID provided",
-                cause: "Set PINGONE_ENV_ID environment variable or use --environment-id flag",
-                context: {
-                  accessTokenProvided: false
-                }
-              })
-            )
-          )
-        )
+  Effect.gen(function*() {
+    // Check if CLI option was provided
+    if (Predicate.isTruthy(cliOption) && cliOption.trim().length > 0) {
+      return cliOption
     }
-  )
+
+    // Fall back to PINGONE_ENV_ID environment variable
+    const envId = yield* Config.string("PINGONE_ENV_ID").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envId) {
+      return envId
+    }
+
+    // Fall back to OAuth service (uses stored credentials)
+    const oauthService = yield* OAuthService
+    const credentials = yield* oauthService.getCredentials().pipe(
+      Effect.catchAll(() =>
+        Effect.fail(
+          new PingOneAuthError({
+            message: "No PingOne environment ID provided",
+            cause:
+              "Run 'p1-cli auth login' to configure OAuth credentials, or set PINGONE_ENV_ID environment variable, or use --environment-id flag",
+            context: {
+              accessTokenProvided: false
+            }
+          })
+        )
+      )
+    )
+
+    return credentials.environmentId
+  })
 
 /**
  * Gets PingOne OAuth 2.0 access token from CLI option, environment variable, or OAuth service.

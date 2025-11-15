@@ -1,5 +1,5 @@
 import { Command, Options } from "@effect/cli"
-import { Effect } from "effect"
+import { Array, Effect } from "effect"
 import * as Console from "effect/Console"
 import { listGroups } from "../../../HttpClient/GroupClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
@@ -51,15 +51,23 @@ export const listGroupsCommand = Command.make(
           const count = response.count || groups.length
 
           return Console.log(
-            `Found ${count} group(s):\n\n${
-              groups
-                .map(
+            `Found ${count} group(s):
+
+${
+              Array.join(
+                Array.map(
+                  groups,
                   (group, index) =>
                     `${index + 1}. ${group.name} (${group.id})${
-                      group.description ? `\n   Description: ${group.description}` : ""
-                    }\n   Custom: ${group.custom}`
-                )
-                .join("\n\n")
+                      group.description ?
+                        `
+   Description: ${group.description}` :
+                        ""
+                    }
+   Custom: ${group.custom}`
+                ),
+                "\n\n"
+              )
             }`
           )
         }),

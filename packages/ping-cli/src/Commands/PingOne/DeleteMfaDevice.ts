@@ -1,6 +1,8 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as EffectString from "effect/String"
 import { PingOneValidationError } from "../../Errors.js"
 import { deletePingOneMfaDevice } from "../../HttpClient/PingOneClient.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
@@ -29,7 +31,7 @@ export const deleteMfaDevice = Command.make(
   ({ userId, deviceId, environmentId, pingoneToken }) =>
     Effect.gen(function*() {
       // Validate userId is not empty
-      if (userId.trim().length === 0) {
+      if (Function.pipe(userId, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "userId",
@@ -39,7 +41,7 @@ export const deleteMfaDevice = Command.make(
       }
 
       // Validate deviceId is not empty
-      if (deviceId.trim().length === 0) {
+      if (Function.pipe(deviceId, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "deviceId",

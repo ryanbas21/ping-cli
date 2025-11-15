@@ -128,11 +128,13 @@ export class StoredCredentials extends Schema.Class<StoredCredentials>("StoredCr
  *
  * @example
  * ```ts
+ * import { DateTime } from "effect"
  * import { Schema } from "effect"
  *
+ * const now = DateTime.unsafeNow()
  * const cachedToken = {
  *   accessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
- *   expiresAt: Date.now() + 3600000
+ *   expiresAt: DateTime.toEpochMillis(DateTime.add(now, { hours: 1 }))
  * }
  *
  * const validated = Schema.decodeUnknownSync(CachedAccessToken)(cachedToken)

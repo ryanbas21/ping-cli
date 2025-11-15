@@ -1,6 +1,9 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect, Predicate } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import { pipe } from "effect/Function"
+import * as Predicate from "effect/Predicate"
+import * as EffectString from "effect/String"
 import { PingOneAuthError } from "../../Errors.js"
 import { deletePingOneUser } from "../../HttpClient/PingOneClient.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
@@ -31,7 +34,7 @@ export const deleteUser = Command.make(
   }) =>
     Effect.gen(function*() {
       // Validate userId is not empty
-      if (!Predicate.isTruthy(userId) || userId.trim().length === 0) {
+      if (!Predicate.isTruthy(userId) || pipe(userId, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneAuthError({
             message: "User ID cannot be empty",

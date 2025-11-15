@@ -1,5 +1,15 @@
-import type { HttpClientRequest } from "@effect/platform"
-import { Cache, Context, Duration, Effect, Hash, Layer } from "effect"
+import type * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as Array from "effect/Array"
+import * as Cache from "effect/Cache"
+import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Hash from "effect/Hash"
+import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
+import * as EffectString from "effect/String"
 
 /**
  * Resource types that can be cached.
@@ -23,15 +33,21 @@ export interface CacheService {
    * Only caches GET requests. Other HTTP methods bypass the cache.
    * Cache invalidation occurs on POST/PUT/PATCH/DELETE to the same resource.
    *
+   * When a schema is provided, cached values are validated at runtime to ensure
+   * type safety. If validation fails, the cache entry is treated as a miss and
+   * the value is recomputed.
+   *
    * @param request - The HTTP request to cache
    * @param compute - The Effect to compute if cache miss occurs
+   * @param schema - Optional schema to validate cached values for type safety
    * @returns The cached or computed result
    *
    * @since 0.0.1
    */
   readonly getCached: <A, E, R>(
     request: HttpClientRequest.HttpClientRequest,
-    compute: Effect.Effect<A, E, R>
+    compute: Effect.Effect<A, E, R>,
+    schema?: Schema.Schema<A, unknown>
   ) => Effect.Effect<A, E, R>
 
   /**
@@ -115,7 +131,7 @@ const generateCacheKey = (request: HttpClientRequest.HttpClientRequest): string 
  * @since 0.0.1
  */
 const isCacheable = (method: string): boolean => {
-  return method.toUpperCase() === "GET"
+  return Function.pipe(method, EffectString.toUpperCase) === "GET"
 }
 
 /**
@@ -127,7 +143,7 @@ const isCacheable = (method: string): boolean => {
  * @since 0.0.1
  */
 const shouldInvalidate = (method: string): boolean => {
-  const upper = method.toUpperCase()
+  const upper = Function.pipe(method, EffectString.toUpperCase)
   return upper === "POST" || upper === "PUT" || upper === "PATCH" || upper === "DELETE"
 }
 
@@ -144,6 +160,28 @@ type CachedResponse = unknown
  * @since 0.0.1
  */
 type ResourceCache = Cache.Cache<string, CachedResponse, never>
+
+/**
+ * Validates a cached value using a schema.
+ *
+ * If validation succeeds, returns the typed value.
+ * If validation fails, returns None to indicate cache miss.
+ *
+ * This provides runtime type safety for cached values, protecting against:
+ * - Cache corruption
+ * - Version mismatches
+ * - Type changes in the codebase
+ *
+ * @internal
+ */
+const validateCachedValue = <A>(
+  value: unknown,
+  schema: Schema.Schema<A, unknown>
+): Effect.Effect<Option.Option<A>, never> =>
+  Schema.decodeUnknown(schema)(value).pipe(
+    Effect.map(Option.some),
+    Effect.catchAll(() => Effect.succeed(Option.none()))
+  )
 
 /**
  * Live implementation of CacheService.
@@ -205,7 +243,8 @@ export const CacheServiceLive = Layer.effect(
     return CacheService.of({
       getCached: <A, E, R>(
         request: HttpClientRequest.HttpClientRequest,
-        compute: Effect.Effect<A, E, R>
+        compute: Effect.Effect<A, E, R>,
+        schema?: Schema.Schema<A, unknown>
       ) => {
         const url = new URL(request.url)
         const resourceType = extractResourceType(url.pathname)
@@ -218,10 +257,18 @@ export const CacheServiceLive = Layer.effect(
         // If method is mutating, invalidate cache and bypass
         if (shouldInvalidate(request.method)) {
           const cache = getCacheForResource(resourceType)
-          const cacheKey = generateCacheKey(request)
+          const url = new URL(request.url)
 
           return Effect.gen(function*() {
-            yield* cache.invalidate(cacheKey)
+            // Invalidate all cache entries that match this URL path
+            // This ensures GET requests are invalidated when DELETE/PUT/PATCH occurs
+            const keys = yield* cache.keys
+            const matchingKeys = Array.filter(keys, (key) => key.includes(url.pathname))
+
+            yield* Effect.forEach(matchingKeys, (key) => cache.invalidate(key), {
+              concurrency: "unbounded"
+            })
+
             return yield* compute
           })
         }
@@ -236,18 +283,38 @@ export const CacheServiceLive = Layer.effect(
         const cacheKey = generateCacheKey(request)
 
         return Effect.gen(function*() {
-          // Try to get from cache
+          // Check cache
           const cached = yield* cache.get(cacheKey).pipe(Effect.option)
 
-          if (cached._tag === "Some") {
-            // Safe cast: we stored type A in the cache
-            return cached.value as A
+          // Cache miss - compute, store, and return
+          if (cached._tag === "None" || cached.value === undefined) {
+            const result = yield* compute
+            yield* cache.set(cacheKey, result)
+            return result
           }
 
-          // Cache miss - compute and store
-          const result = yield* compute
-          yield* cache.set(cacheKey, result)
-          return result
+          // If schema provided, validate cached value
+          if (schema !== undefined) {
+            const validated = yield* validateCachedValue(cached.value, schema)
+
+            if (validated._tag === "None") {
+              // Validation failed - treat as cache miss
+              // Invalidate corrupted entry
+              yield* cache.invalidate(cacheKey)
+              // Compute fresh value
+              const result = yield* compute
+              yield* cache.set(cacheKey, result)
+              return result
+            }
+
+            // Validation succeeded - return validated value
+            return validated.value
+          }
+
+          // No schema - use legacy behavior (unsafe but backward compatible)
+          // SAFETY: When no schema is provided, we rely on cache key uniqueness
+          // and the assumption that the same key always stores/retrieves the same type A
+          return cached.value as A
         })
       },
 

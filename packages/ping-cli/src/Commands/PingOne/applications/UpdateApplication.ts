@@ -1,6 +1,6 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
 import { PingOneValidationError } from "../../../Errors.js"
 import { updateApplication } from "../../../HttpClient/ApplicationClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"

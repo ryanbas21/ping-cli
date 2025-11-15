@@ -1,6 +1,11 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Config, Effect, Predicate } from "effect"
+import * as Array from "effect/Array"
+import * as Config from "effect/Config"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Predicate from "effect/Predicate"
+import * as EffectString from "effect/String"
 import { PingOneAuthError, PingOneValidationError } from "../../Errors.js"
 import { createPingOneUser } from "../../HttpClient/PingOneClient.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
@@ -62,7 +67,7 @@ export const createUser = Command.make(
       }
 
       // Validate username is not empty
-      if (username.trim().length === 0) {
+      if (Function.pipe(username, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "username",
@@ -77,7 +82,7 @@ export const createUser = Command.make(
 
       // Get population ID from config hierarchy (CLI option > env var)
       const popId = yield* Effect.if(
-        Predicate.isTruthy(populationId) && populationId.trim().length > 0,
+        Predicate.isTruthy(populationId) && !Function.pipe(populationId, EffectString.trim, EffectString.isEmpty),
         {
           onTrue: () => Effect.succeed(populationId),
           onFalse: () =>
@@ -115,12 +120,9 @@ export const createUser = Command.make(
 
       // Add optional name fields
       if (givenName._tag === "Some" || familyName._tag === "Some") {
-        userData.name = {}
-        if (givenName._tag === "Some") {
-          ;(userData.name as Record<string, string>).given = givenName.value
-        }
-        if (familyName._tag === "Some") {
-          ;(userData.name as Record<string, string>).family = familyName.value
+        userData.name = {
+          given: givenName._tag === "Some" ? givenName.value : undefined,
+          family: familyName._tag === "Some" ? familyName.value : undefined
         }
       }
 
@@ -131,7 +133,10 @@ export const createUser = Command.make(
 
       // Add optional locales (comma-separated string to array)
       if (locales._tag === "Some") {
-        userData.locales = locales.value.split(",").map((l) => l.trim())
+        userData.locales = Function.pipe(
+          locales.value.split(","),
+          Array.map(EffectString.trim)
+        )
       }
 
       // Create the user
