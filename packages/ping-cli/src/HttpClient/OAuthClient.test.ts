@@ -12,7 +12,7 @@
  */
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { DateTime, Duration, Effect, Layer } from "effect"
+import { DateTime, Duration, Effect, Either, Encoding, Layer } from "effect"
 import type { OAuthFlowError } from "../Errors.js"
 
 // Helper for tests: get current time in milliseconds
@@ -118,7 +118,8 @@ describe("OAuthClient", () => {
 
         // Extract and decode base64 credentials
         const base64Part = authHeader?.replace("Basic ", "")
-        const decoded = Buffer.from(base64Part || "", "base64").toString("utf-8")
+        const decodedEither = Encoding.decodeBase64String(base64Part || "")
+        const decoded = Either.getOrThrow(decodedEither)
 
         // Verify format is "clientId:clientSecret"
         assert.strictEqual(decoded, "my-client:my-secret")

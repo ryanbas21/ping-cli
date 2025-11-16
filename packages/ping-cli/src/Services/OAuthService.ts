@@ -14,6 +14,7 @@ import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Encoding from "effect/Encoding"
 import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
 import { OAuthFlowError } from "../Errors.js"
@@ -162,7 +163,7 @@ export const OAuthServiceLive = Layer.effect(
     }): Effect.Effect<OAuthTokenResponse, OAuthFlowError> =>
       Effect.gen(function*() {
         const credentials = `${params.clientId}:${params.clientSecret}`
-        const base64Credentials = Buffer.from(credentials).toString("base64")
+        const base64Credentials = Encoding.encodeBase64(credentials)
 
         const request = HttpClientRequest.post(params.tokenEndpoint).pipe(
           HttpClientRequest.bodyText("grant_type=client_credentials"),

@@ -14,6 +14,7 @@ import type { ParseResult } from "effect"
 import * as DateTime from "effect/DateTime"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Encoding from "effect/Encoding"
 import * as Function from "effect/Function"
 import * as Number from "effect/Number"
 import * as Option from "effect/Option"
@@ -90,7 +91,7 @@ export const exchangeCredentialsForToken = (params: {
     // Use Basic Authentication (Authorization header) instead of body parameters
     // This is required for PingOne Canada and some other regions
     const credentials = `${params.clientId}:${params.clientSecret}`
-    const base64Credentials = Buffer.from(credentials).toString("base64")
+    const base64Credentials = Encoding.encodeBase64(credentials)
 
     const request = HttpClientRequest.post(params.tokenEndpoint).pipe(
       HttpClientRequest.bodyText("grant_type=client_credentials"),
