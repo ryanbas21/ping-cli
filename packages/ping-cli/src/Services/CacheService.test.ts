@@ -258,11 +258,11 @@ describe("CacheService", () => {
         })
 
         // First call
-        yield* cache.getCached(request, compute, TestDataSchema)
+        yield* cache.getCached(request, compute, TestDataWithTypeSchema)
         assert.strictEqual(callCount, 1)
 
         // Second call should also execute (unrecognized resource not cached)
-        yield* cache.getCached(request, compute, TestDataSchema)
+        yield* cache.getCached(request, compute, TestDataWithTypeSchema)
         assert.strictEqual(callCount, 2)
       }).pipe(Effect.provide(CacheServiceLive)))
 
