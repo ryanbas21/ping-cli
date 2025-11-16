@@ -23,10 +23,7 @@ cache.getCached(request, compute, responseSchema)
 cache.getCached(request, compute, Schema.Unknown)
 ```
 
-Additional P0 security improvements:
-- CredentialService: Added explicit scrypt parameters (N=16384, r=8, p=1, maxmem=32MB)
-
-Updated documentation:
-- Fixed license from ISC to MIT to match package.json
+Additional improvements:
+- CredentialService: Added explicit scrypt parameters (N=16384, r=8, p=1, maxmem=32MB) for improved security
 - Enhanced CacheService documentation with required schema validation
 - Updated all examples to include schema parameter
