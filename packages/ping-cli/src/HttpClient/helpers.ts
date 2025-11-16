@@ -2,16 +2,21 @@
  * HTTP Client Helper Utilities
  *
  * Provides reusable utilities for making HTTP requests with standard
- * error handling, schema validation, and retry logic.
+ * error handling and schema validation.
+ *
+ * **Architecture Note:**
+ * - Retry logic is added via HttpClientWithRetry wrapper layer at app entry point
+ * - Caching uses CacheService directly (cannot be done at HttpClient layer due to schema requirement)
+ * - All helpers only require HttpClient.HttpClient (+ CacheService for cached requests)
  *
  * @since 0.0.2
  */
 import type { HttpClientError, HttpClientRequest, HttpClientResponse as HttpClientResponseType } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import type { ParseResult, Schema } from "effect"
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { PingOneApiError } from "../Errors.js"
-import { CacheService, RetryService } from "../Services/index.js"
+import { CacheService } from "../Services/CacheService.js"
 
 /**
  * Executes an HTTP request with standard error handling and schema validation.
@@ -20,7 +25,9 @@ import { CacheService, RetryService } from "../Services/index.js"
  * 1. Executing an HTTP request via HttpClient
  * 2. Checking response status (2xx = success)
  * 3. Parsing response body with a schema
- * 4. Applying retry logic
+ *
+ * **Cross-Cutting Concerns:**
+ * Retry logic and caching are handled by wrapper layers, not in this helper.
  *
  * @param request - The HTTP request to execute
  * @param responseSchema - Schema to validate and parse the response body
@@ -35,37 +42,32 @@ export const executeRequest = <A, I, R>(
 ): Effect.Effect<
   A,
   PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | RetryService | R
+  HttpClient.HttpClient | R
 > =>
-  RetryService.pipe(
-    Effect.flatMap((retry) =>
-      retry.retryableRequest(
-        HttpClient.HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(request)),
-          Effect.flatMap((response) =>
-            Effect.if(response.status >= 200 && response.status < 300, {
-              onTrue: () => HttpClientResponse.schemaBodyJson(responseSchema)(response),
-              onFalse: () =>
-                Effect.fail(
-                  new PingOneApiError({
-                    status: response.status,
-                    message: `PingOne API request failed with status ${response.status}`
-                  })
-                )
+  HttpClient.HttpClient.pipe(
+    Effect.flatMap((client) => client.execute(request)),
+    Effect.flatMap((response) =>
+      Effect.if(response.status >= 200 && response.status < 300, {
+        onTrue: () => HttpClientResponse.schemaBodyJson(responseSchema)(response),
+        onFalse: () =>
+          Effect.fail(
+            new PingOneApiError({
+              status: response.status,
+              message: `PingOne API request failed with status ${response.status}`
             })
           )
-        )
-      )
+      })
     )
   )
 
 /**
  * Executes a cached HTTP request with standard error handling and schema validation.
  *
- * Similar to executeRequest but integrates with CacheService for GET request caching.
- * Cache behavior:
- * - GET requests: Cached with 5-minute TTL
- * - POST/PUT/PATCH/DELETE: Bypass cache and trigger invalidation
+ * **Caching Strategy:**
+ * - Wraps the HTTP request execution with CacheService
+ * - GET requests are cached with 5-minute TTL
+ * - Mutations (POST/PUT/PATCH/DELETE) bypass cache and trigger invalidation
+ * - Cached values are validated with the provided schema
  *
  * @param request - The HTTP request to execute
  * @param responseSchema - Schema to validate and parse the response body
@@ -80,15 +82,17 @@ export const executeCachedRequest = <A, I, R>(
 ): Effect.Effect<
   A,
   PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | RetryService | CacheService | R
+  HttpClient.HttpClient | CacheService | R
 > =>
-  Effect.gen(function*() {
-    const cache = yield* CacheService
-
-    const compute = executeRequest(request, responseSchema)
-
-    return yield* cache.getCached(request, compute)
-  })
+  CacheService.pipe(
+    Effect.flatMap((cache) =>
+      cache.getCached(
+        request,
+        executeRequest(request, responseSchema),
+        responseSchema
+      )
+    )
+  )
 
 /**
  * Executes an HTTP request without response body parsing.
@@ -107,26 +111,20 @@ export const executeVoidRequest = (
 ): Effect.Effect<
   HttpClientResponseType.HttpClientResponse,
   PingOneApiError | HttpClientError.HttpClientError,
-  HttpClient.HttpClient | RetryService
+  HttpClient.HttpClient
 > =>
-  RetryService.pipe(
-    Effect.flatMap((retry) =>
-      retry.retryableRequest(
-        HttpClient.HttpClient.pipe(
-          Effect.flatMap((client) => client.execute(request)),
-          Effect.flatMap((response) =>
-            Effect.if(response.status >= 200 && response.status < 300, {
-              onTrue: () => Effect.succeed(response),
-              onFalse: () =>
-                Effect.fail(
-                  new PingOneApiError({
-                    status: response.status,
-                    message: `PingOne API request failed with status ${response.status}`
-                  })
-                )
+  HttpClient.HttpClient.pipe(
+    Effect.flatMap((client) => client.execute(request)),
+    Effect.flatMap((response) =>
+      Effect.if(response.status >= 200 && response.status < 300, {
+        onTrue: () => Effect.succeed(response),
+        onFalse: () =>
+          Effect.fail(
+            new PingOneApiError({
+              status: response.status,
+              message: `PingOne API request failed with status ${response.status}`
             })
           )
-        )
-      )
+      })
     )
   )

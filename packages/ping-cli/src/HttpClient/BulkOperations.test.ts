@@ -178,13 +178,58 @@ testuser2,test2@example.com,"Sales, West Coast"`
         const content = yield* fs.readFileString(testFile)
         assert.isTrue(content.includes("invalid"))
 
-        // Test that JSON.parse would fail
-        const parseResult = yield* Effect.try({
-          try: () => JSON.parse(content) as unknown,
-          catch: (error) => new Error(`Parse failed: ${String(error)}`)
-        }).pipe(Effect.either)
+        // Test that Schema parsing fails for malformed JSON
+        const parseResult = yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(
+          content
+        ).pipe(Effect.either)
 
         assert.strictEqual(parseResult._tag, "Left")
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should handle JSON that is not an array", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-not-array.json"
+
+        // Valid JSON but not an array
+        const notArrayJson = `{"username": "test", "email": "test@example.com"}`
+
+        yield* fs.writeFileString(testFile, notArrayJson)
+
+        // Test that Schema parsing fails for non-array JSON
+        const content = yield* fs.readFileString(testFile)
+        const parseResult = yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(
+          content
+        ).pipe(Effect.either)
+
+        assert.strictEqual(parseResult._tag, "Left")
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.live("should handle JSON array with invalid primitive values", () =>
+      Effect.gen(function*() {
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-primitive-array.json"
+
+        // Valid JSON array but contains primitives instead of objects
+        const primitiveArrayJson = `[123, "string", true, null]`
+
+        yield* fs.writeFileString(testFile, primitiveArrayJson)
+
+        const content = yield* fs.readFileString(testFile)
+
+        // Schema can parse this as Array<Unknown> since primitives are valid Unknown values
+        const parseResult = yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(
+          content
+        ).pipe(Effect.either)
+
+        // This should succeed - array of primitives is valid Array<Unknown>
+        assert.strictEqual(parseResult._tag, "Right")
 
         // Cleanup
         yield* fs.remove(testFile)

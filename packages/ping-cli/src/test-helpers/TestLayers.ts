@@ -7,7 +7,7 @@
  *
  * @since 0.0.1
  */
-import { Effect, Layer } from "effect"
+import { DateTime, Effect, Layer } from "effect"
 import { StoredCredentials } from "../HttpClient/OAuthSchemas.js"
 import { CacheService, OAuthService, RetryService } from "../Services/index.js"
 
@@ -29,7 +29,8 @@ export const MockCacheServiceLive = Layer.succeed(
   CacheService.of({
     getCached: <A, E, R>(
       _request: unknown,
-      compute: Effect.Effect<A, E, R>
+      compute: Effect.Effect<A, E, R>,
+      _schema: unknown
     ) => compute,
     invalidate: (_resourceType: unknown, _urlPath: string) => Effect.void
   })
@@ -61,7 +62,9 @@ export const MockOAuthServiceLive = Layer.succeed(
         hasValidToken: true,
         clientId: "test-client-id",
         environmentId: "test-env-id",
-        tokenExpiresAt: Date.now() + 3600000
+        tokenExpiresAt: DateTime.toEpochMillis(
+          DateTime.add(DateTime.unsafeNow(), { hours: 1 })
+        )
       })
   })
 )

@@ -1,5 +1,5 @@
 import { Command, Options } from "@effect/cli"
-import { Effect } from "effect"
+import { Array, Effect } from "effect"
 import * as Console from "effect/Console"
 import { listPopulations } from "../../../HttpClient/PopulationClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
@@ -48,14 +48,19 @@ export const listPopulationsCommand = Command.make(
 
           return Console.log(
             `Found ${count} population(s):\n\n${
-              populations
-                .map(
+              Array.join(
+                Array.map(
+                  populations,
                   (population, index) =>
                     `${index + 1}. ${population.name} (${population.id})${
-                      population.description ? `\n   Description: ${population.description}` : ""
-                    }\n   Default: ${population.default}`
-                )
-                .join("\n\n")
+                      population.description ?
+                        `
+   Description: ${population.description}` :
+                        ""
+                    }`
+                ),
+                "\n\n"
+              )
             }`
           )
         }),

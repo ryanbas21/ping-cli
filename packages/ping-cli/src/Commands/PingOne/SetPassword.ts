@@ -1,6 +1,7 @@
 import { Args, Command, Options } from "@effect/cli"
 import { Effect, Redacted } from "effect"
 import * as Console from "effect/Console"
+import * as EffectString from "effect/String"
 import { PingOneValidationError } from "../../Errors.js"
 import { setPingOneUserPassword } from "../../HttpClient/PingOneClient.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
@@ -33,7 +34,7 @@ export const setPassword = Command.make(
   ({ userId, password, environmentId, pingoneToken, forceChange }) =>
     Effect.gen(function*() {
       // Validate userId is not empty
-      if (userId.trim().length === 0) {
+      if (EffectString.isEmpty(EffectString.trim(userId))) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "userId",

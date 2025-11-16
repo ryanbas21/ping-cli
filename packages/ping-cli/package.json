@@ -26,6 +26,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "tsc": "tsc --noEmit -p tsconfig.prod.json",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist"
@@ -55,7 +56,6 @@
     "@effect/cli": "^0.72.1",
     "@effect/platform": "^0.93.0",
     "@effect/platform-node": "^0.100.0",
-    "dotenv": "^17.2.3",
     "effect": "^3.19.3",
     "keytar": "^7.9.0"
   },

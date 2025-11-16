@@ -27,7 +27,7 @@ import { Schema } from "effect"
  */
 export const LicenseSchema = Schema.Struct({
   id: Schema.String,
-  name: Schema.String
+  name: Schema.optional(Schema.String)
 })
 
 /**

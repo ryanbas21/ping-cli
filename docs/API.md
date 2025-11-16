@@ -99,16 +99,16 @@ export const createPingOneUser = (payload) =>
 
 The `ping-cli` package uses **Effect Layer composition** to provide cross-cutting concerns. All HTTP client functions integrate with these services automatically.
 
-#### RetryService
+#### Retry Logic (HttpClientWithRetry)
 
-**Automatic retry logic** with exponential backoff for transient failures.
+**Automatic retry logic** with exponential backoff for transient failures, applied via wrapper layer.
 
 **Features:**
 - Automatically retries network errors, 5xx server errors, and 429 rate limits
 - Exponential backoff: 100ms base, 2x multiplier, max 30 seconds per retry
 - Respects `Retry-After` header from rate limit responses
 - Maximum retry duration: 2 minutes
-- Applied to **all API requests** (both mutations and reads)
+- Applied to **all HTTP requests** via HttpClientWithRetry wrapper at app entry point
 
 **Retry Decision Logic:**
 
@@ -169,40 +169,58 @@ const user3 = yield* readPingOneUser({ envId, token, userId: "user-123" })
 
 **Mutation vs Read Operations:**
 
-| Operation Type | Examples | RetryService | CacheService |
-|----------------|----------|--------------|--------------|
-| **Mutations** | create, update, delete, addMember, removeMember | ✅ Yes | ❌ No |
-| **Reads** | read, list, listMembers | ✅ Yes | ✅ Yes |
+| Operation Type | Examples | Retry (via wrapper) | CacheService |
+|----------------|----------|---------------------|--------------|
+| **Mutations** | create, update, delete, addMember, removeMember | ✅ Yes (automatic) | ❌ No |
+| **Reads** | read, list, listMembers | ✅ Yes (automatic) | ✅ Yes (via helper) |
 
 #### Service Access Pattern
 
-HTTP client functions access services via **dependency injection** using `yield*`:
+HTTP client functions use the wrapper layer pattern for retry and helper functions for caching:
 
 ```typescript
 // Mutation operation (create, update, delete)
 export const createPingOneUser = (payload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService  // Inject retry service
     const apiBaseUrl = yield* getApiBaseUrl()  // Get configurable URL
 
-    const httpRequest = /* Build HTTP request */
+    const request = HttpClientRequest.post(...)
+      .pipe(HttpClientRequest.setHeader("Authorization", `Bearer ${token}`))
 
-    return yield* retry.retryableRequest(httpRequest)  // Wrap with retry
+    // Retry is automatic via HttpClientWithRetry wrapper
+    // Uses executeRequest helper (only requires HttpClient.HttpClient)
+    return yield* executeRequest(request, UserResponseSchema)
   })
+  // Returns: Effect<UserResponse, PingOneApiError, HttpClient.HttpClient>
 
-// Read operation (read, list)
+// Read operation (read, list) - WITHOUT caching
 export const readPingOneUser = (payload) =>
   Effect.gen(function*() {
-    const retry = yield* RetryService    // Inject retry service
-    const cache = yield* CacheService    // Inject cache service
     const apiBaseUrl = yield* getApiBaseUrl()  // Get configurable URL
 
-    const req = HttpClientRequest.get(...).pipe(...)
-    const httpRequest = /* Build HTTP request */
+    const request = HttpClientRequest.get(...)
+      .pipe(HttpClientRequest.setHeader("Authorization", `Bearer ${token}`))
 
-    // Cache wraps retry which wraps HTTP request
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    // Retry is automatic via HttpClientWithRetry wrapper
+    // Uses executeRequest helper (only requires HttpClient.HttpClient)
+    return yield* executeRequest(request, UserResponseSchema)
   })
+  // Returns: Effect<UserResponse, PingOneApiError, HttpClient.HttpClient>
+
+// Read operation - WITH caching
+export const readPingOneUserCached = (payload) =>
+  Effect.gen(function*() {
+    const apiBaseUrl = yield* getApiBaseUrl()  // Get configurable URL
+
+    const request = HttpClientRequest.get(...)
+      .pipe(HttpClientRequest.setHeader("Authorization", `Bearer ${token}`))
+
+    // Retry is automatic via HttpClientWithRetry wrapper
+    // Uses executeCachedRequest helper (yields CacheService)
+    // Schema parameter required for runtime validation
+    return yield* executeCachedRequest(request, UserResponseSchema)
+  })
+  // Returns: Effect<UserResponse, PingOneApiError, HttpClient.HttpClient | CacheService>
 ```
 
 **Benefits:**
@@ -811,7 +829,7 @@ PingOne API implements rate limiting:
 
 - **Rate Limit**: Varies by endpoint and subscription tier
 - **Headers**: Check `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers
-- **Retry**: ✅ **Automatic** - RetryService handles `429 Too Many Requests` with exponential backoff and respects `Retry-After` header
+- **Retry**: ✅ **Automatic** - HttpClientWithRetry wrapper handles `429 Too Many Requests` with exponential backoff and respects `Retry-After` header
 
 ### GitHub API
 
@@ -819,7 +837,7 @@ GitHub API rate limits:
 
 - **Authenticated**: 5,000 requests per hour
 - **Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-- **Retry**: Manual implementation required (GitHub client does not currently use RetryService)
+- **Retry**: Manual implementation required (GitHub client does not currently use HttpClientWithRetry wrapper)
 
 ---
 
@@ -828,8 +846,8 @@ GitHub API rate limits:
 1. **Always validate inputs** using Effect Schema before API calls
 2. **Handle errors gracefully** with proper error types
 3. **Use environment variables** for sensitive credentials (including `PINGONE_API_URL` for regional endpoints)
-4. ✅ **Retry logic is automatic** - RetryService handles all transient failures automatically
-5. ✅ **Caching is automatic** - CacheService handles all read operations automatically
+4. ✅ **Retry logic is automatic** - HttpClientWithRetry wrapper handles all transient failures automatically
+5. ✅ **Caching is opt-in** - Use `executeCachedRequest` helper for read operations that benefit from caching
 6. **Log requests and responses** for debugging (exclude sensitive data)
 7. **Use Effect's resource management** for cleanup and error recovery
 8. **Configure region correctly** - Set `PINGONE_API_URL` for non-US regions

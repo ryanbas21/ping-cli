@@ -1,9 +1,17 @@
 import { Args, Command, Options } from "@effect/cli"
-import { Effect, Predicate } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Predicate from "effect/Predicate"
+import * as Record from "effect/Record"
+import * as Schema from "effect/Schema"
+import * as EffectString from "effect/String"
 import { PingOneAuthError, PingOneValidationError } from "../../Errors.js"
 import { updatePingOneUser } from "../../HttpClient/PingOneClient.js"
 import { getEnvironmentId, getToken } from "./ConfigHelper.js"
+
+// Schema for user update data (JSON object with unknown values)
+const UserUpdateDataSchema = Schema.Record({ key: Schema.String, value: Schema.Unknown })
 
 // Required arguments
 const userId = Args.text({ name: "userId" })
@@ -34,7 +42,7 @@ export const updateUser = Command.make(
   }) =>
     Effect.gen(function*() {
       // Validate userId is not empty
-      if (!Predicate.isTruthy(userId) || userId.trim().length === 0) {
+      if (!Predicate.isTruthy(userId) || Function.pipe(userId, EffectString.trim, EffectString.isEmpty)) {
         return yield* Effect.fail(
           new PingOneAuthError({
             message: "User ID cannot be empty",
@@ -44,18 +52,19 @@ export const updateUser = Command.make(
         )
       }
 
-      // Parse JSON data
-      const userData = yield* Effect.try({
-        try: () => JSON.parse(jsonData) as Record<string, unknown>,
-        catch: (error) =>
-          new PingOneValidationError({
-            field: "jsonData",
-            message: `Invalid JSON format: ${String(error)}`
-          })
-      })
+      // Parse and validate JSON data
+      const userData = yield* Schema.decodeUnknown(Schema.parseJson(UserUpdateDataSchema))(jsonData).pipe(
+        Effect.mapError(
+          (error) =>
+            new PingOneValidationError({
+              field: "jsonData",
+              message: `Invalid JSON format: ${error.message}`
+            })
+        )
+      )
 
       // Validate that at least one field is provided for update
-      if (Object.keys(userData).length === 0) {
+      if (Record.isEmptyRecord(userData)) {
         return yield* Effect.fail(
           new PingOneValidationError({
             field: "jsonData",

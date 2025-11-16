@@ -1,37 +1,23 @@
 /**
- * Service composition for retry logic and caching in ping-cli.
+ * Service layer exports for the PingOne CLI.
  *
  * This module provides Effect-ts service layers for:
- * - Retry logic with exponential backoff
- * - Per-resource caching with automatic invalidation
+ * - **HttpClientWithRetry**: Wrapper layer that adds automatic retry logic to HttpClient
+ * - **CacheService**: Response caching with schema validation (used in helpers)
+ * - **RetryService**: Retry logic service (used internally by HttpClientWithRetry)
+ * - **CredentialService**: Secure credential storage
+ * - **OAuthService**: OAuth token management
  *
- * ## Usage Pattern (Opt-in)
+ * ## Architecture
  *
- * Commands can opt-in to retry and/or caching by providing service layers:
+ * Retry logic is applied via the wrapper layer pattern at app entry point:
+ * - HttpClientWithRetry wraps HttpClient.execute with retry logic
+ * - All HTTP requests automatically get retry behavior
+ * - No need to yield RetryService in application code
  *
- * @example
- * ```ts
- * import { Effect } from "effect"
- * import { readPingOneUser } from "./HttpClient/PingOneClient.js"
- * import { RetryServiceLive } from "./Services/index.js"
- *
- * // Add retry logic to a command
- * const program = readPingOneUser({ envId, token, userId }).pipe(
- *   Effect.provide(RetryServiceLive)
- * )
- * ```
- *
- * @example
- * ```ts
- * import { Effect, Layer } from "effect"
- * import { readPingOneUser } from "./HttpClient/PingOneClient.js"
- * import { EnhancedHttpClientLive } from "./Services/index.js"
- *
- * // Add both retry and caching
- * const program = readPingOneUser({ envId, token, userId }).pipe(
- *   Effect.provide(EnhancedHttpClientLive)
- * )
- * ```
+ * Caching is applied via helper functions (requires schema validation):
+ * - Use `executeCachedRequest` helper for cached operations
+ * - Use `executeRequest` helper for non-cached operations
  *
  * @since 0.0.1
  * @module Services
@@ -41,34 +27,8 @@ export { CacheService, CacheServiceLive, type ResourceType } from "./CacheServic
 
 export { CredentialService, CredentialServiceLive } from "./CredentialService.js"
 
+export { HttpClientWithRetry } from "./HttpClientWithRetry.js"
+
 export { OAuthService, OAuthServiceLive } from "./OAuthService.js"
 
 export { RetryService, RetryServiceLive } from "./RetryService.js"
-
-import { Layer } from "effect"
-import { CacheServiceLive } from "./CacheService.js"
-import { RetryServiceLive } from "./RetryService.js"
-
-/**
- * Combined layer providing both retry logic and caching.
- *
- * This is a convenience layer that merges RetryServiceLive and CacheServiceLive.
- * Commands can use this to get both services at once.
- *
- * @example
- * ```ts
- * import { Effect } from "effect"
- * import { readPingOneUser } from "./HttpClient/PingOneClient.js"
- * import { EnhancedHttpClientLive } from "./Services/index.js"
- *
- * const program = readPingOneUser({ envId, token, userId }).pipe(
- *   Effect.provide(EnhancedHttpClientLive)
- * )
- * ```
- *
- * @since 0.0.1
- */
-export const EnhancedHttpClientLive = Layer.merge(
-  RetryServiceLive,
-  CacheServiceLive
-)

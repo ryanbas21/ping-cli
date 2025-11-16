@@ -6,7 +6,10 @@
  *
  * @since 0.0.3
  */
-import { Context, Effect, Layer } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 import * as crypto from "node:crypto"
 import * as fs from "node:fs"
 import * as os from "node:os"
@@ -125,7 +128,17 @@ const storeInKeychain = (
 ): Effect.Effect<void, CredentialStorageError> =>
   Effect.gen(function*() {
     const keytar = yield* loadKeytar()
-    const credentialsJson = JSON.stringify(credentials)
+    const credentialsJson = yield* Schema.encode(Schema.parseJson(StoredCredentials))(credentials).pipe(
+      Effect.mapError((error) =>
+        new CredentialStorageError({
+          message: "Failed to encode credentials",
+          storage: "keychain",
+          operation: "write",
+          cause: error.message,
+          fallbackAvailable: true
+        })
+      )
+    )
 
     yield* Effect.tryPromise({
       try: () => keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, credentialsJson),
@@ -176,7 +189,17 @@ const retrieveFromKeychain = (): Effect.Effect<
       )
     }
 
-    return JSON.parse(credentialsJson) as StoredCredentials
+    return yield* Schema.decodeUnknown(Schema.parseJson(StoredCredentials))(credentialsJson).pipe(
+      Effect.mapError((error) =>
+        new CredentialStorageError({
+          message: "Failed to decode credentials",
+          storage: "keychain",
+          operation: "read",
+          cause: error.message,
+          fallbackAvailable: true
+        })
+      )
+    )
   })
 
 /**
@@ -204,7 +227,12 @@ const deleteFromKeychain = (): Effect.Effect<void, CredentialStorageError> =>
 /**
  * Generates an encryption key derived from machine-specific information.
  *
- * Uses hostname and home directory to create a deterministic key via scrypt KDF.
+ * Uses hostname and home directory to create a deterministic key via scrypt KDF
+ * with explicit cost parameters:
+ * - N=16384 (CPU/memory cost, 2^14, moderate security)
+ * - r=8 (block size)
+ * - p=1 (parallelization)
+ * - maxmem=32MB (memory limit)
  *
  * **Security Note**: This provides obfuscation and machine-binding for the encrypted
  * file fallback, not cryptographic protection against attackers with file system access.
@@ -226,7 +254,12 @@ const deleteFromKeychain = (): Effect.Effect<void, CredentialStorageError> =>
  */
 const generateEncryptionKey = (): Buffer => {
   const machineId = `${os.hostname()}-${os.homedir()}`
-  return crypto.scryptSync(machineId, "ping-cli-salt", 32)
+  return crypto.scryptSync(machineId, "ping-cli-salt", 32, {
+    N: 16384, // CPU/memory cost parameter (2^14)
+    r: 8, // Block size parameter
+    p: 1, // Parallelization parameter
+    maxmem: 32 * 1024 * 1024 // 32MB memory limit
+  })
 }
 
 /**
@@ -241,29 +274,41 @@ const storeInEncryptedFile = (
   credentials: StoredCredentials
 ): Effect.Effect<void, CredentialStorageError> =>
   Effect.gen(function*() {
-    try {
-      // Ensure directory exists
-      if (!fs.existsSync(CREDENTIAL_DIR)) {
-        fs.mkdirSync(CREDENTIAL_DIR, { recursive: true, mode: 0o700 })
-      }
+    const credentialsJson = yield* Schema.encode(Schema.parseJson(StoredCredentials))(credentials).pipe(
+      Effect.mapError((error) =>
+        new CredentialStorageError({
+          message: "Failed to encode credentials",
+          storage: "encrypted_file",
+          operation: "write",
+          cause: error.message,
+          fallbackAvailable: false
+        })
+      )
+    )
 
-      const key = generateEncryptionKey()
-      const iv = crypto.randomBytes(16)
-      const cipher = crypto.createCipheriv("aes-256-gcm", key, iv)
+    yield* Effect.try({
+      try: () => {
+        // Ensure directory exists
+        if (!fs.existsSync(CREDENTIAL_DIR)) {
+          fs.mkdirSync(CREDENTIAL_DIR, { recursive: true, mode: 0o700 })
+        }
 
-      const credentialsJson = JSON.stringify(credentials)
-      const encrypted = Buffer.concat([
-        cipher.update(credentialsJson, "utf8"),
-        cipher.final()
-      ])
+        const key = generateEncryptionKey()
+        const iv = crypto.randomBytes(16)
+        const cipher = crypto.createCipheriv("aes-256-gcm", key, iv)
 
-      const authTag = cipher.getAuthTag()
+        const encrypted = Buffer.concat([
+          cipher.update(credentialsJson, "utf8"),
+          cipher.final()
+        ])
 
-      // Store IV + authTag + encrypted data
-      const fileContent = Buffer.concat([iv, authTag, encrypted])
-      fs.writeFileSync(CREDENTIAL_FILE, fileContent, { mode: 0o600 })
-    } catch (error) {
-      return yield* Effect.fail(
+        const authTag = cipher.getAuthTag()
+
+        // Store IV + authTag + encrypted data
+        const fileContent = Buffer.concat([iv, authTag, encrypted])
+        fs.writeFileSync(CREDENTIAL_FILE, fileContent, { mode: 0o600 })
+      },
+      catch: (error) =>
         new CredentialStorageError({
           message: "Failed to store credentials in encrypted file",
           storage: "encrypted_file",
@@ -271,8 +316,7 @@ const storeInEncryptedFile = (
           cause: String(error),
           fallbackAvailable: false
         })
-      )
-    }
+    })
   })
 
 /**
@@ -287,44 +331,56 @@ const retrieveFromEncryptedFile = (): Effect.Effect<
   CredentialStorageError
 > =>
   Effect.gen(function*() {
-    try {
-      if (!fs.existsSync(CREDENTIAL_FILE)) {
-        return yield* Effect.fail(
-          new CredentialStorageError({
-            message: "No credentials file found",
-            storage: "encrypted_file",
-            operation: "read",
-            cause: "Credentials file does not exist",
-            fallbackAvailable: false
-          })
-        )
-      }
-
-      const fileContent = fs.readFileSync(CREDENTIAL_FILE)
-
-      // Extract IV, authTag, and encrypted data
-      const iv = fileContent.subarray(0, 16)
-      const authTag = fileContent.subarray(16, 32)
-      const encrypted = fileContent.subarray(32)
-
-      const key = generateEncryptionKey()
-      const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv)
-      decipher.setAuthTag(authTag)
-
-      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
-
-      return JSON.parse(decrypted.toString("utf8")) as StoredCredentials
-    } catch (error) {
+    if (!fs.existsSync(CREDENTIAL_FILE)) {
       return yield* Effect.fail(
         new CredentialStorageError({
-          message: "Failed to retrieve credentials from encrypted file",
+          message: "No credentials file found",
+          storage: "encrypted_file",
+          operation: "read",
+          cause: "Credentials file does not exist",
+          fallbackAvailable: false
+        })
+      )
+    }
+
+    const decryptedJson = yield* Effect.try({
+      try: () => {
+        const fileContent = fs.readFileSync(CREDENTIAL_FILE)
+
+        // Extract IV, authTag, and encrypted data
+        const iv = fileContent.subarray(0, 16)
+        const authTag = fileContent.subarray(16, 32)
+        const encrypted = fileContent.subarray(32)
+
+        const key = generateEncryptionKey()
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv)
+        decipher.setAuthTag(authTag)
+
+        const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+
+        return decrypted.toString("utf8")
+      },
+      catch: (error) =>
+        new CredentialStorageError({
+          message: "Failed to decrypt credentials file",
           storage: "encrypted_file",
           operation: "read",
           cause: String(error),
           fallbackAvailable: false
         })
+    })
+
+    return yield* Schema.decodeUnknown(Schema.parseJson(StoredCredentials))(decryptedJson).pipe(
+      Effect.mapError((error) =>
+        new CredentialStorageError({
+          message: "Failed to decode credentials",
+          storage: "encrypted_file",
+          operation: "read",
+          cause: error.message,
+          fallbackAvailable: false
+        })
       )
-    }
+    )
   })
 
 /**
@@ -334,12 +390,13 @@ const retrieveFromEncryptedFile = (): Effect.Effect<
  */
 const deleteEncryptedFile = (): Effect.Effect<void, CredentialStorageError> =>
   Effect.gen(function*() {
-    try {
-      if (fs.existsSync(CREDENTIAL_FILE)) {
-        fs.unlinkSync(CREDENTIAL_FILE)
-      }
-    } catch (error) {
-      return yield* Effect.fail(
+    yield* Effect.try({
+      try: () => {
+        if (fs.existsSync(CREDENTIAL_FILE)) {
+          fs.unlinkSync(CREDENTIAL_FILE)
+        }
+      },
+      catch: (error) =>
         new CredentialStorageError({
           message: "Failed to delete credentials file",
           storage: "encrypted_file",
@@ -347,8 +404,7 @@ const deleteEncryptedFile = (): Effect.Effect<void, CredentialStorageError> =>
           cause: String(error),
           fallbackAvailable: false
         })
-      )
-    }
+    })
   })
 
 /**

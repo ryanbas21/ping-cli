@@ -6,7 +6,7 @@
  * @since 0.0.3
  */
 import { Command } from "@effect/cli"
-import { Effect } from "effect"
+import { DateTime, Effect } from "effect"
 import * as Console from "effect/Console"
 import { OAuthService } from "../../../Services/index.js"
 
@@ -17,8 +17,8 @@ import { OAuthService } from "../../../Services/index.js"
  * @returns Formatted date string
  */
 const formatExpirationTime = (timestamp: number): string => {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
+  const dateTime = DateTime.unsafeMake(timestamp)
+  return DateTime.formatLocal(dateTime)
 }
 
 /**

@@ -6,8 +6,8 @@
  *
  * @since 0.0.2
  */
-import { HttpClientRequest } from "@effect/platform"
-import { Effect } from "effect"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as Effect from "effect/Effect"
 import { getApiBaseUrl } from "../Commands/PingOne/ConfigHelper.js"
 import { EnvironmentSchema, ListEnvironmentsResponseSchema } from "./EnvironmentSchemas.js"
 import { executeCachedRequest } from "./helpers.js"

@@ -7,9 +7,16 @@
  * @since 0.0.1
  */
 import { FileSystem } from "@effect/platform"
-import { Array, Ref, Schema } from "effect"
-import { Effect } from "effect"
+import * as Array from "effect/Array"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Either from "effect/Either"
+import * as Function from "effect/Function"
+import * as Number from "effect/Number"
+import * as Predicate from "effect/Predicate"
+import * as Ref from "effect/Ref"
+import * as Schema from "effect/Schema"
+import * as EffectString from "effect/String"
 import { createPingOneUser, deletePingOneUser, listPingOneUsers } from "./PingOneClient.js"
 import {
   PingOneBulkDeleteResultSchema,
@@ -52,14 +59,14 @@ const parseCsvLine = (line: string): ReadonlyArray<string> => {
     if (char === "\"") {
       inQuotes = !inQuotes
     } else if (char === "," && !inQuotes) {
-      values.push(currentValue.trim())
+      values.push(EffectString.trim(currentValue))
       currentValue = ""
     } else {
       currentValue += char
     }
   }
 
-  values.push(currentValue.trim())
+  values.push(EffectString.trim(currentValue))
   return values
 }
 
@@ -68,7 +75,10 @@ const parseCsvLine = (line: string): ReadonlyArray<string> => {
  */
 const parseCsv = (content: string) =>
   Effect.gen(function*() {
-    const lines = content.split("\n").filter((line) => line.trim().length > 0)
+    const lines = Function.pipe(
+      content.split("\n"),
+      Array.filter((line) => !EffectString.isEmpty(EffectString.trim(line)))
+    )
 
     if (lines.length === 0) {
       return yield* Effect.fail(new Error("CSV file is empty"))
@@ -77,11 +87,11 @@ const parseCsv = (content: string) =>
     const headerLine = lines[0]
     const headers = parseCsvLine(headerLine)
 
-    const rows = lines.slice(1).map((line, index) => {
+    const rows = Array.map(Array.drop(lines, 1), (line, index) => {
       const values = parseCsvLine(line)
       const obj: Record<string, string> = {}
 
-      headers.forEach((header, i) => {
+      Array.forEach(headers, (header, i) => {
         obj[header] = values[i] || ""
       })
 
@@ -111,13 +121,12 @@ export const bulkImportUsers = ({
     const content = yield* fs.readFileString(filePath)
 
     // Parse based on format
-    const rawData = format === "json"
-      ? yield* Effect.try({
-        try: () => JSON.parse(content) as Array<unknown>,
-        catch: (error) => new Error(`Failed to parse JSON: ${String(error)}`)
-      })
+    const rawData: ReadonlyArray<unknown> = format === "json"
+      ? yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(content).pipe(
+        Effect.mapError((error) => new Error(`Failed to parse JSON: ${error.message}`))
+      )
       : yield* parseCsv(content).pipe(
-        Effect.map((rows) => rows.map((r) => r.data))
+        Effect.map((rows) => Array.map(rows, (r) => r.data))
       )
 
     // Display dry-run mode notification
@@ -138,33 +147,36 @@ export const bulkImportUsers = ({
 
     // Process users with controlled concurrency
     yield* Effect.forEach(
-      rawData.map((item, index) => ({ item, index })),
+      Array.map(rawData, (item, index) => ({ item, index })),
       ({ item: rawUser, index }) =>
         Effect.gen(function*() {
           const row = index + 1
 
           // Validate and decode user data
-          const parseResult = yield* Schema.decodeUnknown(PingOneBulkImportUserSchema)(rawUser).pipe(
+          const validationResult = yield* Schema.decodeUnknown(PingOneBulkImportUserSchema)(rawUser).pipe(
             Effect.either
           )
 
-          if (parseResult._tag === "Left") {
+          if (validationResult._tag === "Left") {
             yield* Ref.update(failedRef, (n) => n + 1)
-            const usernameValue = typeof rawUser === "object" && rawUser !== null && "username" in rawUser
-              ? String(rawUser.username)
+            const usernameValue = Predicate.isRecord(rawUser) && "username" in rawUser
+              ? (Predicate.isString(rawUser.username) ? rawUser.username : "unknown")
               : "unknown"
             yield* Ref.update(errorsRef, (errors) =>
               Array.append(errors, {
                 row,
                 username: usernameValue,
-                error: `Validation failed: ${String(parseResult.left)}`
+                error: `Validation failed: ${
+                  Predicate.isString(validationResult.left)
+                    ? validationResult.left
+                    : JSON.stringify(validationResult.left)
+                }`
               }))
             yield* Console.log(`❌ Row ${row}: Validation failed for ${usernameValue}`)
             return yield* Effect.void
           }
 
-          // Cast to proper TypeScript interface
-          const user = parseResult.right as BulkImportUser
+          const user = validationResult.right as BulkImportUser
 
           // Build user data object
           const userData: {
@@ -207,35 +219,49 @@ export const bulkImportUsers = ({
           }
 
           // Create user
-          const createResult = yield* createPingOneUser({
+          yield* createPingOneUser({
             envId,
             token,
             userData
-          }).pipe(Effect.either)
-
-          if (createResult._tag === "Left") {
-            yield* Ref.update(failedRef, (n) => n + 1)
-            const errorMessage = createResult.left instanceof Error
-              ? createResult.left.message
-              : JSON.stringify(createResult.left)
-            yield* Ref.update(errorsRef, (errors) =>
-              Array.append(errors, {
-                row,
-                username: user.username,
-                error: errorMessage
-              }))
-            yield* Console.log(`❌ Row ${row}: Failed to create user ${user.username}`)
-          } else {
-            yield* Ref.update(successfulRef, (n) => n + 1)
-            yield* Console.log(`✅ Row ${row}: Created user ${user.username}`)
-          }
+          }).pipe(
+            Effect.either,
+            Effect.flatMap(
+              Either.match({
+                onLeft: (error) =>
+                  Effect.gen(function*() {
+                    yield* Ref.update(failedRef, (n) => n + 1)
+                    const errorMessage = Predicate.isError(error)
+                      ? error.message
+                      : JSON.stringify(error)
+                    yield* Ref.update(errorsRef, (errors) =>
+                      Array.append(errors, {
+                        row,
+                        username: user.username,
+                        error: errorMessage
+                      }))
+                    yield* Console.log(`❌ Row ${row}: Failed to create user ${user.username}`)
+                  }),
+                onRight: () =>
+                  Effect.gen(function*() {
+                    yield* Ref.update(successfulRef, (n) => n + 1)
+                    yield* Console.log(`✅ Row ${row}: Created user ${user.username}`)
+                  })
+              })
+            )
+          )
 
           // Update progress counter and show progress
           const processed = yield* Ref.updateAndGet(processedRef, (n) => n + 1)
           if (processed % 10 === 0 || processed === total) {
             const successful = yield* Ref.get(successfulRef)
             const failed = yield* Ref.get(failedRef)
-            const percentage = Math.round((processed / total) * 100)
+            const percentage = Function.pipe(
+              processed,
+              Number.divide(total),
+              (opt) => opt._tag === "Some" ? opt.value : 0,
+              Number.multiply(100),
+              Number.round(0)
+            )
             yield* Console.log(
               `⏳ Progress: ${processed}/${total} (${percentage}%) - ✅ ${successful} succeeded, ❌ ${failed} failed`
             )
@@ -285,7 +311,7 @@ export const bulkExportUsers = ({ envId, token, filePath, format, filter, limit 
     } else {
       // Export as CSV
       const headers = ["id", "username", "email", "givenName", "familyName", "department", "enabled", "mfaEnabled"]
-      const csvLines = [headers.join(",")]
+      const csvLines = [Array.join(headers, ",")]
 
       for (const user of users) {
         const row = [
@@ -298,10 +324,10 @@ export const bulkExportUsers = ({ envId, token, filePath, format, filter, limit 
           String(user.enabled),
           String(user.mfaEnabled)
         ]
-        csvLines.push(row.map((v) => `"${v}"`).join(","))
+        csvLines.push(Array.join(Array.map(row, (v) => `"${v}"`), ","))
       }
 
-      const csvContent = csvLines.join("\n")
+      const csvContent = Array.join(csvLines, "\n")
       yield* fs.writeFileString(filePath, csvContent)
     }
 
@@ -334,13 +360,12 @@ export const bulkDeleteUsers = ({
     const content = yield* fs.readFileString(filePath)
 
     // Parse based on format
-    const rawData = format === "json"
-      ? yield* Effect.try({
-        try: () => JSON.parse(content) as Array<unknown>,
-        catch: (error) => new Error(`Failed to parse JSON: ${String(error)}`)
-      })
+    const rawData: ReadonlyArray<unknown> = format === "json"
+      ? yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(content).pipe(
+        Effect.mapError((error) => new Error(`Failed to parse JSON: ${error.message}`))
+      )
       : yield* parseCsv(content).pipe(
-        Effect.map((rows) => rows.map((r) => r.data))
+        Effect.map((rows) => Array.map(rows, (r) => r.data))
       )
 
     // Display dry-run mode notification
@@ -371,13 +396,15 @@ export const bulkDeleteUsers = ({
 
           if (parseResult._tag === "Left") {
             yield* Ref.update(failedRef, (n) => n + 1)
-            const userIdValue = typeof rawUser === "object" && rawUser !== null && "userId" in rawUser
-              ? String(rawUser.userId)
+            const userIdValue = Predicate.isRecord(rawUser) && "userId" in rawUser
+              ? (Predicate.isString(rawUser.userId) ? rawUser.userId : "unknown")
               : "unknown"
             yield* Ref.update(errorsRef, (errors) =>
               Array.append(errors, {
                 userId: userIdValue,
-                error: `Validation failed: ${String(parseResult.left)}`
+                error: `Validation failed: ${
+                  Predicate.isString(parseResult.left) ? parseResult.left : JSON.stringify(parseResult.left)
+                }`
               }))
             yield* Console.log(`❌ Validation failed for user ID: ${userIdValue}`)
             return yield* Effect.void
@@ -395,34 +422,48 @@ export const bulkDeleteUsers = ({
           }
 
           // Delete user
-          const deleteResult = yield* deletePingOneUser({
+          yield* deletePingOneUser({
             envId,
             token,
             userId
-          }).pipe(Effect.either)
-
-          if (deleteResult._tag === "Left") {
-            yield* Ref.update(failedRef, (n) => n + 1)
-            const errorMessage = deleteResult.left instanceof Error
-              ? deleteResult.left.message
-              : JSON.stringify(deleteResult.left)
-            yield* Ref.update(errorsRef, (errors) =>
-              Array.append(errors, {
-                userId,
-                error: errorMessage
-              }))
-            yield* Console.log(`❌ Failed to delete user ${userId}`)
-          } else {
-            yield* Ref.update(successfulRef, (n) => n + 1)
-            yield* Console.log(`✅ Deleted user ${userId}`)
-          }
+          }).pipe(
+            Effect.either,
+            Effect.flatMap(
+              Either.match({
+                onLeft: (error) =>
+                  Effect.gen(function*() {
+                    yield* Ref.update(failedRef, (n) => n + 1)
+                    const errorMessage = Predicate.isError(error)
+                      ? error.message
+                      : JSON.stringify(error)
+                    yield* Ref.update(errorsRef, (errors) =>
+                      Array.append(errors, {
+                        userId,
+                        error: errorMessage
+                      }))
+                    yield* Console.log(`❌ Failed to delete user ${userId}`)
+                  }),
+                onRight: () =>
+                  Effect.gen(function*() {
+                    yield* Ref.update(successfulRef, (n) => n + 1)
+                    yield* Console.log(`✅ Deleted user ${userId}`)
+                  })
+              })
+            )
+          )
 
           // Update progress counter and show progress
           const processed = yield* Ref.updateAndGet(processedRef, (n) => n + 1)
           if (processed % 10 === 0 || processed === total) {
             const successful = yield* Ref.get(successfulRef)
             const failed = yield* Ref.get(failedRef)
-            const percentage = Math.round((processed / total) * 100)
+            const percentage = Function.pipe(
+              processed,
+              Number.divide(total),
+              (opt) => opt._tag === "Some" ? opt.value : 0,
+              Number.multiply(100),
+              Number.round(0)
+            )
             yield* Console.log(
               `⏳ Progress: ${processed}/${total} (${percentage}%) - ✅ ${successful} succeeded, ❌ ${failed} failed`
             )

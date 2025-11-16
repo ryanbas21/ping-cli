@@ -15,8 +15,21 @@ export const PopulationSchema = Schema.Struct({
       id: Schema.String
     })
   ),
+  environment: Schema.optional(
+    Schema.Struct({
+      id: Schema.String
+    })
+  ),
+  userCount: Schema.optional(Schema.Number),
+  preferredLanguage: Schema.optional(Schema.String),
+  theme: Schema.optional(
+    Schema.Struct({
+      id: Schema.String
+    })
+  ),
   createdAt: Schema.optional(Schema.String),
-  updatedAt: Schema.optional(Schema.String)
+  updatedAt: Schema.optional(Schema.String),
+  _links: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
 })
 
 /**

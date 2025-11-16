@@ -6,9 +6,9 @@
  *
  * @since 0.0.1
  */
-import { HttpClientRequest } from "@effect/platform"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
 import type { Schema } from "effect"
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { getApiBaseUrl } from "../Commands/PingOne/ConfigHelper.js"
 import {
   ApplicationSchema,
