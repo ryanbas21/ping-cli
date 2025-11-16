@@ -353,30 +353,40 @@ describe("CacheService", () => {
         const request = HttpClientRequest.get("https://api.pingone.com/v1/environments/env-123/users/user-123")
           .pipe(HttpClientRequest.bearerToken("test-token"))
 
-        let callCount = 0
+        let computeCallCount = 0
 
-        // First compute returns invalid data (missing email field)
-        const invalidCompute = Effect.sync(() => {
-          callCount++
-          return { id: "user-123", name: "Test User" }
-        })
-
-        // Second compute returns valid data
-        const validCompute = Effect.sync(() => {
-          callCount++
+        // Single compute function - always returns valid data when called
+        const compute = Effect.sync(() => {
+          computeCallCount++
           return { id: "user-123", name: "Test User", email: "test@example.com" }
         })
 
-        // First call without schema - caches invalid data
-        const result1 = yield* cache.getCached(request, invalidCompute)
-        assert.strictEqual(callCount, 1)
-        assert.strictEqual(result1.id, "user-123")
+        // First, cache invalid data (missing email) WITHOUT schema validation
+        const cachedInvalidData = yield* cache.getCached(
+          request,
+          Effect.sync(() => ({ id: "user-123", name: "Test User" }))
+        )
 
-        // Second call WITH schema - should detect invalid cached data and recompute
-        const result2 = yield* cache.getCached(request, validCompute, UserSchema)
-        assert.strictEqual(callCount, 2) // Recomputed because validation failed
-        assert.strictEqual(result2.id, "user-123")
-        assert.strictEqual(result2.email, "test@example.com")
+        // At this point, cache contains invalid data (no email field)
+        // Verify the cached data is actually invalid (missing email)
+        assert.strictEqual(cachedInvalidData.id, "user-123")
+        assert.strictEqual(cachedInvalidData.name, "Test User")
+        assert.strictEqual("email" in cachedInvalidData, false)
+
+        // callCount should still be 0 because we haven't called compute yet
+        assert.strictEqual(computeCallCount, 0)
+
+        // Now call WITH schema - should detect invalid cached data and call compute
+        const result = yield* cache.getCached(request, compute, UserSchema)
+
+        // Should have called compute because validation failed
+        assert.strictEqual(computeCallCount, 1)
+        assert.strictEqual(result.id, "user-123")
+        assert.strictEqual(result.email, "test@example.com")
+
+        // Calling again should use cached valid data (not call compute again)
+        yield* cache.getCached(request, compute, UserSchema)
+        assert.strictEqual(computeCallCount, 1) // Still 1
       }).pipe(Effect.provide(CacheServiceLive)))
 
     it.effect("should invalidate cache entry on validation failure", () =>
