@@ -47,7 +47,7 @@ export interface CacheService {
   readonly getCached: <A, E, R>(
     request: HttpClientRequest.HttpClientRequest,
     compute: Effect.Effect<A, E, R>,
-    schema?: Schema.Schema<A, unknown>
+    schema?: Schema.Schema<A, any, never>
   ) => Effect.Effect<A, E, R>
 
   /**
@@ -176,7 +176,7 @@ type ResourceCache = Cache.Cache<string, CachedResponse, never>
  */
 const validateCachedValue = <A>(
   value: unknown,
-  schema: Schema.Schema<A, unknown>
+  schema: Schema.Schema<A, any, never>
 ): Effect.Effect<Option.Option<A>, never> =>
   Schema.decodeUnknown(schema)(value).pipe(
     Effect.map(Option.some),
@@ -244,7 +244,7 @@ export const CacheServiceLive = Layer.effect(
       getCached: <A, E, R>(
         request: HttpClientRequest.HttpClientRequest,
         compute: Effect.Effect<A, E, R>,
-        schema?: Schema.Schema<A, unknown>
+        schema?: Schema.Schema<A, any, never>
       ) => {
         const url = new URL(request.url)
         const resourceType = extractResourceType(url.pathname)
