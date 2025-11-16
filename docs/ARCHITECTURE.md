@@ -152,15 +152,17 @@ export const createPingOneUser = (payload) =>
 
 ### CacheService
 
-Provides response caching to reduce API calls:
+Provides response caching with runtime schema validation to reduce API calls:
 
 **Location**: `packages/ping-cli/src/Services/CacheService.ts`
 
 **Features**:
+- **Required schema validation**: All cached values must be validated with a schema for type safety
 - Per-resource caching (separate caches for users, groups, applications, populations)
 - Cache TTL: 5 minutes
 - Cache capacity: 100 entries per resource type
 - Automatic cache invalidation on mutations
+- Automatic cache invalidation on schema validation failures
 - Applied to all read operations (read, list)
 
 **Usage Pattern**:
@@ -176,7 +178,8 @@ export const readPingOneUser = (payload) =>
       /* HTTP execution logic */
     })
 
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    // Schema parameter is required for runtime validation
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest), UserResponseSchema)
   })
 ```
 
@@ -568,24 +571,28 @@ readPingOneUser({ envId, token, userId })
   // - yield* CacheService (inject caching)
   // - yield* getApiBaseUrl() (configurable API URL)
   // - Creates HttpClientRequest.get(...)
-  // - Calls cache.getCached(req, httpRequest)
+  // - Calls cache.getCached(req, httpRequest, UserResponseSchema)
 
 // 3. Cache checks for cached response
-CacheService.getCached(req, httpRequest)
+CacheService.getCached(req, httpRequest, UserResponseSchema)
   // Key: hash of request URL + headers
   // Check users cache (separate from groups, apps, populations)
-  // If found and not expired (< 5 min old): return cached response
+  // If found and not expired (< 5 min old):
+  //   - Validate cached value against UserResponseSchema
+  //   - If valid: return cached response
+  //   - If invalid: invalidate entry and continue to cache miss
   // If not found or expired: execute httpRequest with retry
 
 // 4. If cache miss, execute HTTP request
   // - Makes HTTP GET to ${apiBaseUrl}/environments/${envId}/users/${userId}
   // - RetryService retries on transient errors
-  // - Validates response schema
-  // - Stores response in cache
+  // - Validates response against UserResponseSchema
+  // - Stores validated response in cache
   // - Returns response
 
 // 5. Result
-Cache Hit: Returns immediately without API call
+Cache Hit (valid): Returns immediately without API call
+Cache Hit (invalid): Invalidates entry, makes API call, stores new response
 Cache Miss: Makes API call, stores in cache, returns response
 ```
 

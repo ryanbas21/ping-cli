@@ -201,7 +201,8 @@ export const readPingOneUser = (payload) =>
     const httpRequest = /* Build HTTP request */
 
     // Cache wraps retry which wraps HTTP request
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest))
+    // Schema parameter is required for runtime validation
+    return yield* cache.getCached(req, retry.retryableRequest(httpRequest), UserResponseSchema)
   })
 ```
 

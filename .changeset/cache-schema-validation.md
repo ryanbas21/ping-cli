@@ -1,16 +1,32 @@
 ---
-"p1-cli": patch
+"p1-cli": major
 ---
 
-Add runtime schema validation to CacheService for improved type safety
+BREAKING CHANGE: CacheService now requires schema validation for all cached values
 
-CacheService now supports optional schema validation for cached values:
-- Validates cached data at runtime to ensure type correctness
+CacheService.getCached() now requires a schema parameter for improved type safety:
+- **BREAKING**: Schema parameter is now required (was optional)
+- Validates all cached data at runtime to ensure type correctness
 - Automatically invalidates and recomputes corrupted cache entries
 - Protects against cache corruption and API version mismatches
-- Maintains backward compatibility (schema parameter is optional)
+- Eliminates unsafe type assertions (removed `as A` cast)
 
-Updated README documentation:
+**Migration Guide:**
+```typescript
+// Before (schema was optional):
+cache.getCached(request, compute)
+
+// After (schema is required):
+cache.getCached(request, compute, responseSchema)
+
+// For arbitrary data, use Schema.Unknown:
+cache.getCached(request, compute, Schema.Unknown)
+```
+
+Additional P0 security improvements:
+- CredentialService: Added explicit scrypt parameters (N=16384, r=8, p=1, maxmem=32MB)
+
+Updated documentation:
 - Fixed license from ISC to MIT to match package.json
-- Enhanced CacheService documentation with schema validation details
-- Improved executeCachedRequest documentation
+- Enhanced CacheService documentation with required schema validation
+- Updated all examples to include schema parameter

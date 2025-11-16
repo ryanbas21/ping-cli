@@ -884,7 +884,7 @@ export const executeRequest = <A, I, R>(
 >
 ```
 
-**executeCachedRequest** - GET requests with automatic caching and optional schema validation:
+**executeCachedRequest** - GET requests with automatic caching and runtime schema validation:
 ```typescript
 export const executeCachedRequest = <A, I, R>(
   request: HttpClientRequest.HttpClientRequest,
@@ -896,7 +896,7 @@ export const executeCachedRequest = <A, I, R>(
 >
 ```
 
-When a schema is provided to CacheService, cached values are validated at runtime. If validation fails (e.g., due to cache corruption or API version changes), the cache entry is automatically invalidated and the value is recomputed.
+**IMPORTANT**: CacheService requires a schema for all cached values. Cached values are validated at runtime for type safety. If validation fails (e.g., due to cache corruption or API version changes), the cache entry is automatically invalidated and the value is recomputed.
 
 **executeVoidRequest** - DELETE/POST operations returning void:
 ```typescript
