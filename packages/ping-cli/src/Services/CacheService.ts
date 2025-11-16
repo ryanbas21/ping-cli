@@ -33,22 +33,22 @@ export interface CacheService {
    * Only caches GET requests. Other HTTP methods bypass the cache.
    * Cache invalidation occurs on POST/PUT/PATCH/DELETE to the same resource.
    *
-   * When a schema is provided, cached values are validated at runtime to ensure
+   * Cached values are validated at runtime using the provided schema to ensure
    * type safety. If validation fails, the cache entry is treated as a miss and
    * the value is recomputed.
    *
    * @param request - The HTTP request to cache
    * @param compute - The Effect to compute if cache miss occurs
-   * @param schema - Optional schema to validate cached values for type safety
+   * @param schema - Schema to validate cached values for type safety
    * @returns The cached or computed result
    *
    * @since 0.0.1
    */
-  readonly getCached: <A, E, R>(
+  readonly getCached: <A, E, R, SR = never>(
     request: HttpClientRequest.HttpClientRequest,
     compute: Effect.Effect<A, E, R>,
-    schema?: Schema.Schema<A, any, never>
-  ) => Effect.Effect<A, E, R>
+    schema: Schema.Schema<A, any, SR>
+  ) => Effect.Effect<A, E, R | SR>
 
   /**
    * Invalidates cache entries for a specific resource type and path.
@@ -174,10 +174,10 @@ type ResourceCache = Cache.Cache<string, CachedResponse, never>
  *
  * @internal
  */
-const validateCachedValue = <A>(
+const validateCachedValue = <A, SR>(
   value: unknown,
-  schema: Schema.Schema<A, any, never>
-): Effect.Effect<Option.Option<A>, never> =>
+  schema: Schema.Schema<A, any, SR>
+): Effect.Effect<Option.Option<A>, never, SR> =>
   Schema.decodeUnknown(schema)(value).pipe(
     Effect.map(Option.some),
     Effect.catchAll(() => Effect.succeed(Option.none()))
@@ -241,10 +241,10 @@ export const CacheServiceLive = Layer.effect(
     }
 
     return CacheService.of({
-      getCached: <A, E, R>(
+      getCached: <A, E, R, SR = never>(
         request: HttpClientRequest.HttpClientRequest,
         compute: Effect.Effect<A, E, R>,
-        schema?: Schema.Schema<A, any, never>
+        schema: Schema.Schema<A, any, SR>
       ) => {
         const url = new URL(request.url)
         const resourceType = extractResourceType(url.pathname)
@@ -293,28 +293,21 @@ export const CacheServiceLive = Layer.effect(
             return result
           }
 
-          // If schema provided, validate cached value
-          if (schema !== undefined) {
-            const validated = yield* validateCachedValue(cached.value, schema)
+          // Validate cached value using schema
+          const validated = yield* validateCachedValue(cached.value, schema)
 
-            if (validated._tag === "None") {
-              // Validation failed - treat as cache miss
-              // Invalidate corrupted entry
-              yield* cache.invalidate(cacheKey)
-              // Compute fresh value
-              const result = yield* compute
-              yield* cache.set(cacheKey, result)
-              return result
-            }
-
-            // Validation succeeded - return validated value
-            return validated.value
+          if (validated._tag === "None") {
+            // Validation failed - treat as cache miss
+            // Invalidate corrupted entry
+            yield* cache.invalidate(cacheKey)
+            // Compute fresh value
+            const result = yield* compute
+            yield* cache.set(cacheKey, result)
+            return result
           }
 
-          // No schema - use legacy behavior (unsafe but backward compatible)
-          // SAFETY: When no schema is provided, we rely on cache key uniqueness
-          // and the assumption that the same key always stores/retrieves the same type A
-          return cached.value as A
+          // Validation succeeded - return validated value
+          return validated.value
         })
       },
 

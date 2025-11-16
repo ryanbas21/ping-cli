@@ -4,6 +4,28 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { CacheService, CacheServiceLive } from "./CacheService.js"
 
+// Test schemas
+const TestDataSchema = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String
+})
+
+const TestDataWithTypeSchema = Schema.Struct({
+  id: Schema.String,
+  type: Schema.String
+})
+
+const TestDataWithTokenSchema = Schema.Struct({
+  id: Schema.String,
+  token: Schema.String
+})
+
+const TestDataIdOnlySchema = Schema.Struct({
+  id: Schema.String
+})
+
+const VoidSchema = Schema.Void
+
 describe("CacheService", () => {
   describe("getCached", () => {
     it.effect("should cache GET requests", () =>
@@ -21,12 +43,12 @@ describe("CacheService", () => {
         })
 
         // First call should execute compute
-        const result1 = yield* cache.getCached(request, compute)
+        const result1 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1)
         assert.strictEqual(result1.id, "user-456")
 
         // Second call should return cached value without executing compute
-        const result2 = yield* cache.getCached(request, compute)
+        const result2 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1) // Still 1 - didn't execute again
         assert.strictEqual(result2.id, "user-456")
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -46,12 +68,12 @@ describe("CacheService", () => {
         })
 
         // First call should execute compute
-        const result1 = yield* cache.getCached(request, compute)
+        const result1 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1)
         assert.strictEqual(result1.id, "user-new")
 
         // Second call should also execute compute (POST not cached)
-        const result2 = yield* cache.getCached(request, compute)
+        const result2 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 2) // Executed again
         assert.strictEqual(result2.id, "user-new")
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -71,11 +93,11 @@ describe("CacheService", () => {
         })
 
         // First call
-        yield* cache.getCached(request, compute)
+        yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1)
 
         // Second call should execute again (PUT not cached)
-        yield* cache.getCached(request, compute)
+        yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 2)
       }).pipe(Effect.provide(CacheServiceLive)))
 
@@ -93,8 +115,8 @@ describe("CacheService", () => {
           return { id: "user-456", name: "Patched User" }
         })
 
-        yield* cache.getCached(request, compute)
-        yield* cache.getCached(request, compute)
+        yield* cache.getCached(request, compute, TestDataSchema)
+        yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 2) // Both executed
       }).pipe(Effect.provide(CacheServiceLive)))
 
@@ -114,11 +136,11 @@ describe("CacheService", () => {
         })
 
         // Cache the GET request
-        yield* cache.getCached(getRequest, getCompute)
+        yield* cache.getCached(getRequest, getCompute, TestDataSchema)
         assert.strictEqual(getCallCount, 1)
 
         // Verify it's cached
-        yield* cache.getCached(getRequest, getCompute)
+        yield* cache.getCached(getRequest, getCompute, TestDataSchema)
         assert.strictEqual(getCallCount, 1) // Still 1 - from cache
 
         // Now DELETE the same resource (should invalidate cache)
@@ -127,10 +149,10 @@ describe("CacheService", () => {
             HttpClientRequest.bearerToken("test-token")
           )
 
-        yield* cache.getCached(deleteRequest, Effect.void)
+        yield* cache.getCached(deleteRequest, Effect.void, VoidSchema)
 
         // Next GET should re-execute compute (cache was invalidated)
-        yield* cache.getCached(getRequest, getCompute)
+        yield* cache.getCached(getRequest, getCompute, TestDataSchema)
         assert.strictEqual(getCallCount, 2) // Executed again after invalidation
       }).pipe(Effect.provide(CacheServiceLive)))
 
@@ -163,14 +185,14 @@ describe("CacheService", () => {
         })
 
         // Cache both
-        yield* cache.getCached(userRequest, userCompute)
-        yield* cache.getCached(groupRequest, groupCompute)
+        yield* cache.getCached(userRequest, userCompute, TestDataWithTypeSchema)
+        yield* cache.getCached(groupRequest, groupCompute, TestDataWithTypeSchema)
         assert.strictEqual(userCallCount, 1)
         assert.strictEqual(groupCallCount, 1)
 
         // Verify both are cached
-        yield* cache.getCached(userRequest, userCompute)
-        yield* cache.getCached(groupRequest, groupCompute)
+        yield* cache.getCached(userRequest, userCompute, TestDataWithTypeSchema)
+        yield* cache.getCached(groupRequest, groupCompute, TestDataWithTypeSchema)
         assert.strictEqual(userCallCount, 1) // Still cached
         assert.strictEqual(groupCallCount, 1) // Still cached
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -204,18 +226,18 @@ describe("CacheService", () => {
         })
 
         // Cache with token 1
-        const result1a = yield* cache.getCached(request1, compute1)
+        const result1a = yield* cache.getCached(request1, compute1, TestDataWithTokenSchema)
         assert.strictEqual(callCount1, 1)
         assert.strictEqual(result1a.token, "token-1")
 
         // Cache with token 2 (should execute, different cache key)
-        const result2a = yield* cache.getCached(request2, compute2)
+        const result2a = yield* cache.getCached(request2, compute2, TestDataWithTokenSchema)
         assert.strictEqual(callCount2, 1)
         assert.strictEqual(result2a.token, "token-2")
 
         // Verify both are cached independently
-        yield* cache.getCached(request1, compute1)
-        yield* cache.getCached(request2, compute2)
+        yield* cache.getCached(request1, compute1, TestDataWithTokenSchema)
+        yield* cache.getCached(request2, compute2, TestDataWithTokenSchema)
         assert.strictEqual(callCount1, 1) // Still cached
         assert.strictEqual(callCount2, 1) // Still cached
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -236,11 +258,11 @@ describe("CacheService", () => {
         })
 
         // First call
-        yield* cache.getCached(request, compute)
+        yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1)
 
         // Second call should also execute (unrecognized resource not cached)
-        yield* cache.getCached(request, compute)
+        yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 2)
       }).pipe(Effect.provide(CacheServiceLive)))
 
@@ -260,12 +282,12 @@ describe("CacheService", () => {
         })
 
         // First call should execute and cache
-        const result1 = yield* cache.getCached(request, compute)
+        const result1 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1)
         assert.strictEqual(result1.id, "pop-789")
 
         // Second call should use cache
-        const result2 = yield* cache.getCached(request, compute)
+        const result2 = yield* cache.getCached(request, compute, TestDataSchema)
         assert.strictEqual(callCount, 1) // Still 1 - from cache
         assert.strictEqual(result2.id, "pop-789")
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -298,8 +320,8 @@ describe("CacheService", () => {
         })
 
         // Cache both users
-        yield* cache.getCached(request1, compute1)
-        yield* cache.getCached(request2, compute2)
+        yield* cache.getCached(request1, compute1, TestDataIdOnlySchema)
+        yield* cache.getCached(request2, compute2, TestDataIdOnlySchema)
         assert.strictEqual(callCount1, 1)
         assert.strictEqual(callCount2, 1)
 
@@ -307,8 +329,8 @@ describe("CacheService", () => {
         yield* cache.invalidate("users", "/environments/env-123/users/user-1")
 
         // user-1 should re-execute, user-2 should still be cached
-        yield* cache.getCached(request1, compute1)
-        yield* cache.getCached(request2, compute2)
+        yield* cache.getCached(request1, compute1, TestDataIdOnlySchema)
+        yield* cache.getCached(request2, compute2, TestDataIdOnlySchema)
         assert.strictEqual(callCount1, 2) // Re-executed
         assert.strictEqual(callCount2, 1) // Still cached
       }).pipe(Effect.provide(CacheServiceLive)))
@@ -361,10 +383,11 @@ describe("CacheService", () => {
           return { id: "user-123", name: "Test User", email: "test@example.com" }
         })
 
-        // First, cache invalid data (missing email) WITHOUT schema validation
+        // First, cache invalid data (missing email) - use partial schema
         const cachedInvalidData = yield* cache.getCached(
           request,
-          Effect.sync(() => ({ id: "user-123", name: "Test User" }))
+          Effect.sync(() => ({ id: "user-123", name: "Test User" })),
+          TestDataSchema
         )
 
         // At this point, cache contains invalid data (no email field)
@@ -403,7 +426,7 @@ describe("CacheService", () => {
           return { id: "user-123", name: "Test User" } // Missing email
         })
 
-        yield* cache.getCached(request, invalidCompute)
+        yield* cache.getCached(request, invalidCompute, TestDataSchema)
         assert.strictEqual(callCount, 1)
 
         // Try to retrieve with schema (should fail validation and recompute)
@@ -421,7 +444,7 @@ describe("CacheService", () => {
         assert.strictEqual(callCount, 2) // Still 2 - using cached valid data
       }).pipe(Effect.provide(CacheServiceLive)))
 
-    it.effect("should work without schema for backward compatibility", () =>
+    it.effect("should cache arbitrary data with Schema.Unknown", () =>
       Effect.gen(function*() {
         const cache = yield* CacheService
 
@@ -434,13 +457,13 @@ describe("CacheService", () => {
           return { id: "user-123", arbitrary: "data", canBe: "anything" }
         })
 
-        // Works without schema (legacy behavior)
-        const result1 = yield* cache.getCached(request, compute)
+        // Works with Schema.Unknown for arbitrary data
+        const result1 = yield* cache.getCached(request, compute, Schema.Unknown)
         assert.strictEqual(callCount, 1)
-        assert.strictEqual(result1.id, "user-123")
+        assert.deepStrictEqual(result1, { id: "user-123", arbitrary: "data", canBe: "anything" })
 
-        // Still cached without schema
-        yield* cache.getCached(request, compute)
+        // Still cached with Schema.Unknown
+        yield* cache.getCached(request, compute, Schema.Unknown)
         assert.strictEqual(callCount, 1)
       }).pipe(Effect.provide(CacheServiceLive)))
 

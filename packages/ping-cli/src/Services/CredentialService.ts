@@ -227,7 +227,12 @@ const deleteFromKeychain = (): Effect.Effect<void, CredentialStorageError> =>
 /**
  * Generates an encryption key derived from machine-specific information.
  *
- * Uses hostname and home directory to create a deterministic key via scrypt KDF.
+ * Uses hostname and home directory to create a deterministic key via scrypt KDF
+ * with explicit cost parameters:
+ * - N=16384 (CPU/memory cost, 2^14, moderate security)
+ * - r=8 (block size)
+ * - p=1 (parallelization)
+ * - maxmem=32MB (memory limit)
  *
  * **Security Note**: This provides obfuscation and machine-binding for the encrypted
  * file fallback, not cryptographic protection against attackers with file system access.
@@ -249,7 +254,12 @@ const deleteFromKeychain = (): Effect.Effect<void, CredentialStorageError> =>
  */
 const generateEncryptionKey = (): Buffer => {
   const machineId = `${os.hostname()}-${os.homedir()}`
-  return crypto.scryptSync(machineId, "ping-cli-salt", 32)
+  return crypto.scryptSync(machineId, "ping-cli-salt", 32, {
+    N: 16384, // CPU/memory cost parameter (2^14)
+    r: 8, // Block size parameter
+    p: 1, // Parallelization parameter
+    maxmem: 32 * 1024 * 1024 // 32MB memory limit
+  })
 }
 
 /**

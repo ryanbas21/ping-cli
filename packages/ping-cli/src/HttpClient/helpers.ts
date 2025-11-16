@@ -87,7 +87,7 @@ export const executeCachedRequest = <A, I, R>(
 
     const compute = executeRequest(request, responseSchema)
 
-    return yield* cache.getCached(request, compute)
+    return yield* cache.getCached(request, compute, responseSchema)
   })
 
 /**

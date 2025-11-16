@@ -29,7 +29,8 @@ export const MockCacheServiceLive = Layer.succeed(
   CacheService.of({
     getCached: <A, E, R>(
       _request: unknown,
-      compute: Effect.Effect<A, E, R>
+      compute: Effect.Effect<A, E, R>,
+      _schema: unknown
     ) => compute,
     invalidate: (_resourceType: unknown, _urlPath: string) => Effect.void
   })
