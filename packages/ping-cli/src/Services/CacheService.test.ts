@@ -354,28 +354,26 @@ describe("CacheService", () => {
           .pipe(HttpClientRequest.bearerToken("test-token"))
 
         let callCount = 0
-        let returnValidData = true
 
-        const compute = Effect.sync(() => {
+        // First compute returns invalid data (missing email field)
+        const invalidCompute = Effect.sync(() => {
           callCount++
-          if (returnValidData) {
-            // First call returns invalid data (missing email field)
-            return { id: "user-123", name: "Test User" }
-          }
-          // Second call returns valid data
+          return { id: "user-123", name: "Test User" }
+        })
+
+        // Second compute returns valid data
+        const validCompute = Effect.sync(() => {
+          callCount++
           return { id: "user-123", name: "Test User", email: "test@example.com" }
         })
 
         // First call without schema - caches invalid data
-        const result1 = yield* cache.getCached(request, compute)
+        const result1 = yield* cache.getCached(request, invalidCompute)
         assert.strictEqual(callCount, 1)
         assert.strictEqual(result1.id, "user-123")
 
-        // Change compute to return valid data
-        returnValidData = false
-
         // Second call WITH schema - should detect invalid cached data and recompute
-        const result2 = yield* cache.getCached(request, compute, UserSchema)
+        const result2 = yield* cache.getCached(request, validCompute, UserSchema)
         assert.strictEqual(callCount, 2) // Recomputed because validation failed
         assert.strictEqual(result2.id, "user-123")
         assert.strictEqual(result2.email, "test@example.com")
