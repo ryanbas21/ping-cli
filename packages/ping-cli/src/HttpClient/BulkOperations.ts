@@ -121,11 +121,10 @@ export const bulkImportUsers = ({
     const content = yield* fs.readFileString(filePath)
 
     // Parse based on format
-    const rawData = format === "json"
-      ? yield* Effect.try({
-        try: () => JSON.parse(content) as Array<unknown>,
-        catch: (error) => new Error(`Failed to parse JSON: ${String(error)}`)
-      })
+    const rawData: ReadonlyArray<unknown> = format === "json"
+      ? yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(content).pipe(
+        Effect.mapError((error) => new Error(`Failed to parse JSON: ${error.message}`))
+      )
       : yield* parseCsv(content).pipe(
         Effect.map((rows) => Array.map(rows, (r) => r.data))
       )
@@ -361,11 +360,10 @@ export const bulkDeleteUsers = ({
     const content = yield* fs.readFileString(filePath)
 
     // Parse based on format
-    const rawData = format === "json"
-      ? yield* Effect.try({
-        try: () => JSON.parse(content) as Array<unknown>,
-        catch: (error) => new Error(`Failed to parse JSON: ${String(error)}`)
-      })
+    const rawData: ReadonlyArray<unknown> = format === "json"
+      ? yield* Schema.decodeUnknown(Schema.parseJson(Schema.Array(Schema.Unknown)))(content).pipe(
+        Effect.mapError((error) => new Error(`Failed to parse JSON: ${error.message}`))
+      )
       : yield* parseCsv(content).pipe(
         Effect.map((rows) => Array.map(rows, (r) => r.data))
       )

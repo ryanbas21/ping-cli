@@ -53,24 +53,13 @@ export const updateUser = Command.make(
       }
 
       // Parse and validate JSON data
-      const userData = yield* Effect.try({
-        try: (): unknown => JSON.parse(jsonData),
-        catch: (error) =>
-          new PingOneValidationError({
-            field: "jsonData",
-            message: `Invalid JSON format: ${String(error)}`
-          })
-      }).pipe(
-        Effect.flatMap((parsed) =>
-          Schema.decodeUnknown(UserUpdateDataSchema)(parsed).pipe(
-            Effect.mapError(
-              (error) =>
-                new PingOneValidationError({
-                  field: "jsonData",
-                  message: `Invalid JSON format (expected object): ${error.message}`
-                })
-            )
-          )
+      const userData = yield* Schema.decodeUnknown(Schema.parseJson(UserUpdateDataSchema))(jsonData).pipe(
+        Effect.mapError(
+          (error) =>
+            new PingOneValidationError({
+              field: "jsonData",
+              message: `Invalid JSON format: ${error.message}`
+            })
         )
       )
 
