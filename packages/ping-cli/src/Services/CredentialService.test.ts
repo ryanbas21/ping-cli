@@ -183,6 +183,16 @@ describe("CredentialService", () => {
               // Simulate encoding to JSON (what keychain/file storage does)
               const jsonString = yield* Schema.encode(Schema.parseJson(StoredCredentials))(
                 credentials
+              ).pipe(
+                Effect.mapError(() =>
+                  new CredentialStorageError({
+                    message: "Failed to encode credentials",
+                    storage: "keychain",
+                    operation: "write",
+                    cause: "Encoding error",
+                    fallbackAvailable: false
+                  })
+                )
               )
               // Verify it's valid JSON
               assert.isTrue(typeof jsonString === "string")
@@ -199,7 +209,17 @@ describe("CredentialService", () => {
               })
 
               // Decode using Schema
-              return yield* Schema.decodeUnknown(Schema.parseJson(StoredCredentials))(jsonString)
+              return yield* Schema.decodeUnknown(Schema.parseJson(StoredCredentials))(jsonString).pipe(
+                Effect.mapError(() =>
+                  new CredentialStorageError({
+                    message: "Failed to decode credentials",
+                    storage: "keychain",
+                    operation: "read",
+                    cause: "Decoding error",
+                    fallbackAvailable: false
+                  })
+                )
+              )
             }),
           delete: () => Effect.void
         })
@@ -228,7 +248,7 @@ describe("CredentialService", () => {
               return yield* Effect.fail(
                 new CredentialStorageError({
                   message: "Failed to encode credentials",
-                  storage: "test",
+                  storage: "keychain",
                   operation: "write",
                   cause: "Schema encoding failed",
                   fallbackAvailable: false
@@ -271,7 +291,7 @@ describe("CredentialService", () => {
                 Effect.mapError(() =>
                   new CredentialStorageError({
                     message: "Failed to decode credentials",
-                    storage: "test",
+                    storage: "encrypted_file",
                     operation: "read",
                     cause: "Malformed JSON",
                     fallbackAvailable: false
