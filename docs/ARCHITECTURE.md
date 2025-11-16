@@ -112,98 +112,120 @@ The `ping-cli` package uses **Effect Layer composition** to provide cross-cuttin
 ```
 Application Entry Point (main.ts)
     ↓
-Layer Composition (Layer.mergeAll)
-    ├── NodeHttpClient.layer      # HTTP client
+Wrapper Layer Composition
+    ├── HttpClientWithRetry       # Wraps HttpClient with retry logic
+    │   └── NodeHttpClient.layer  # Base HTTP client
     ├── NodeContext.layer          # Node.js runtime
-    ├── RetryServiceLive           # Retry logic service
-    └── CacheServiceLive           # Caching service
+    ├── CacheServiceLive           # Caching service (used in helpers)
+    └── RetryServiceLive           # Retry service (used in wrapper)
     ↓
-Commands (yield* services as needed)
+Commands
     ↓
-HTTP Client Functions (yield* services as needed)
+HTTP Client Functions (only require HttpClient.HttpClient)
 ```
 
-### RetryService
+### HttpClientWithRetry (Wrapper Layer)
 
-Provides automatic retry logic with exponential backoff for transient failures:
+Wraps HttpClient to add automatic retry logic for transient failures:
 
-**Location**: `packages/ping-cli/src/Services/RetryService.ts`
+**Location**: `packages/ping-cli/src/Services/HttpClientWithRetry.ts`
+
+**Architecture**: Wrapper layer following Effect-ts best practices
 
 **Features**:
+- Wraps HttpClient.execute with RetryService logic
 - Retries network errors, 5xx server errors, and 429 rate limits
 - Exponential backoff: 100ms base, 2x multiplier, max 30s
 - Respects `Retry-After` header from rate limit responses
 - Maximum retry duration: 2 minutes
-- Applied to all mutation operations (create, update, delete)
-- Applied to all read operations (read, list)
+- **Applied automatically** to all HTTP requests (transparent to consumers)
 
-**Usage Pattern**:
+**Implementation**:
 ```typescript
-export const createPingOneUser = (payload) =>
+export const HttpClientWithRetry = Layer.effect(
+  HttpClient.HttpClient,
   Effect.gen(function*() {
+    const underlying = yield* HttpClient.HttpClient
     const retry = yield* RetryService
-    const apiBaseUrl = yield* getApiBaseUrl()
 
-    const httpRequest = /* HTTP request logic */
-
-    return yield* retry.retryableRequest(httpRequest)
+    return HttpClient.make((request) =>
+      retry.retryableRequest(underlying.execute(request))
+    )
   })
+)
 ```
+
+**Benefits**:
+- HTTP client consumers only require `HttpClient.HttpClient` (no RetryService in R)
+- Retry logic applied once at app entry point
+- Composable with other wrappers
+- Easy to test - mock just HttpClient
 
 ### CacheService
 
-Provides response caching with runtime schema validation to reduce API calls:
+Provides response caching with runtime schema validation (applied in helpers):
 
 **Location**: `packages/ping-cli/src/Services/CacheService.ts`
 
+**Architecture**: Used in executeCachedRequest helper (requires schema)
+
 **Features**:
-- **Required schema validation**: All cached values must be validated with a schema for type safety
+- **Required schema validation**: All cached values validated for type safety
 - Per-resource caching (separate caches for users, groups, applications, populations)
 - Cache TTL: 5 minutes
 - Cache capacity: 100 entries per resource type
 - Automatic cache invalidation on mutations
 - Automatic cache invalidation on schema validation failures
-- Applied to all read operations (read, list)
+- **Applied via executeCachedRequest** helper function
 
-**Usage Pattern**:
+**Why Not a Wrapper Layer?**
+Caching cannot be done at the HttpClient layer because:
+- HttpClient.execute returns raw `HttpClientResponse`
+- Schema validation happens after parsing response body
+- Cache validation requires the response schema
+
+**Usage in Helpers**:
 ```typescript
-export const readPingOneUser = (payload) =>
-  Effect.gen(function*() {
-    const retry = yield* RetryService
-    const cache = yield* CacheService
-    const apiBaseUrl = yield* getApiBaseUrl()
-
-    const req = HttpClientRequest.get(...).pipe(...)
-    const httpRequest = Effect.gen(function*() {
-      /* HTTP execution logic */
-    })
-
-    // Schema parameter is required for runtime validation
-    return yield* cache.getCached(req, retry.retryableRequest(httpRequest), UserResponseSchema)
-  })
+export const executeCachedRequest = <A, I, R>(
+  request: HttpClientRequest.HttpClientRequest,
+  responseSchema: Schema.Schema<A, I, R>
+): Effect.Effect<A, E, HttpClient.HttpClient | CacheService | R> =>
+  CacheService.pipe(
+    Effect.flatMap((cache) =>
+      cache.getCached(request, executeRequest(request, responseSchema), responseSchema)
+    )
+  )
 ```
 
 ### Layer Composition in main.ts
 
-Services are provided globally via `Layer.mergeAll`:
+Services composed using wrapper pattern:
 
 ```typescript
-import { CacheServiceLive, RetryServiceLive } from "./Services/index.js"
+import { HttpClientWithRetry, CacheServiceLive, RetryServiceLive } from "./Services/index.js"
+
+// Compose HttpClient wrapper: Base -> Retry
+const httpClientLayer = HttpClientWithRetry.pipe(
+  Layer.provide(
+    Layer.mergeAll(NodeHttpClient.layer, RetryServiceLive)
+  )
+)
 
 const layers = Layer.mergeAll(
-  NodeHttpClient.layer,
+  httpClientLayer,
   NodeContext.layer,
-  RetryServiceLive,
-  CacheServiceLive
+  CacheServiceLive,
+  // ... other services
 )
 
 PingCli(process.argv).pipe(Effect.provide(layers), NodeRuntime.runMain)
 ```
 
 **Benefits**:
-- Services are memoized (single instance per application)
-- HTTP client functions access services via `yield*` (dependency injection)
-- Easy to test by providing mock layers
+- Clean separation: retry at HttpClient layer, caching after schema validation
+- HTTP clients only require HttpClient.HttpClient (or +CacheService for cached requests)
+- Composable architecture - can add more wrappers (metrics, logging, etc.)
+- Easy to test - mock just HttpClient or provide test layers
 - No per-effect provision (anti-pattern avoided)
 
 ---
@@ -489,22 +511,24 @@ Input Validation
 Configuration Resolution (env vars + CLI options)
     ↓
 HTTP Client Function (HttpClient/)
-    ├── yield* RetryService       # Inject retry logic
-    ├── yield* CacheService        # Inject caching (reads only)
+    ├── Uses HttpClient.HttpClient (wrapped with retry at app entry point)
+    ├── Uses executeCachedRequest helper for cached reads
     └── yield* getApiBaseUrl()     # Get configurable API base URL
     ↓
 Request Schema Validation
     ↓
-Cache Check (Read Operations Only)
-    ├── Cache Hit → Return Cached Response
-    └── Cache Miss → Continue
+HTTP Request (via HttpClient.HttpClient - already wrapped with retry)
     ↓
-HTTP Request (@effect/platform HttpClient)
-    ↓
-Retry Logic (Automatic)
-    ├── Success → Continue
+Retry Logic (Automatic via HttpClientWithRetry wrapper)
+    ├── Success → Return Response
     ├── Transient Error (5xx, 429, network) → Retry with backoff
     └── Permanent Error (4xx) → Fail immediately
+    ↓
+Response Schema Validation (in helper)
+    ↓
+Cache Check (Read Operations using executeCachedRequest Only)
+    ├── Cache Hit → Return Cached Response (after schema validation)
+    └── Cache Miss → Store in Cache
     ↓
 HTTP Response
     ↓
@@ -540,22 +564,23 @@ getApiBaseUrl() // Effect<string> - reads PINGONE_API_URL or defaults
 // 5. Build user data payload
 { username, email, population: { id: popId }, ... }
 
-// 6. Call HTTP client with service integration
+// 6. Call HTTP client (retry automatic via HttpClientWithRetry wrapper)
 createPingOneUser({ envId, token, userData })
   // Inside createPingOneUser:
-  // - yield* RetryService (inject retry logic)
   // - yield* getApiBaseUrl() (configurable API URL)
   // - Validates request against PingOneCreateUserRequest schema
   // - Makes HTTP POST to ${apiBaseUrl}/environments/${envId}/users
-  // - RetryService automatically retries on transient errors (5xx, 429, network)
+  // - Uses executeRequest helper (only requires HttpClient.HttpClient)
+  // - HttpClient.execute is ALREADY wrapped with retry at app entry point
+  // - Automatic retries on transient errors (5xx, 429, network)
   // - Validates response against PingOneCreateUserResponse schema
-  // Returns Effect<UserResponse, PingOneApiError>
+  // Returns Effect<UserResponse, PingOneApiError, HttpClient.HttpClient>
 
 // 7. Handle result
 Success: Console.log("User created: {user.id}")
 Failure: Console.error("Failed: {error.message}")
-  // If transient error, already retried automatically
-  // If permanent error (4xx), fails immediately
+  // Retry was automatic via HttpClientWithRetry wrapper
+  // If permanent error (4xx), fails immediately (no retry)
 ```
 
 ### Example: Read User Flow (with Caching)
@@ -567,14 +592,14 @@ $ ping-cli read_user user-123
 // 2. HTTP client called with caching
 readPingOneUser({ envId, token, userId })
   // Inside readPingOneUser:
-  // - yield* RetryService (inject retry logic)
-  // - yield* CacheService (inject caching)
   // - yield* getApiBaseUrl() (configurable API URL)
   // - Creates HttpClientRequest.get(...)
-  // - Calls cache.getCached(req, httpRequest, UserResponseSchema)
+  // - Uses executeCachedRequest helper (yields CacheService)
+  // - HttpClient.execute is ALREADY wrapped with retry at app entry point
+  // Returns Effect<UserResponse, PingOneApiError, HttpClient.HttpClient | CacheService>
 
 // 3. Cache checks for cached response
-CacheService.getCached(req, httpRequest, UserResponseSchema)
+CacheService.getCached(req, executeRequest(req, UserResponseSchema), UserResponseSchema)
   // Key: hash of request URL + headers
   // Check users cache (separate from groups, apps, populations)
   // If found and not expired (< 5 min old):
@@ -583,9 +608,9 @@ CacheService.getCached(req, httpRequest, UserResponseSchema)
   //   - If invalid: invalidate entry and continue to cache miss
   // If not found or expired: execute httpRequest with retry
 
-// 4. If cache miss, execute HTTP request
+// 4. If cache miss, execute HTTP request (via executeRequest helper)
   // - Makes HTTP GET to ${apiBaseUrl}/environments/${envId}/users/${userId}
-  // - RetryService retries on transient errors
+  // - HttpClient already has retry via HttpClientWithRetry wrapper
   // - Validates response against UserResponseSchema
   // - Stores validated response in cache
   // - Returns response
@@ -593,7 +618,7 @@ CacheService.getCached(req, httpRequest, UserResponseSchema)
 // 5. Result
 Cache Hit (valid): Returns immediately without API call
 Cache Hit (invalid): Invalidates entry, makes API call, stores new response
-Cache Miss: Makes API call, stores in cache, returns response
+Cache Miss: Makes API call (with automatic retry), stores in cache, returns response
 ```
 
 ---

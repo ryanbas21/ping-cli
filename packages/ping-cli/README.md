@@ -831,38 +831,52 @@ If you receive `403 Forbidden` or `400 Bad Request` errors for these operations:
 
 ### Service Composition
 
-The CLI uses Effect-ts service composition for cross-cutting concerns:
+The CLI uses Effect-ts wrapper layer pattern for cross-cutting concerns:
 
-#### RetryService
+#### Retry Logic (HttpClientWithRetry)
 
-Automatically retries transient failures with exponential backoff:
-- Retries network errors, 5xx server errors, and 429 rate limits
-- Respects `Retry-After` header from rate limit responses
-- Maximum retry duration: 2 minutes
-- Applied to all mutation operations (create, update, delete)
+Automatically retries transient failures via wrapper layer:
+- **Architecture**: Wrapper layer wraps HttpClient.execute at app entry point
+- **Retries**: Network errors, 5xx server errors, and 429 rate limits
+- **Respects**: `Retry-After` header from rate limit responses
+- **Maximum retry duration**: 2 minutes
+- **Applied to**: All HTTP requests automatically (transparent to consumers)
 
-#### CacheService
+#### Caching (CacheService)
 
-Caches read operation responses to reduce API calls with optional runtime type safety:
+Caches read operation responses with runtime type safety:
+- **Architecture**: Applied in executeCachedRequest helper after schema validation
 - **Per-resource caching**: Separate caches for users, groups, applications, populations
 - **Cache TTL**: 5 minutes
 - **Cache capacity**: 100 entries per resource type
 - **Automatic invalidation**: Cache cleared on mutations (POST/PUT/PATCH/DELETE)
-- **Runtime validation**: Optional schema validation for cached values ensures type safety
+- **Runtime validation**: Schema validation for cached values ensures type safety
 - **Self-healing**: Invalid cached entries are automatically recomputed
-- **Corruption protection**: Validates data integrity on cache retrieval
-- **Applied to**: All read operations (read, list)
+- **Applied to**: Read operations via executeCachedRequest helper
+
+#### Why This Architecture?
+
+- **Retry**: Applied at HttpClient layer (no schema needed)
+- **Caching**: Applied after schema validation (requires response schema)
+- **Clean separation**: Each concern at the right abstraction level
 
 ### Layer Composition
 
-Services are provided via Effect's Layer system in `src/main.ts`:
+Services are composed using wrapper pattern in `src/main.ts`:
 
 ```typescript
+// Retry wrapper: Base -> Retry
+const httpClientLayer = HttpClientWithRetry.pipe(
+  Layer.provide(
+    Layer.mergeAll(NodeHttpClient.layer, RetryServiceLive)
+  )
+)
+
 const layers = Layer.mergeAll(
-  NodeHttpClient.layer,
+  httpClientLayer,
   NodeContext.layer,
-  RetryServiceLive,
-  CacheServiceLive
+  CacheServiceLive,
+  // ... other services
 )
 ```
 
@@ -880,7 +894,7 @@ export const executeRequest = <A, I, R>(
 ): Effect.Effect<
   A,
   PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | RetryService | R
+  HttpClient.HttpClient | R
 >
 ```
 
@@ -892,11 +906,14 @@ export const executeCachedRequest = <A, I, R>(
 ): Effect.Effect<
   A,
   PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | RetryService | CacheService | R
+  HttpClient.HttpClient | CacheService | R
 >
 ```
 
-**IMPORTANT**: CacheService requires a schema for all cached values. Cached values are validated at runtime for type safety. If validation fails (e.g., due to cache corruption or API version changes), the cache entry is automatically invalidated and the value is recomputed.
+**IMPORTANT**:
+- **Retry is automatic** via HttpClientWithRetry wrapper (transparent to helpers)
+- **Caching requires schema** for runtime validation - applied in executeCachedRequest
+- Invalid cached entries are automatically invalidated and recomputed
 
 **executeVoidRequest** - DELETE/POST operations returning void:
 ```typescript
@@ -905,7 +922,7 @@ export const executeVoidRequest = (
 ): Effect.Effect<
   HttpClientResponseType.HttpClientResponse,
   PingOneApiError | HttpClientError.HttpClientError,
-  HttpClient.HttpClient | RetryService
+  HttpClient.HttpClient
 >
 ```
 
