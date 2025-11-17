@@ -2,11 +2,49 @@
 
 ## 0.3.0
 
+### Minor Changes
+
+- [#15](https://github.com/ryanbas21/ping-cli/pull/15) [`215666a`](https://github.com/ryanbas21/ping-cli/commit/215666a67daf76d8d14dfd4cb5a24ad1264b381c) Thanks [@ryanbas21](https://github.com/ryanbas21)! - refactor a lot of code to be more effectful, use new modules, add features and schemas
+
+- [#15](https://github.com/ryanbas21/ping-cli/pull/15) [`215666a`](https://github.com/ryanbas21/ping-cli/commit/215666a67daf76d8d14dfd4cb5a24ad1264b381c) Thanks [@ryanbas21](https://github.com/ryanbas21)! - **BREAKING CHANGE (pre-1.0)**: CacheService now requires schema validation for all cached values
+
+  CacheService.getCached() now requires a schema parameter for improved type safety:
+
+  - **BREAKING**: Schema parameter is now required (was optional)
+  - Validates all cached data at runtime to ensure type correctness
+  - Automatically invalidates and recomputes corrupted cache entries
+  - Protects against cache corruption and API version mismatches
+  - Eliminates unsafe type assertions (removed `as A` cast)
+
+  **Note**: This is a breaking change in a pre-1.0 package. Per semver, breaking changes in pre-1.0 versions are acceptable as minor releases.
+
+  **Migration Guide:**
+
+  ```typescript
+  // Before (schema was optional):
+  cache.getCached(request, compute);
+
+  // After (schema is required):
+  cache.getCached(request, compute, responseSchema);
+
+  // For arbitrary data, use Schema.Unknown:
+  cache.getCached(request, compute, Schema.Unknown);
+  ```
+
+  Additional improvements:
+
+  - CredentialService: Added explicit scrypt parameters (N=16384, r=8, p=1, maxmem=32MB) for improved security
+  - Enhanced CacheService documentation with required schema validation
+  - Updated all examples to include schema parameter
+
+## 0.3.0
+
 ### Major Changes
 
 - **BREAKING CHANGE**: CacheService now requires schema validation for all cached values
 
   CacheService.getCached() now requires a schema parameter for improved type safety:
+
   - **BREAKING**: Schema parameter is now required (was optional)
   - Validates all cached data at runtime to ensure type correctness
   - Automatically invalidates and recomputes corrupted cache entries
@@ -14,21 +52,24 @@
   - Eliminates unsafe type assertions (removed `as A` cast)
 
   **Migration Guide:**
+
   ```typescript
   // Before (schema was optional):
-  cache.getCached(request, compute)
+  cache.getCached(request, compute);
 
   // After (schema is required):
-  cache.getCached(request, compute, responseSchema)
+  cache.getCached(request, compute, responseSchema);
 
   // For arbitrary data, use Schema.Unknown:
-  cache.getCached(request, compute, Schema.Unknown)
+  cache.getCached(request, compute, Schema.Unknown);
   ```
 
   Additional P0 security improvements:
+
   - CredentialService: Added explicit scrypt parameters (N=16384, r=8, p=1, maxmem=32MB)
 
   Updated documentation:
+
   - Fixed license from ISC to MIT to match package.json
   - Enhanced CacheService documentation with required schema validation
   - Updated all examples to include schema parameter
