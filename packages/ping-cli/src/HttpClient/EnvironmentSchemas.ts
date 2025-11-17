@@ -4,6 +4,7 @@
  * Schema definitions for PingOne environment resources.
  * Environments are isolated containers for identity configurations.
  *
+ * @internal
  * @since 0.0.2
  */
 import { Schema } from "effect"

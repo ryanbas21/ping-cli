@@ -19,6 +19,7 @@
  * - Use `executeCachedRequest` helper for cached operations
  * - Use `executeRequest` helper for non-cached operations
  *
+ * @internal
  * @since 0.0.1
  * @module Services
  */

@@ -9,6 +9,7 @@
  * - Caching uses CacheService directly (cannot be done at HttpClient layer due to schema requirement)
  * - All helpers only require HttpClient.HttpClient (+ CacheService for cached requests)
  *
+ * @internal
  * @since 0.0.2
  */
 import type { HttpClientError, HttpClientRequest, HttpClientResponse as HttpClientResponseType } from "@effect/platform"

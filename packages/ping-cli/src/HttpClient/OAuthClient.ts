@@ -4,6 +4,7 @@
  * Provides functions for obtaining and refreshing OAuth access tokens
  * using the client credentials grant flow.
  *
+ * @internal
  * @since 0.0.3
  */
 import type { HttpClientError } from "@effect/platform"

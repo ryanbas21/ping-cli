@@ -4,6 +4,7 @@
  * Provides functions for managing PingOne environments via the PingOne Management API.
  * Includes operations for reading and listing environments.
  *
+ * @internal
  * @since 0.0.2
  */
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
