@@ -1,6 +1,6 @@
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer, Option, Redacted } from "effect"
+import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { OAuthFlowError } from "../../../Errors.js"
 import { StoredCredentials } from "../../../HttpClient/OAuthSchemas.js"
 import { OAuthService } from "../../../Services/index.js"
@@ -408,6 +408,311 @@ describe("Auth Login Command", () => {
         assert.isTrue(tokenAcquired)
       }).pipe(
         Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
+    })
+  })
+
+  describe("environment variable resolution", () => {
+    it.effect("should use environment variables when CLI flags are not provided", () => {
+      let storedCreds: StoredCredentials | undefined
+
+      const mockOAuthService = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          storeCredentials: (credentials) =>
+            Effect.sync(() => {
+              storedCreds = credentials
+            }),
+          getAccessToken: () => Effect.succeed("test-access-token"),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "Not needed",
+                cause: "Mock",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false
+            })
+        })
+      )
+
+      const envConfig = ConfigProvider.fromMap(
+        new Map([
+          ["PINGONE_CLIENT_ID", "env-client-id"],
+          ["PINGONE_CLIENT_SECRET", "env-client-secret"],
+          ["PINGONE_ENV_ID", "env-environment-id"],
+          ["PINGONE_AUTH_REGION", "eu"]
+        ])
+      )
+
+      return Effect.gen(function*() {
+        const handler = login.handler
+
+        yield* handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        assert.isDefined(storedCreds)
+        assert.strictEqual(storedCreds?.clientId, "env-client-id")
+        assert.strictEqual(storedCreds?.clientSecret, "env-client-secret")
+        assert.strictEqual(storedCreds?.environmentId, "env-environment-id")
+        assert.strictEqual(
+          storedCreds?.tokenEndpoint,
+          "https://auth.pingone.eu/env-environment-id/as/token"
+        )
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
+        Effect.withConfigProvider(envConfig)
+      )
+    })
+
+    it.effect("should fall back to default region when env var is invalid", () => {
+      let storedCreds: StoredCredentials | undefined
+
+      const mockOAuthService = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          storeCredentials: (credentials) =>
+            Effect.sync(() => {
+              storedCreds = credentials
+            }),
+          getAccessToken: () => Effect.succeed("test-access-token"),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "Not needed",
+                cause: "Mock",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false
+            })
+        })
+      )
+
+      const envConfig = ConfigProvider.fromMap(
+        new Map([
+          ["PINGONE_CLIENT_ID", "test-client"],
+          ["PINGONE_CLIENT_SECRET", "test-secret"],
+          ["PINGONE_ENV_ID", "test-env"],
+          ["PINGONE_AUTH_REGION", "invalid-region"]
+        ])
+      )
+
+      return Effect.gen(function*() {
+        const handler = login.handler
+
+        yield* handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        assert.strictEqual(
+          storedCreds?.tokenEndpoint,
+          "https://auth.pingone.com/test-env/as/token"
+        )
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
+        Effect.withConfigProvider(envConfig)
+      )
+    })
+  })
+
+  describe("interactive prompt fallback", () => {
+    it.effect("should prompt for all credentials when not provided", () => {
+      let storedCreds: StoredCredentials | undefined
+
+      const mockOAuthService = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          storeCredentials: (credentials) =>
+            Effect.sync(() => {
+              storedCreds = credentials
+            }),
+          getAccessToken: () => Effect.succeed("test-access-token"),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "Not needed",
+                cause: "Mock",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false
+            })
+        })
+      )
+
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler
+
+        const inputsEffect = Effect.gen(function*() {
+          yield* MockTerminal.inputText("prompted-client-id")
+          yield* MockTerminal.inputKey("return")
+          yield* MockTerminal.inputText("prompted-secret")
+          yield* MockTerminal.inputKey("return")
+          yield* MockTerminal.inputText("prompted-env-id")
+          yield* MockTerminal.inputKey("return")
+        })
+
+        const handlerEffect = handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.some("com" as const)
+        })
+
+        yield* Effect.all([inputsEffect, handlerEffect], { concurrency: "unbounded" })
+
+        assert.isDefined(storedCreds)
+        assert.strictEqual(storedCreds?.clientId, "prompted-client-id")
+        assert.strictEqual(storedCreds?.clientSecret, "prompted-secret")
+        assert.strictEqual(storedCreds?.environmentId, "prompted-env-id")
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
+        Effect.withConfigProvider(emptyConfig)
+      )
+    })
+  })
+
+  describe("input precedence", () => {
+    it.effect("should prioritize CLI flags over environment variables", () => {
+      let storedCreds: StoredCredentials | undefined
+
+      const mockOAuthService = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          storeCredentials: (credentials) =>
+            Effect.sync(() => {
+              storedCreds = credentials
+            }),
+          getAccessToken: () => Effect.succeed("test-access-token"),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "Not needed",
+                cause: "Mock",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false
+            })
+        })
+      )
+
+      const envConfig = ConfigProvider.fromMap(
+        new Map([
+          ["PINGONE_CLIENT_ID", "env-client-id"],
+          ["PINGONE_CLIENT_SECRET", "env-client-secret"],
+          ["PINGONE_ENV_ID", "env-environment-id"],
+          ["PINGONE_AUTH_REGION", "eu"]
+        ])
+      )
+
+      return Effect.gen(function*() {
+        const handler = login.handler
+
+        yield* handler({
+          clientId: Option.some("cli-client-id"),
+          clientSecret: Option.some(Redacted.make("cli-client-secret")),
+          environmentId: Option.some("cli-environment-id"),
+          region: Option.some("asia" as const)
+        })
+
+        // CLI flags should take precedence
+        assert.strictEqual(storedCreds?.clientId, "cli-client-id")
+        assert.strictEqual(storedCreds?.clientSecret, "cli-client-secret")
+        assert.strictEqual(storedCreds?.environmentId, "cli-environment-id")
+        assert.strictEqual(
+          storedCreds?.tokenEndpoint,
+          "https://auth.pingone.asia/cli-environment-id/as/token"
+        )
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
+        Effect.withConfigProvider(envConfig)
+      )
+    })
+
+    it.effect("should use mix of CLI flags and environment variables", () => {
+      let storedCreds: StoredCredentials | undefined
+
+      const mockOAuthService = Layer.succeed(
+        OAuthService,
+        OAuthService.of({
+          storeCredentials: (credentials) =>
+            Effect.sync(() => {
+              storedCreds = credentials
+            }),
+          getAccessToken: () => Effect.succeed("test-access-token"),
+          getCredentials: () =>
+            Effect.fail(
+              new OAuthFlowError({
+                message: "Not needed",
+                cause: "Mock",
+                step: "credential_retrieval"
+              })
+            ),
+          clearAuth: () => Effect.void,
+          getAuthStatus: () =>
+            Effect.succeed({
+              hasCredentials: false,
+              hasValidToken: false
+            })
+        })
+      )
+
+      const envConfig = ConfigProvider.fromMap(
+        new Map([
+          ["PINGONE_CLIENT_ID", "env-client-id"],
+          ["PINGONE_CLIENT_SECRET", "env-client-secret"]
+        ])
+      )
+
+      return Effect.gen(function*() {
+        const handler = login.handler
+
+        yield* handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.some("cli-environment-id"),
+          region: Option.some("ca" as const)
+        })
+
+        // Should use env vars for client ID and secret, CLI for environment and region
+        assert.strictEqual(storedCreds?.clientId, "env-client-id")
+        assert.strictEqual(storedCreds?.clientSecret, "env-client-secret")
+        assert.strictEqual(storedCreds?.environmentId, "cli-environment-id")
+        assert.strictEqual(
+          storedCreds?.tokenEndpoint,
+          "https://auth.pingone.ca/cli-environment-id/as/token"
+        )
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
+        Effect.withConfigProvider(envConfig)
       )
     })
   })

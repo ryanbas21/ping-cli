@@ -30,6 +30,14 @@ const environmentId = Options.text("environment-id").pipe(
   Options.optional
 )
 
+const VALID_REGIONS = ["com", "eu", "asia", "ca"] as const
+type Region = typeof VALID_REGIONS[number]
+
+/**
+ * Type guard to check if a string is a valid PingOne region.
+ */
+const isValidRegion = (value: string): value is Region => VALID_REGIONS.includes(value as Region)
+
 const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
   Options.optional,
   Options.withDescription(
@@ -41,7 +49,7 @@ const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
  * Resolves region from CLI option or environment variable.
  * Priority: CLI option > PINGONE_AUTH_REGION env var > default ("com")
  */
-const resolveRegion = (cliOption: Option.Option<"com" | "eu" | "asia" | "ca">) =>
+const resolveRegion = (cliOption: Option.Option<Region>) =>
   Effect.gen(function*() {
     if (Option.isSome(cliOption)) {
       return cliOption.value
@@ -51,7 +59,7 @@ const resolveRegion = (cliOption: Option.Option<"com" | "eu" | "asia" | "ca">) =
       Effect.catchAll(() => Effect.succeed(undefined))
     )
 
-    if (envValue && (envValue === "com" || envValue === "eu" || envValue === "asia" || envValue === "ca")) {
+    if (envValue && isValidRegion(envValue)) {
       return envValue
     }
 
@@ -61,6 +69,8 @@ const resolveRegion = (cliOption: Option.Option<"com" | "eu" | "asia" | "ca">) =
 /**
  * Resolves client ID from CLI option, environment variable, or interactive prompt.
  * Priority: CLI option > PINGONE_CLIENT_ID env var > interactive prompt
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
  */
 const resolveClientId = (cliOption: Option.Option<string>) =>
   Effect.gen(function*() {
@@ -87,6 +97,8 @@ const resolveClientId = (cliOption: Option.Option<string>) =>
  * Priority: CLI option > PINGONE_CLIENT_SECRET env var > interactive prompt
  *
  * Returns a plain string (unwraps Redacted values from CLI options).
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
  */
 const resolveClientSecret = (cliOption: Option.Option<Redacted.Redacted<string>>) =>
   Effect.gen(function*() {
@@ -110,6 +122,8 @@ const resolveClientSecret = (cliOption: Option.Option<Redacted.Redacted<string>>
 /**
  * Resolves environment ID from CLI option, environment variable, or interactive prompt.
  * Priority: CLI option > PINGONE_ENV_ID env var > interactive prompt
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
  */
 const resolveEnvironmentId = (cliOption: Option.Option<string>) =>
   Effect.gen(function*() {
