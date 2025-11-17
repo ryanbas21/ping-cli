@@ -1,5 +1,17 @@
 # p1-cli
 
+## 0.3.1
+
+### Patch Changes
+
+- [#23](https://github.com/ryanbas21/ping-cli/pull/23) [`70f612e`](https://github.com/ryanbas21/ping-cli/commit/70f612edce0f329800b70cc9b3a7babf83f49dba) Thanks [@ryanbas21](https://github.com/ryanbas21)! - Fix auth login command to support multiple input methods with proper precedence:
+
+  - CLI flags (highest priority)
+  - Environment variables (PINGONE_CLIENT_ID, PINGONE_CLIENT_SECRET, PINGONE_ENV_ID, PINGONE_AUTH_REGION)
+  - Interactive prompts (lowest priority)
+
+  All authentication options are now optional, allowing flexible authentication workflows for different use cases (CI/CD, development, interactive).
+
 ## 0.3.0
 
 ### Minor Changes
