@@ -8,10 +8,12 @@
  */
 import { FileSystem } from "@effect/platform"
 import * as Array from "effect/Array"
+import * as Chunk from "effect/Chunk"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Either from "effect/Either"
 import * as Function from "effect/Function"
+import * as HashSet from "effect/HashSet"
 import * as Number from "effect/Number"
 import * as Predicate from "effect/Predicate"
 import * as Ref from "effect/Ref"
@@ -142,8 +144,16 @@ export const bulkImportUsers = ({
     // Create refs for tracking progress
     const successfulRef = yield* Ref.make(0)
     const failedRef = yield* Ref.make(0)
-    const errorsRef = yield* Ref.make<Array<{ row: number; username: string; error: string }>>([])
+    const errorsRef = yield* Ref.make(Chunk.empty<{
+      readonly row: number
+      readonly username: string
+      readonly error: string
+    }>())
     const processedRef = yield* Ref.make(0)
+
+    // Create sets for tracking unique usernames and emails to prevent duplicates
+    const seenUsernames = yield* Ref.make(HashSet.empty<string>())
+    const seenEmails = yield* Ref.make(HashSet.empty<string>())
 
     // Process users with controlled concurrency
     yield* Effect.forEach(
@@ -163,7 +173,7 @@ export const bulkImportUsers = ({
               ? (Predicate.isString(rawUser.username) ? rawUser.username : "unknown")
               : "unknown"
             yield* Ref.update(errorsRef, (errors) =>
-              Array.append(errors, {
+              Chunk.append(errors, {
                 row,
                 username: usernameValue,
                 error: `Validation failed: ${
@@ -177,6 +187,36 @@ export const bulkImportUsers = ({
           }
 
           const user = validationResult.right as BulkImportUser
+
+          // Check for duplicate username
+          const usernamesSet = yield* Ref.get(seenUsernames)
+          if (HashSet.has(usernamesSet, user.username)) {
+            yield* Ref.update(failedRef, (n) => n + 1)
+            yield* Ref.update(errorsRef, (errors) =>
+              Chunk.append(errors, {
+                row,
+                username: user.username,
+                error: `Duplicate username: ${user.username}`
+              }))
+            yield* Console.log(`❌ Row ${row}: Duplicate username ${user.username}`)
+            return yield* Effect.void
+          }
+          yield* Ref.update(seenUsernames, HashSet.add(user.username))
+
+          // Check for duplicate email
+          const emailsSet = yield* Ref.get(seenEmails)
+          if (HashSet.has(emailsSet, user.email)) {
+            yield* Ref.update(failedRef, (n) => n + 1)
+            yield* Ref.update(errorsRef, (errors) =>
+              Chunk.append(errors, {
+                row,
+                username: user.username,
+                error: `Duplicate email: ${user.email}`
+              }))
+            yield* Console.log(`❌ Row ${row}: Duplicate email ${user.email}`)
+            return yield* Effect.void
+          }
+          yield* Ref.update(seenEmails, HashSet.add(user.email))
 
           // Build user data object
           const userData: {
@@ -234,7 +274,7 @@ export const bulkImportUsers = ({
                       ? error.message
                       : JSON.stringify(error)
                     yield* Ref.update(errorsRef, (errors) =>
-                      Array.append(errors, {
+                      Chunk.append(errors, {
                         row,
                         username: user.username,
                         error: errorMessage
@@ -273,13 +313,13 @@ export const bulkImportUsers = ({
     // Get final results
     const successful = yield* Ref.get(successfulRef)
     const failed = yield* Ref.get(failedRef)
-    const errors = yield* Ref.get(errorsRef)
+    const errorsChunk = yield* Ref.get(errorsRef)
 
     const result = {
       total: rawData.length,
       successful,
       failed,
-      errors
+      errors: Chunk.toReadonlyArray(errorsChunk)
     }
 
     return yield* Schema.decodeUnknown(PingOneBulkImportResultSchema)(result)
@@ -381,7 +421,10 @@ export const bulkDeleteUsers = ({
     // Create refs for tracking progress
     const successfulRef = yield* Ref.make(0)
     const failedRef = yield* Ref.make(0)
-    const errorsRef = yield* Ref.make<Array<{ userId: string; error: string }>>([])
+    const errorsRef = yield* Ref.make(Chunk.empty<{
+      readonly userId: string
+      readonly error: string
+    }>())
     const processedRef = yield* Ref.make(0)
 
     // Process users with controlled concurrency
@@ -400,7 +443,7 @@ export const bulkDeleteUsers = ({
               ? (Predicate.isString(rawUser.userId) ? rawUser.userId : "unknown")
               : "unknown"
             yield* Ref.update(errorsRef, (errors) =>
-              Array.append(errors, {
+              Chunk.append(errors, {
                 userId: userIdValue,
                 error: `Validation failed: ${
                   Predicate.isString(parseResult.left) ? parseResult.left : JSON.stringify(parseResult.left)
@@ -437,7 +480,7 @@ export const bulkDeleteUsers = ({
                       ? error.message
                       : JSON.stringify(error)
                     yield* Ref.update(errorsRef, (errors) =>
-                      Array.append(errors, {
+                      Chunk.append(errors, {
                         userId,
                         error: errorMessage
                       }))
@@ -475,13 +518,13 @@ export const bulkDeleteUsers = ({
     // Get final results
     const successful = yield* Ref.get(successfulRef)
     const failed = yield* Ref.get(failedRef)
-    const errors = yield* Ref.get(errorsRef)
+    const errorsChunk = yield* Ref.get(errorsRef)
 
     const result = {
       total: rawData.length,
       successful,
       failed,
-      errors
+      errors: Chunk.toReadonlyArray(errorsChunk)
     }
 
     return yield* Schema.decodeUnknown(PingOneBulkDeleteResultSchema)(result)

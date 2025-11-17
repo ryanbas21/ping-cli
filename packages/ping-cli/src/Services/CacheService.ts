@@ -150,6 +150,18 @@ const shouldInvalidate = (method: string): boolean => {
 /**
  * Type representing cached response data.
  *
+ * This is intentionally `unknown` because this cache is heterogeneous - it stores
+ * already-decoded API response data of various types (User, Group, Application,
+ * Population, etc.) in the same cache instances.
+ *
+ * Type safety is enforced at the **service boundary** through:
+ * 1. The generic type parameter `A` in `getCached<A, E, R, SR>()`
+ * 2. Runtime schema validation in `validateCachedValue()` before returning cached values
+ * 3. The schema ensures cached data matches the expected type `A`
+ *
+ * This design allows the cache layer to remain type-agnostic while still providing
+ * full type safety to consumers through the schema validation pattern.
+ *
  * @since 0.0.1
  */
 type CachedResponse = unknown
