@@ -44,6 +44,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24.x
+
+      - name: Install latest npm
+        run: npm i -g npm@latest
+
       - name: Restore node_modules
         uses: actions/cache/restore@v4
         with:
@@ -52,11 +56,6 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ github.sha }}
           fail-on-cache-miss: true
-      - name: Setup npm registry
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          registry-url: https://registry.npmjs.org
       - name: Build project
         run: pnpm build
       - name: Run tests
@@ -71,28 +70,7 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish to GitHub Package Registry
-        if: steps.changesets.outputs.published == 'true'
-        run: |
-          # Configure GPR authentication
-          cat > packages/ping-cli/.npmrc << EOF
-          @ryanbas21:registry=https://npm.pkg.github.com
-          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
-          EOF
-          
-          # Temporarily update package name for GPR (scoped required)
-          cd packages/ping-cli
-          cp package.json package.json.backup
-          npm pkg set name="@ryanbas21/p1-cli"
-          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
-          
-          # Publish to GPR
-          pnpm publish --registry https://npm.pkg.github.com --no-git-checks
-          
-          # Restore original package.json
-          mv package.json.backup package.json
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ''
 
   docs:
     name: Deploy Documentation

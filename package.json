@@ -23,7 +23,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "prepare": "effect-language-service patch",
-    "release": "pnpm build; pnpm -r publish; changeset tag",
+    "release": "pnpm -r publish && changeset tag",
     "docgen": "cd packages/ping-cli && pnpm exec docgen"
   },
   "devDependencies": {
