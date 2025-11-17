@@ -249,4 +249,207 @@ testuser2,test2@example.com,"Sales, West Coast"`
         yield* fs.remove(testFile)
       }).pipe(Effect.provide(TestLive)))
   })
+
+  describe("Duplicate Detection", () => {
+    it.effect("should detect duplicate usernames in concurrent processing", () =>
+      Effect.gen(function*() {
+        const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-duplicate-username.csv"
+
+        // CSV with duplicate username
+        const csvContent = `username,email,populationId
+user1,email1@example.com,pop-123
+user2,email2@example.com,pop-123
+user1,email3@example.com,pop-123`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        const result = yield* bulkImportUsers({
+          envId: "test-env",
+          token: "test-token",
+          filePath: testFile,
+          format: "csv",
+          dryRun: true,
+          concurrency: 5
+        }).pipe(Effect.either)
+
+        // Should succeed but with failures for duplicate
+        assert.strictEqual(result._tag, "Right")
+        if (result._tag === "Right") {
+          assert.strictEqual(result.right.total, 3)
+          assert.strictEqual(result.right.successful, 2)
+          assert.strictEqual(result.right.failed, 1)
+
+          // Check error message and errorType
+          const errors = result.right.errors
+          assert.strictEqual(errors.length, 1)
+          assert.isTrue(errors[0].error.includes("Duplicate username"))
+          assert.strictEqual(errors[0].username, "user1")
+          assert.strictEqual(errors[0].errorType, "duplicate")
+        }
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.effect("should detect duplicate emails in concurrent processing", () =>
+      Effect.gen(function*() {
+        const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-duplicate-email.csv"
+
+        // CSV with duplicate email
+        const csvContent = `username,email,populationId
+user1,duplicate@example.com,pop-123
+user2,unique@example.com,pop-123
+user3,duplicate@example.com,pop-123`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        const result = yield* bulkImportUsers({
+          envId: "test-env",
+          token: "test-token",
+          filePath: testFile,
+          format: "csv",
+          dryRun: true,
+          concurrency: 5
+        }).pipe(Effect.either)
+
+        // Should succeed but with failures for duplicate
+        assert.strictEqual(result._tag, "Right")
+        if (result._tag === "Right") {
+          assert.strictEqual(result.right.total, 3)
+          assert.strictEqual(result.right.successful, 2)
+          assert.strictEqual(result.right.failed, 1)
+
+          // Check error message and errorType
+          const errors = result.right.errors
+          assert.strictEqual(errors.length, 1)
+          assert.isTrue(errors[0].error.includes("Duplicate email"))
+          assert.strictEqual(errors[0].errorType, "duplicate")
+        }
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.effect("should handle multiple duplicates correctly", () =>
+      Effect.gen(function*() {
+        const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-multiple-duplicates.csv"
+
+        // CSV with multiple different duplicates
+        const csvContent = `username,email,populationId
+user1,email1@example.com,pop-123
+user2,email2@example.com,pop-123
+user1,email3@example.com,pop-123
+user3,email2@example.com,pop-123
+user4,email4@example.com,pop-123`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        const result = yield* bulkImportUsers({
+          envId: "test-env",
+          token: "test-token",
+          filePath: testFile,
+          format: "csv",
+          dryRun: true,
+          concurrency: 5
+        }).pipe(Effect.either)
+
+        // Should have 2 failures (duplicate username and duplicate email)
+        assert.strictEqual(result._tag, "Right")
+        if (result._tag === "Right") {
+          assert.strictEqual(result.right.total, 5)
+          assert.strictEqual(result.right.successful, 3)
+          assert.strictEqual(result.right.failed, 2)
+          assert.strictEqual(result.right.errors.length, 2)
+        }
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.effect("should detect duplicate after first row succeeds", () =>
+      Effect.gen(function*() {
+        const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-duplicate-after-success.csv"
+
+        // Both rows valid, but duplicate username
+        const csvContent = `username,email,populationId
+user1,email1@example.com,pop-123
+user1,email1-different@example.com,pop-123`
+
+        yield* fs.writeFileString(testFile, csvContent)
+
+        const result = yield* bulkImportUsers({
+          envId: "test-env",
+          token: "test-token",
+          filePath: testFile,
+          format: "csv",
+          dryRun: true,
+          concurrency: 5
+        }).pipe(Effect.either)
+
+        // First succeeds, second fails duplicate check
+        assert.strictEqual(result._tag, "Right")
+        if (result._tag === "Right") {
+          assert.strictEqual(result.right.total, 2)
+          assert.strictEqual(result.right.successful, 1)
+          assert.strictEqual(result.right.failed, 1)
+          assert.strictEqual(result.right.errors.length, 1)
+          assert.isTrue(result.right.errors[0].error.includes("Duplicate username"))
+        }
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+
+    it.effect("should have errorType 'validation' for validation failures", () =>
+      Effect.gen(function*() {
+        const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
+        const fs = yield* FileSystem.FileSystem
+        const testFile = "/tmp/test-validation-errortype.json"
+
+        // JSON with invalid data (missing required fields)
+        const jsonContent = JSON.stringify([
+          {
+            username: "user1",
+            email: "email1@example.com",
+            populationId: "pop-123"
+          },
+          {
+            username: "user2"
+            // Missing email and populationId - should fail validation
+          }
+        ])
+
+        yield* fs.writeFileString(testFile, jsonContent)
+
+        const result = yield* bulkImportUsers({
+          envId: "test-env",
+          token: "test-token",
+          filePath: testFile,
+          format: "json",
+          dryRun: true,
+          concurrency: 5
+        }).pipe(Effect.either)
+
+        // Should have validation failure with errorType 'validation'
+        assert.strictEqual(result._tag, "Right")
+        if (result._tag === "Right") {
+          assert.strictEqual(result.right.total, 2)
+          assert.strictEqual(result.right.successful, 1)
+          assert.strictEqual(result.right.failed, 1)
+          assert.strictEqual(result.right.errors.length, 1)
+          assert.strictEqual(result.right.errors[0].errorType, "validation")
+        }
+
+        // Cleanup
+        yield* fs.remove(testFile)
+      }).pipe(Effect.provide(TestLive)))
+  })
 })

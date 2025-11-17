@@ -148,6 +148,7 @@ export const bulkImportUsers = ({
       readonly row: number
       readonly username: string
       readonly error: string
+      readonly errorType: "validation" | "duplicate"
     }>())
     const processedRef = yield* Ref.make(0)
 
@@ -180,7 +181,8 @@ export const bulkImportUsers = ({
                   Predicate.isString(validationResult.left)
                     ? validationResult.left
                     : JSON.stringify(validationResult.left)
-                }`
+                }`,
+                errorType: "validation" as const
               }))
             yield* Console.log(`❌ Row ${row}: Validation failed for ${usernameValue}`)
             return yield* Effect.void
@@ -188,35 +190,43 @@ export const bulkImportUsers = ({
 
           const user = validationResult.right as BulkImportUser
 
-          // Check for duplicate username
-          const usernamesSet = yield* Ref.get(seenUsernames)
-          if (HashSet.has(usernamesSet, user.username)) {
+          // Check for duplicate username (atomic check-and-add)
+          const usernameIsDuplicate = yield* Ref.modify(seenUsernames, (set) => {
+            const isDuplicate = HashSet.has(set, user.username)
+            return [isDuplicate, isDuplicate ? set : HashSet.add(set, user.username)]
+          })
+
+          if (usernameIsDuplicate) {
             yield* Ref.update(failedRef, (n) => n + 1)
             yield* Ref.update(errorsRef, (errors) =>
               Chunk.append(errors, {
                 row,
                 username: user.username,
-                error: `Duplicate username: ${user.username}`
+                error: `Duplicate username: ${user.username}`,
+                errorType: "duplicate" as const
               }))
             yield* Console.log(`❌ Row ${row}: Duplicate username ${user.username}`)
             return yield* Effect.void
           }
-          yield* Ref.update(seenUsernames, HashSet.add(user.username))
 
-          // Check for duplicate email
-          const emailsSet = yield* Ref.get(seenEmails)
-          if (HashSet.has(emailsSet, user.email)) {
+          // Check for duplicate email (atomic check-and-add)
+          const emailIsDuplicate = yield* Ref.modify(seenEmails, (set) => {
+            const isDuplicate = HashSet.has(set, user.email)
+            return [isDuplicate, isDuplicate ? set : HashSet.add(set, user.email)]
+          })
+
+          if (emailIsDuplicate) {
             yield* Ref.update(failedRef, (n) => n + 1)
             yield* Ref.update(errorsRef, (errors) =>
               Chunk.append(errors, {
                 row,
                 username: user.username,
-                error: `Duplicate email: ${user.email}`
+                error: `Duplicate email: ${user.email}`,
+                errorType: "duplicate" as const
               }))
             yield* Console.log(`❌ Row ${row}: Duplicate email ${user.email}`)
             return yield* Effect.void
           }
-          yield* Ref.update(seenEmails, HashSet.add(user.email))
 
           // Build user data object
           const userData: {
@@ -277,7 +287,8 @@ export const bulkImportUsers = ({
                       Chunk.append(errors, {
                         row,
                         username: user.username,
-                        error: errorMessage
+                        error: errorMessage,
+                        errorType: "validation" as const
                       }))
                     yield* Console.log(`❌ Row ${row}: Failed to create user ${user.username}`)
                   }),

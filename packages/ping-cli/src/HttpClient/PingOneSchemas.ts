@@ -434,7 +434,8 @@ export const PingOneBulkImportResultSchema = Schema.Struct({
   errors: Schema.Array(Schema.Struct({
     row: Schema.Number,
     username: Schema.String,
-    error: Schema.String
+    error: Schema.String,
+    errorType: Schema.Literal("validation", "duplicate")
   }))
 })
 
