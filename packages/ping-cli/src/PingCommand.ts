@@ -1,6 +1,7 @@
 /* eslint-disable @effect/dprint */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
+import packageJson from "../package.json" with { type: "json" }
 import { applicationsCommand } from "./Commands/PingOne/applications/index.js"
 import { authCommand } from "./Commands/PingOne/auth/index.js"
 import { bulkDeleteUsersCommand } from "./Commands/PingOne/BulkDeleteUsers.js"
@@ -78,4 +79,4 @@ export const PingCommand = Command.make("p1-cli")
  * @since 0.0.1
  * @category commands
  */
-export const PingCli = PingCommand.pipe(Command.withSubcommands(pingCommands), Command.run({ name: "PingOne CLI", version: "0.1.0" }))
+export const PingCli = PingCommand.pipe(Command.withSubcommands(pingCommands), Command.run({ name: "PingOne CLI", version: packageJson.version }))
