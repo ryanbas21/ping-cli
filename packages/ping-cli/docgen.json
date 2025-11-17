@@ -4,11 +4,14 @@
   "projectHomepage": "https://github.com/ryanbas21/ping-cli",
   "homepage": "https://ryanbas21.github.io/ping-cli",
   "srcDir": "src",
-  "outDir": "../../api_docs",
+  "outDir": "docs",
   "exclude": [
     "**/*.test.ts",
     "**/*.spec.ts",
     "src/main.ts",
+    "src/index.ts",
+    "src/PingCommand.ts",
+    "src/test/**/*",
     "src/Services/**/*",
     "src/HttpClient/**/*",
     "src/Commands/**/*",
@@ -21,14 +24,18 @@
   "examplesCompilerOptions": {
     "noEmit": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "downlevelIteration": true
   },
   "noErrorOnMissingExamples": true,
   "parseCompilerOptions": {
     "noEmit": false,
     "strict": false,
     "skipLibCheck": true,
-    "moduleResolution": "NodeNext",
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
     "target": "ES2022",
     "lib": ["ES2022", "DOM"]
   },

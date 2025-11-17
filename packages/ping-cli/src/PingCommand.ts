@@ -68,6 +68,23 @@ const pingCommands = Array.make(
 /**
  * Main PingOne CLI command
  *
+ * @example
+ * ```ts
+ * import { PingCommand } from "p1-cli"
+ * import { Command, Options } from "@effect/cli"
+ * import { Effect } from "effect"
+ *
+ * // Create a custom command
+ * const helloCommand = Command.make("hello", { name: Options.text("name") }).pipe(
+ *   Command.withHandler(({ name }) => Effect.log(`Hello, ${name}!`))
+ * )
+ *
+ * // Extend PingCommand with custom subcommands
+ * const customCli = PingCommand.pipe(
+ *   Command.withSubcommands([helloCommand])
+ * )
+ * ```
+ *
  * @since 0.0.1
  * @category commands
  */
@@ -75,6 +92,17 @@ export const PingCommand = Command.make("p1-cli")
 
 /**
  * Runnable PingOne CLI with all subcommands configured
+ *
+ * @example
+ * ```ts
+ * import { PingCli } from "p1-cli"
+ *
+ * // Create the CLI program with command line arguments
+ * const program = PingCli(process.argv)
+ *
+ * // The program is an Effect that can be run with Effect.runPromise or Effect.runFork
+ * // after providing the required services (Terminal, FileSystem, etc.)
+ * ```
  *
  * @since 0.0.1
  * @category commands
