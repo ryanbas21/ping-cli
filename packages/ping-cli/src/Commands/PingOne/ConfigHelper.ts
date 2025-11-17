@@ -1,6 +1,6 @@
 import { Config, Effect, Predicate, Redacted } from "effect"
 import { PingOneAuthError } from "../../Errors.js"
-import { OAuthService } from "../../Services/index.js"
+import { CredentialService, OAuthService } from "../../Services/index.js"
 
 /**
  * Default PingOne API base URL.
@@ -10,8 +10,8 @@ import { OAuthService } from "../../Services/index.js"
 export const DEFAULT_PINGONE_API_URL = "https://api.pingone.com/v1"
 
 /**
- * Gets PingOne API base URL from environment variable or uses default.
- * Priority: PINGONE_API_URL env var > default (https://api.pingone.com/v1)
+ * Gets PingOne API base URL from environment variable, stored credentials, or default.
+ * Priority: PINGONE_API_URL env var > stored credentials region > default (https://api.pingone.com/v1)
  *
  * This allows using different PingOne regions or environments:
  * - North America: https://api.pingone.com/v1 (default)
@@ -22,9 +22,34 @@ export const DEFAULT_PINGONE_API_URL = "https://api.pingone.com/v1"
  * @since 0.0.1
  */
 export const getApiBaseUrl = () =>
-  Config.string("PINGONE_API_URL").pipe(
-    Effect.catchAll(() => Effect.succeed(DEFAULT_PINGONE_API_URL))
-  )
+  Effect.gen(function*() {
+    // Priority 1: Check PINGONE_API_URL environment variable
+    const envUrl = yield* Config.string("PINGONE_API_URL").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envUrl) {
+      return envUrl
+    }
+
+    // Priority 2: Derive from stored credentials' tokenEndpoint region
+    const credentialService = yield* CredentialService
+    const credentials = yield* credentialService.retrieve().pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (credentials) {
+      // Extract region from tokenEndpoint: https://auth.pingone.{region}/{envId}/as/token
+      const match = credentials.tokenEndpoint.match(/https:\/\/auth\.pingone\.([^/]+)\//)
+      if (match && match[1]) {
+        const region = match[1]
+        return `https://api.pingone.${region}/v1`
+      }
+    }
+
+    // Priority 3: Fall back to default
+    return DEFAULT_PINGONE_API_URL
+  })
 
 /**
  * Gets PingOne environment ID from CLI option, environment variable, or OAuth service.

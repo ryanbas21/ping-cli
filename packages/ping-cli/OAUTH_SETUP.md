@@ -189,7 +189,7 @@ If authentication fails with 401/403 errors:
 
 ### Region Mismatch
 
-If you see connection errors:
+If you see connection errors or 401 errors:
 
 1. Verify your region setting matches your PingOne environment
 2. Check the PingOne console URL:
@@ -197,6 +197,12 @@ If you see connection errors:
    - `console.pingone.eu` → `eu`
    - `console.pingone.asia` → `asia`
    - `console.pingone.ca` → `ca`
+
+**Note:** After v0.3.2+, the CLI automatically uses the correct API endpoint based on the region you specified during `auth login`. You don't need to manually set `PINGONE_API_URL` unless you want to override the automatic behavior. If you're experiencing issues:
+
+1. Run `p1-cli auth logout` to clear stored credentials
+2. Run `p1-cli auth login` again with the correct `--region` flag
+3. The CLI will automatically use the correct API endpoint for that region
 
 ## Security Best Practices
 

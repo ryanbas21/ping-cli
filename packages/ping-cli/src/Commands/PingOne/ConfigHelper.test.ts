@@ -1,9 +1,10 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
 import { OAuthFlowError } from "../../Errors.js"
-import { OAuthService } from "../../Services/index.js"
+import { StoredCredentials } from "../../HttpClient/OAuthSchemas.js"
+import { CredentialService, OAuthService } from "../../Services/index.js"
 import { MockCacheServiceLive, MockRetryServiceLive, MockServicesLive } from "../../test-helpers/TestLayers.js"
-import { getEnvironmentId, getToken } from "./ConfigHelper.js"
+import { DEFAULT_PINGONE_API_URL, getApiBaseUrl, getEnvironmentId, getToken } from "./ConfigHelper.js"
 
 describe("ConfigHelper", () => {
   describe("getEnvironmentId", () => {
@@ -233,6 +234,300 @@ describe("ConfigHelper", () => {
         // Should return the actual token value (unwrapped from Redacted)
         assert.strictEqual(result, secretToken)
       }).pipe(Effect.provide(MockServicesLive)))
+  })
+
+  describe("getApiBaseUrl", () => {
+    it.effect("should return PINGONE_API_URL environment variable when set", () => {
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_API_URL", "https://api.pingone.eu/v1"]]))
+        ),
+        MockServicesLive
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        assert.strictEqual(result, "https://api.pingone.eu/v1")
+      }).pipe(Effect.provide(configLayer))
+    })
+
+    it.effect("should derive API URL from stored credentials when env var not set", () => {
+      // Create credential service that returns credentials with CA region
+      const CredentialLayer = Layer.succeed(
+        CredentialService,
+        CredentialService.of({
+          store: () => Effect.void,
+          retrieve: () =>
+            Effect.succeed(
+              new StoredCredentials({
+                clientId: "test-client",
+                clientSecret: "test-secret",
+                environmentId: "test-env",
+                tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
+              })
+            ),
+          clear: () => Effect.void
+        })
+      )
+
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map()) // Empty config - no PINGONE_API_URL
+        ),
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        CredentialLayer,
+        Layer.succeed(
+          OAuthService,
+          OAuthService.of({
+            getAccessToken: () => Effect.succeed("test-token"),
+            storeCredentials: () => Effect.void,
+            getCredentials: () =>
+              Effect.succeed(
+                new StoredCredentials({
+                  clientId: "test-client",
+                  clientSecret: "test-secret",
+                  environmentId: "test-env",
+                  tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
+                })
+              ),
+            clearAuth: () => Effect.void,
+            getAuthStatus: () =>
+              Effect.succeed({
+                hasCredentials: true,
+                hasValidToken: false,
+                clientId: "test-client",
+                environmentId: "test-env"
+              })
+          })
+        )
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        assert.strictEqual(result, "https://api.pingone.ca/v1")
+      }).pipe(Effect.provide(configLayer))
+    })
+
+    it.effect("should derive EU region from stored credentials", () => {
+      const CredentialLayer = Layer.succeed(
+        CredentialService,
+        CredentialService.of({
+          store: () => Effect.void,
+          retrieve: () =>
+            Effect.succeed(
+              new StoredCredentials({
+                clientId: "test-client",
+                clientSecret: "test-secret",
+                environmentId: "test-env",
+                tokenEndpoint: "https://auth.pingone.eu/test-env/as/token"
+              })
+            ),
+          clear: () => Effect.void
+        })
+      )
+
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(ConfigProvider.fromMap(new Map())),
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        CredentialLayer,
+        Layer.succeed(
+          OAuthService,
+          OAuthService.of({
+            getAccessToken: () => Effect.succeed("test-token"),
+            storeCredentials: () => Effect.void,
+            getCredentials: () =>
+              Effect.succeed(
+                new StoredCredentials({
+                  clientId: "test-client",
+                  clientSecret: "test-secret",
+                  environmentId: "test-env",
+                  tokenEndpoint: "https://auth.pingone.eu/test-env/as/token"
+                })
+              ),
+            clearAuth: () => Effect.void,
+            getAuthStatus: () =>
+              Effect.succeed({
+                hasCredentials: true,
+                hasValidToken: false,
+                clientId: "test-client",
+                environmentId: "test-env"
+              })
+          })
+        )
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        assert.strictEqual(result, "https://api.pingone.eu/v1")
+      }).pipe(Effect.provide(configLayer))
+    })
+
+    it.effect("should derive Asia region from stored credentials", () => {
+      const CredentialLayer = Layer.succeed(
+        CredentialService,
+        CredentialService.of({
+          store: () => Effect.void,
+          retrieve: () =>
+            Effect.succeed(
+              new StoredCredentials({
+                clientId: "test-client",
+                clientSecret: "test-secret",
+                environmentId: "test-env",
+                tokenEndpoint: "https://auth.pingone.asia/test-env/as/token"
+              })
+            ),
+          clear: () => Effect.void
+        })
+      )
+
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(ConfigProvider.fromMap(new Map())),
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        CredentialLayer,
+        Layer.succeed(
+          OAuthService,
+          OAuthService.of({
+            getAccessToken: () => Effect.succeed("test-token"),
+            storeCredentials: () => Effect.void,
+            getCredentials: () =>
+              Effect.succeed(
+                new StoredCredentials({
+                  clientId: "test-client",
+                  clientSecret: "test-secret",
+                  environmentId: "test-env",
+                  tokenEndpoint: "https://auth.pingone.asia/test-env/as/token"
+                })
+              ),
+            clearAuth: () => Effect.void,
+            getAuthStatus: () =>
+              Effect.succeed({
+                hasCredentials: true,
+                hasValidToken: false,
+                clientId: "test-client",
+                environmentId: "test-env"
+              })
+          })
+        )
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        assert.strictEqual(result, "https://api.pingone.asia/v1")
+      }).pipe(Effect.provide(configLayer))
+    })
+
+    it.effect("should fall back to default when no env var or credentials available", () => {
+      // Create credential service that fails
+      const FailingCredentialLayer = Layer.succeed(
+        CredentialService,
+        CredentialService.of({
+          store: () => Effect.void,
+          retrieve: () => Effect.fail(new Error("No credentials")),
+          clear: () => Effect.void
+        })
+      )
+
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(ConfigProvider.fromMap(new Map())),
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        FailingCredentialLayer,
+        Layer.succeed(
+          OAuthService,
+          OAuthService.of({
+            getAccessToken: () => Effect.succeed("test-token"),
+            storeCredentials: () => Effect.void,
+            getCredentials: () =>
+              Effect.fail(
+                new OAuthFlowError({
+                  message: "No credentials",
+                  cause: "No stored credentials",
+                  step: "credential_retrieval"
+                })
+              ),
+            clearAuth: () => Effect.void,
+            getAuthStatus: () =>
+              Effect.succeed({
+                hasCredentials: false,
+                hasValidToken: false
+              })
+          })
+        )
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        assert.strictEqual(result, DEFAULT_PINGONE_API_URL)
+      }).pipe(Effect.provide(configLayer))
+    })
+
+    it.effect("should prioritize env var over stored credentials", () => {
+      // Credentials have CA region, but env var has EU
+      const CredentialLayer = Layer.succeed(
+        CredentialService,
+        CredentialService.of({
+          store: () => Effect.void,
+          retrieve: () =>
+            Effect.succeed(
+              new StoredCredentials({
+                clientId: "test-client",
+                clientSecret: "test-secret",
+                environmentId: "test-env",
+                tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
+              })
+            ),
+          clear: () => Effect.void
+        })
+      )
+
+      const configLayer = Layer.mergeAll(
+        Layer.setConfigProvider(
+          ConfigProvider.fromMap(new Map([["PINGONE_API_URL", "https://api.pingone.eu/v1"]]))
+        ),
+        MockRetryServiceLive,
+        MockCacheServiceLive,
+        CredentialLayer,
+        Layer.succeed(
+          OAuthService,
+          OAuthService.of({
+            getAccessToken: () => Effect.succeed("test-token"),
+            storeCredentials: () => Effect.void,
+            getCredentials: () =>
+              Effect.succeed(
+                new StoredCredentials({
+                  clientId: "test-client",
+                  clientSecret: "test-secret",
+                  environmentId: "test-env",
+                  tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
+                })
+              ),
+            clearAuth: () => Effect.void,
+            getAuthStatus: () =>
+              Effect.succeed({
+                hasCredentials: true,
+                hasValidToken: false,
+                clientId: "test-client",
+                environmentId: "test-env"
+              })
+          })
+        )
+      )
+
+      return Effect.gen(function*() {
+        const result = yield* getApiBaseUrl()
+
+        // Should use env var (EU), not credentials (CA)
+        assert.strictEqual(result, "https://api.pingone.eu/v1")
+      }).pipe(Effect.provide(configLayer))
+    })
   })
 
   describe("Configuration hierarchy integration", () => {
