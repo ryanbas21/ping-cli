@@ -9,7 +9,7 @@
  */
 import { DateTime, Effect, Layer } from "effect"
 import { StoredCredentials } from "../HttpClient/OAuthSchemas.js"
-import { CacheService, OAuthService, RetryService } from "../Services/index.js"
+import { CacheService, CredentialService, OAuthService, RetryService } from "../Services/index.js"
 
 /**
  * Mock RetryService that passes through requests without retry logic
@@ -70,10 +70,33 @@ export const MockOAuthServiceLive = Layer.succeed(
 )
 
 /**
+ * Mock CredentialService that returns test credentials
+ *
+ * @since 0.0.3
+ */
+export const MockCredentialServiceLive = Layer.succeed(
+  CredentialService,
+  CredentialService.of({
+    store: () => Effect.void,
+    retrieve: () =>
+      Effect.succeed(
+        new StoredCredentials({
+          clientId: "test-client-id",
+          clientSecret: "test-client-secret",
+          environmentId: "test-env-id",
+          tokenEndpoint: "https://auth.pingone.com/test-env-id/as/token"
+        })
+      ),
+    delete: () => Effect.void
+  })
+)
+
+/**
  * Combined mock services layer for testing
  */
 export const MockServicesLive = Layer.mergeAll(
   MockRetryServiceLive,
   MockCacheServiceLive,
-  MockOAuthServiceLive
+  MockOAuthServiceLive,
+  MockCredentialServiceLive
 )

@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
-import { OAuthFlowError } from "../../Errors.js"
+import { CredentialStorageError, OAuthFlowError } from "../../Errors.js"
 import { StoredCredentials } from "../../HttpClient/OAuthSchemas.js"
 import { CredentialService, OAuthService } from "../../Services/index.js"
 import { MockCacheServiceLive, MockRetryServiceLive, MockServicesLive } from "../../test-helpers/TestLayers.js"
@@ -267,7 +267,7 @@ describe("ConfigHelper", () => {
                 tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
               })
             ),
-          clear: () => Effect.void
+          delete: () => Effect.void
         })
       )
 
@@ -325,7 +325,7 @@ describe("ConfigHelper", () => {
                 tokenEndpoint: "https://auth.pingone.eu/test-env/as/token"
               })
             ),
-          clear: () => Effect.void
+          delete: () => Effect.void
         })
       )
 
@@ -381,7 +381,7 @@ describe("ConfigHelper", () => {
                 tokenEndpoint: "https://auth.pingone.asia/test-env/as/token"
               })
             ),
-          clear: () => Effect.void
+          delete: () => Effect.void
         })
       )
 
@@ -429,8 +429,17 @@ describe("ConfigHelper", () => {
         CredentialService,
         CredentialService.of({
           store: () => Effect.void,
-          retrieve: () => Effect.fail(new Error("No credentials")),
-          clear: () => Effect.void
+          retrieve: () =>
+            Effect.fail(
+              new CredentialStorageError({
+                message: "No credentials",
+                storage: "keychain",
+                operation: "read",
+                cause: "No stored credentials",
+                fallbackAvailable: false
+              })
+            ),
+          delete: () => Effect.void
         })
       )
 
@@ -484,7 +493,7 @@ describe("ConfigHelper", () => {
                 tokenEndpoint: "https://auth.pingone.ca/test-env/as/token"
               })
             ),
-          clear: () => Effect.void
+          delete: () => Effect.void
         })
       )
 

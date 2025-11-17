@@ -402,7 +402,7 @@ describe("PingOneClient", () => {
           userData
         }).pipe(Effect.provide(testLayer))
 
-        assert.strictEqual(capturedUrl, "https://api.pingone.com/v1/environments/env-custom/users")
+        assert.strictEqual(capturedUrl, "https://api.pingone.ca/v1/environments/env-custom/users")
       }))
 
     it.effect("should set correct headers including bearer token", () =>
