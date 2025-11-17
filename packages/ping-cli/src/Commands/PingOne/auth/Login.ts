@@ -2,37 +2,181 @@
  * Auth Login Command
  *
  * Stores OAuth client credentials securely for subsequent CLI operations.
- * Supports both direct flag entry and interactive prompts.
+ * Supports CLI flags, environment variables, and interactive prompts.
  *
  * @since 0.0.3
  */
-import { Command, Options } from "@effect/cli"
-import { Effect, Redacted } from "effect"
+import { Command, Options, Prompt } from "@effect/cli"
+import { Config, Effect, Option, Redacted } from "effect"
 import * as Console from "effect/Console"
 import { buildTokenEndpoint } from "../../../HttpClient/OAuthClient.js"
 import { StoredCredentials } from "../../../HttpClient/OAuthSchemas.js"
 import { OAuthService } from "../../../Services/index.js"
 
-// OAuth client credentials
+// OAuth client credentials - all optional to support env vars and prompts
 const clientId = Options.text("client-id").pipe(
-  Options.withDescription("OAuth client ID from PingOne Worker Application")
+  Options.withDescription("OAuth client ID from PingOne Worker Application"),
+  Options.optional
 )
 
 const clientSecret = Options.redacted("client-secret").pipe(
-  Options.withDescription("OAuth client secret from PingOne Worker Application")
+  Options.withDescription("OAuth client secret from PingOne Worker Application"),
+  Options.optional
 )
 
 const environmentId = Options.text("environment-id").pipe(
   Options.withAlias("e"),
-  Options.withDescription("PingOne environment ID")
+  Options.withDescription("PingOne environment ID"),
+  Options.optional
 )
 
+const VALID_REGIONS = ["com", "eu", "asia", "ca"] as const
+type Region = typeof VALID_REGIONS[number]
+
+/**
+ * Type guard to check if a string is a valid PingOne region.
+ */
+const isValidRegion = (value: string): value is Region => VALID_REGIONS.includes(value as Region)
+
+/**
+ * Validates UUID v4 format (loosely - accepts standard UUID format).
+ * PingOne uses UUIDs for client IDs and environment IDs.
+ */
+const isValidUUID = (value: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(value.trim())
+}
+
 const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
-  Options.withDefault("com" as "com" | "eu" | "asia" | "ca"),
+  Options.optional,
   Options.withDescription(
     "PingOne region: com (North America), eu (Europe), asia (Asia Pacific), ca (Canada). Defaults to 'com'"
   )
 )
+
+/**
+ * Resolves region from CLI option or environment variable.
+ * Priority: CLI option > PINGONE_AUTH_REGION env var > default ("com")
+ */
+const resolveRegion = (cliOption: Option.Option<Region>) =>
+  Effect.gen(function*() {
+    if (Option.isSome(cliOption)) {
+      return cliOption.value
+    }
+
+    const envValue = yield* Config.string("PINGONE_AUTH_REGION").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envValue && isValidRegion(envValue)) {
+      return envValue
+    }
+
+    return "com" as const
+  })
+
+/**
+ * Resolves client ID from CLI option, environment variable, or interactive prompt.
+ * Priority: CLI option > PINGONE_CLIENT_ID env var > interactive prompt
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
+ */
+const resolveClientId = (cliOption: Option.Option<string>) =>
+  Effect.gen(function*() {
+    if (Option.isSome(cliOption)) {
+      return cliOption.value
+    }
+
+    const envValue = yield* Config.string("PINGONE_CLIENT_ID").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envValue) {
+      yield* Console.log("Using PINGONE_CLIENT_ID from environment variable")
+      return envValue
+    }
+
+    return yield* Prompt.text({
+      message: "Enter your PingOne OAuth client ID (UUID format):",
+      validate: (value) => {
+        const trimmed = value.trim()
+        if (trimmed.length === 0) {
+          return Effect.fail("Client ID cannot be empty")
+        }
+        if (!isValidUUID(trimmed)) {
+          return Effect.fail("Client ID must be a valid UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)")
+        }
+        return Effect.succeed(trimmed)
+      }
+    }).pipe(Prompt.run)
+  })
+
+/**
+ * Resolves client secret from CLI option, environment variable, or interactive prompt.
+ * Priority: CLI option > PINGONE_CLIENT_SECRET env var > interactive prompt
+ *
+ * Returns a plain string (unwraps Redacted values from CLI options).
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
+ */
+const resolveClientSecret = (cliOption: Option.Option<Redacted.Redacted<string>>) =>
+  Effect.gen(function*() {
+    if (Option.isSome(cliOption)) {
+      return Redacted.value(cliOption.value)
+    }
+
+    const envValue = yield* Config.string("PINGONE_CLIENT_SECRET").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envValue) {
+      yield* Console.log("Using PINGONE_CLIENT_SECRET from environment variable")
+      return envValue
+    }
+
+    const secret = yield* Prompt.password({
+      message: "Enter your PingOne OAuth client secret:"
+    }).pipe(Prompt.run)
+    return Redacted.value(secret)
+  })
+
+/**
+ * Resolves environment ID from CLI option, environment variable, or interactive prompt.
+ * Priority: CLI option > PINGONE_ENV_ID env var > interactive prompt
+ *
+ * @throws QuitException if the user cancels the prompt (Ctrl+C or Ctrl+D)
+ */
+const resolveEnvironmentId = (cliOption: Option.Option<string>) =>
+  Effect.gen(function*() {
+    if (Option.isSome(cliOption)) {
+      return cliOption.value
+    }
+
+    const envValue = yield* Config.string("PINGONE_ENV_ID").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+
+    if (envValue) {
+      yield* Console.log("Using PINGONE_ENV_ID from environment variable")
+      return envValue
+    }
+
+    return yield* Prompt.text({
+      message: "Enter your PingOne environment ID (UUID format):",
+      validate: (value) => {
+        const trimmed = value.trim()
+        if (trimmed.length === 0) {
+          return Effect.fail("Environment ID cannot be empty")
+        }
+        if (!isValidUUID(trimmed)) {
+          return Effect.fail(
+            "Environment ID must be a valid UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+          )
+        }
+        return Effect.succeed(trimmed)
+      }
+    }).pipe(Prompt.run)
+  })
 
 /**
  * Auth login command.
@@ -44,10 +188,23 @@ const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
  * Usage:
  * ```bash
  * # Direct entry with all flags
- * p1-cli auth login --client-id=abc --client-secret=xyz --environment-id=env-123
+ * p1-cli auth login --client-id=abc --client-secret=xyz --environment-id=env-123 --region=com
+ *
+ * # Using environment variables
+ * export PINGONE_CLIENT_ID=abc
+ * export PINGONE_CLIENT_SECRET=xyz
+ * export PINGONE_ENV_ID=env-123
+ * export PINGONE_AUTH_REGION=eu  # Optional, defaults to "com"
+ * p1-cli auth login
  *
  * # Interactive prompts (CLI will prompt for missing values)
  * p1-cli auth login
+ *
+ * # Mix of flags, env vars, and prompts
+ * export PINGONE_CLIENT_ID=abc
+ * export PINGONE_AUTH_REGION=asia
+ * p1-cli auth login --client-secret=xyz
+ * # Will prompt for environment-id, use asia region from env var
  * ```
  *
  * @since 0.0.3
@@ -64,17 +221,20 @@ export const login = Command.make(
     Effect.gen(function*() {
       const oauthService = yield* OAuthService
 
-      // Build token endpoint based on region
-      const tokenEndpoint = buildTokenEndpoint(environmentId, region)
+      // Resolve credentials with fallback: CLI args > env vars > prompts
+      const resolvedClientId = yield* resolveClientId(clientId)
+      const resolvedClientSecret = yield* resolveClientSecret(clientSecret)
+      const resolvedEnvironmentId = yield* resolveEnvironmentId(environmentId)
+      const resolvedRegion = yield* resolveRegion(region)
 
-      // Extract client secret from Redacted type
-      const clientSecretValue = Redacted.value(clientSecret)
+      // Build token endpoint based on region
+      const tokenEndpoint = buildTokenEndpoint(resolvedEnvironmentId, resolvedRegion)
 
       // Create credentials object
       const credentials = new StoredCredentials({
-        clientId,
-        clientSecret: clientSecretValue,
-        environmentId,
+        clientId: resolvedClientId,
+        clientSecret: resolvedClientSecret,
+        environmentId: resolvedEnvironmentId,
         tokenEndpoint
       })
 
@@ -88,16 +248,16 @@ export const login = Command.make(
       if (accessToken) {
         yield* Console.log("✓ Successfully authenticated!")
         yield* Console.log(
-          `✓ Credentials stored securely for environment: ${environmentId}`
+          `✓ Credentials stored securely for environment: ${resolvedEnvironmentId}`
         )
-        const regionName = region === "com" ?
+        const regionName = resolvedRegion === "com" ?
           "North America" :
-          region === "eu" ?
+          resolvedRegion === "eu" ?
           "Europe" :
-          region === "asia" ?
+          resolvedRegion === "asia" ?
           "Asia Pacific" :
           "Canada"
-        yield* Console.log(`✓ Region: ${regionName} (${region})`)
+        yield* Console.log(`✓ Region: ${regionName} (${resolvedRegion})`)
       }
     })
 )
