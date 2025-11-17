@@ -1,8 +1,10 @@
+import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Option, Redacted } from "effect"
 import { OAuthFlowError } from "../../../Errors.js"
 import { StoredCredentials } from "../../../HttpClient/OAuthSchemas.js"
 import { OAuthService } from "../../../Services/index.js"
+import * as MockTerminal from "../../../test/services/MockTerminal.js"
 import { login } from "./Login.js"
 
 describe("Auth Login Command", () => {
@@ -58,7 +60,9 @@ describe("Auth Login Command", () => {
           storedCreds?.tokenEndpoint,
           "https://auth.pingone.com/my-env-id/as/token"
         )
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
 
     it.effect("should build correct token endpoint for EU region", () => {
@@ -103,7 +107,9 @@ describe("Auth Login Command", () => {
           storedCreds?.tokenEndpoint,
           "https://auth.pingone.eu/eu-env/as/token"
         )
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
 
     it.effect("should build correct token endpoint for Asia region", () => {
@@ -148,7 +154,9 @@ describe("Auth Login Command", () => {
           storedCreds?.tokenEndpoint,
           "https://auth.pingone.asia/asia-env/as/token"
         )
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
 
     it.effect("should build correct token endpoint for Canada region", () => {
@@ -193,7 +201,9 @@ describe("Auth Login Command", () => {
           storedCreds?.tokenEndpoint,
           "https://auth.pingone.ca/ca-env/as/token"
         )
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
 
     it.effect("should unwrap Redacted client secret correctly", () => {
@@ -237,7 +247,9 @@ describe("Auth Login Command", () => {
 
         // Verify the secret was properly unwrapped from Redacted
         assert.strictEqual(storedCreds?.clientSecret, secretValue)
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
   })
 
@@ -286,9 +298,13 @@ describe("Auth Login Command", () => {
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
           const error = result.cause.error
           assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "credential_storage")
+          if (error._tag === "OAuthFlowError") {
+            assert.strictEqual(error.step, "credential_storage")
+          }
         }
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
 
     it.effect("should fail when token verification fails", () => {
@@ -335,9 +351,13 @@ describe("Auth Login Command", () => {
         if (result._tag === "Failure" && result.cause._tag === "Fail") {
           const error = result.cause.error
           assert.strictEqual(error._tag, "OAuthFlowError")
-          assert.strictEqual(error.step, "token_exchange")
+          if (error._tag === "OAuthFlowError") {
+            assert.strictEqual(error.step, "token_exchange")
+          }
         }
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
   })
 
@@ -386,7 +406,9 @@ describe("Auth Login Command", () => {
 
         // Verify token was acquired as part of login verification
         assert.isTrue(tokenAcquired)
-      }).pipe(Effect.provide(mockOAuthService))
+      }).pipe(
+        Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer))
+      )
     })
   })
 })
