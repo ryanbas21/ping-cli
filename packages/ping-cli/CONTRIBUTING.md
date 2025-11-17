@@ -39,7 +39,7 @@ npm link
 
 ## Project Structure
 
-```
+```text
 packages/ping-cli/
 ├── src/
 │   ├── Commands/        # CLI command definitions
@@ -173,7 +173,7 @@ return yield* Effect.fail(
 
 Follow conventional commit format:
 
-```
+```text
 feat: add bulk user export command
 fix: correct token refresh logic
 docs: update authentication examples
