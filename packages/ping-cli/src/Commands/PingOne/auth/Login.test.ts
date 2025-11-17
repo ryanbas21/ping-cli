@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer, Redacted } from "effect"
+import { Effect, Layer, Option, Redacted } from "effect"
 import { OAuthFlowError } from "../../../Errors.js"
 import { StoredCredentials } from "../../../HttpClient/OAuthSchemas.js"
 import { OAuthService } from "../../../Services/index.js"
@@ -43,10 +43,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         yield* handler({
-          clientId: "my-client-id",
-          clientSecret: Redacted.make("my-client-secret"),
-          environmentId: "my-env-id",
-          region: "com" as const
+          clientId: Option.some("my-client-id"),
+          clientSecret: Option.some(Redacted.make("my-client-secret")),
+          environmentId: Option.some("my-env-id"),
+          region: Option.some("com" as const)
         })
 
         // Verify credentials were stored
@@ -93,10 +93,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         yield* handler({
-          clientId: "eu-client",
-          clientSecret: Redacted.make("eu-secret"),
-          environmentId: "eu-env",
-          region: "eu" as const
+          clientId: Option.some("eu-client"),
+          clientSecret: Option.some(Redacted.make("eu-secret")),
+          environmentId: Option.some("eu-env"),
+          region: Option.some("eu" as const)
         })
 
         assert.strictEqual(
@@ -138,10 +138,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         yield* handler({
-          clientId: "asia-client",
-          clientSecret: Redacted.make("asia-secret"),
-          environmentId: "asia-env",
-          region: "asia" as const
+          clientId: Option.some("asia-client"),
+          clientSecret: Option.some(Redacted.make("asia-secret")),
+          environmentId: Option.some("asia-env"),
+          region: Option.some("asia" as const)
         })
 
         assert.strictEqual(
@@ -183,10 +183,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         yield* handler({
-          clientId: "ca-client",
-          clientSecret: Redacted.make("ca-secret"),
-          environmentId: "ca-env",
-          region: "ca" as const
+          clientId: Option.some("ca-client"),
+          clientSecret: Option.some(Redacted.make("ca-secret")),
+          environmentId: Option.some("ca-env"),
+          region: Option.some("ca" as const)
         })
 
         assert.strictEqual(
@@ -229,10 +229,10 @@ describe("Auth Login Command", () => {
         const secretValue = "super-secret-password-123"
 
         yield* handler({
-          clientId: "test-client",
-          clientSecret: Redacted.make(secretValue),
-          environmentId: "test-env",
-          region: "com" as const
+          clientId: Option.some("test-client"),
+          clientSecret: Option.some(Redacted.make(secretValue)),
+          environmentId: Option.some("test-env"),
+          region: Option.some("com" as const)
         })
 
         // Verify the secret was properly unwrapped from Redacted
@@ -276,10 +276,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         const result = yield* handler({
-          clientId: "test-client",
-          clientSecret: Redacted.make("test-secret"),
-          environmentId: "test-env",
-          region: "com" as const
+          clientId: Option.some("test-client"),
+          clientSecret: Option.some(Redacted.make("test-secret")),
+          environmentId: Option.some("test-env"),
+          region: Option.some("com" as const)
         }).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
@@ -325,10 +325,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         const result = yield* handler({
-          clientId: "invalid-client",
-          clientSecret: Redacted.make("invalid-secret"),
-          environmentId: "test-env",
-          region: "com" as const
+          clientId: Option.some("invalid-client"),
+          clientSecret: Option.some(Redacted.make("invalid-secret")),
+          environmentId: Option.some("test-env"),
+          region: Option.some("com" as const)
         }).pipe(Effect.exit)
 
         assert.strictEqual(result._tag, "Failure")
@@ -378,10 +378,10 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         yield* handler({
-          clientId: "test-client",
-          clientSecret: Redacted.make("test-secret"),
-          environmentId: "test-env",
-          region: "com" as const
+          clientId: Option.some("test-client"),
+          clientSecret: Option.some(Redacted.make("test-secret")),
+          environmentId: Option.some("test-env"),
+          region: Option.some("com" as const)
         })
 
         // Verify token was acquired as part of login verification
