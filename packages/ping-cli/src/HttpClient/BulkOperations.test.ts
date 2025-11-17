@@ -251,7 +251,7 @@ testuser2,test2@example.com,"Sales, West Coast"`
   })
 
   describe("Duplicate Detection", () => {
-    it.effect("should detect duplicate usernames in concurrent processing", () =>
+    it.live("should detect duplicate usernames in concurrent processing", () =>
       Effect.gen(function*() {
         const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
         const fs = yield* FileSystem.FileSystem
@@ -293,7 +293,7 @@ user1,email3@example.com,pop-123`
         yield* fs.remove(testFile)
       }).pipe(Effect.provide(TestLive)))
 
-    it.effect("should detect duplicate emails in concurrent processing", () =>
+    it.live("should detect duplicate emails in concurrent processing", () =>
       Effect.gen(function*() {
         const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
         const fs = yield* FileSystem.FileSystem
@@ -334,7 +334,7 @@ user3,duplicate@example.com,pop-123`
         yield* fs.remove(testFile)
       }).pipe(Effect.provide(TestLive)))
 
-    it.effect("should handle multiple duplicates correctly", () =>
+    it.live("should handle multiple duplicates correctly", () =>
       Effect.gen(function*() {
         const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
         const fs = yield* FileSystem.FileSystem
@@ -372,7 +372,7 @@ user4,email4@example.com,pop-123`
         yield* fs.remove(testFile)
       }).pipe(Effect.provide(TestLive)))
 
-    it.effect("should detect duplicate after first row succeeds", () =>
+    it.live("should detect duplicate after first row succeeds", () =>
       Effect.gen(function*() {
         const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
         const fs = yield* FileSystem.FileSystem
@@ -408,7 +408,7 @@ user1,email1-different@example.com,pop-123`
         yield* fs.remove(testFile)
       }).pipe(Effect.provide(TestLive)))
 
-    it.effect("should have errorType 'validation' for validation failures", () =>
+    it.live("should have errorType 'validation' for validation failures", () =>
       Effect.gen(function*() {
         const { bulkImportUsers } = yield* Effect.promise(() => import("./BulkOperations.js"))
         const fs = yield* FileSystem.FileSystem
