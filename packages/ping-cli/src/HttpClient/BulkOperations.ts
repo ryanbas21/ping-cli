@@ -190,11 +190,9 @@ export const bulkImportUsers = ({
 
           const user = validationResult.right as BulkImportUser
 
-          // Check for duplicate username (atomic check-and-add)
-          const usernameIsDuplicate = yield* Ref.modify(seenUsernames, (set) => {
-            const isDuplicate = HashSet.has(set, user.username)
-            return [isDuplicate, isDuplicate ? set : HashSet.add(set, user.username)]
-          })
+          // Check for duplicate username (read-only check)
+          const usernameSeenSet = yield* Ref.get(seenUsernames)
+          const usernameIsDuplicate = HashSet.has(usernameSeenSet, user.username)
 
           if (usernameIsDuplicate) {
             yield* Ref.update(failedRef, (n) => n + 1)
@@ -209,11 +207,9 @@ export const bulkImportUsers = ({
             return yield* Effect.void
           }
 
-          // Check for duplicate email (atomic check-and-add)
-          const emailIsDuplicate = yield* Ref.modify(seenEmails, (set) => {
-            const isDuplicate = HashSet.has(set, user.email)
-            return [isDuplicate, isDuplicate ? set : HashSet.add(set, user.email)]
-          })
+          // Check for duplicate email (read-only check)
+          const emailSeenSet = yield* Ref.get(seenEmails)
+          const emailIsDuplicate = HashSet.has(emailSeenSet, user.email)
 
           if (emailIsDuplicate) {
             yield* Ref.update(failedRef, (n) => n + 1)
@@ -227,6 +223,10 @@ export const bulkImportUsers = ({
             yield* Console.log(`❌ Row ${row}: Duplicate email ${user.email}`)
             return yield* Effect.void
           }
+
+          // Both checks passed - now add to tracking sets
+          yield* Ref.update(seenUsernames, (set) => HashSet.add(set, user.username))
+          yield* Ref.update(seenEmails, (set) => HashSet.add(set, user.email))
 
           // Build user data object
           const userData: {
