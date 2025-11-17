@@ -567,11 +567,11 @@ describe("Auth Login Command", () => {
         const handler = login.handler
 
         const inputsEffect = Effect.gen(function*() {
-          yield* MockTerminal.inputText("prompted-client-id")
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
           yield* MockTerminal.inputKey("return")
           yield* MockTerminal.inputText("prompted-secret")
           yield* MockTerminal.inputKey("return")
-          yield* MockTerminal.inputText("prompted-env-id")
+          yield* MockTerminal.inputText("02fb4743-189a-4bc7-9d6c-a919edfe6447")
           yield* MockTerminal.inputKey("return")
         })
 
@@ -585,9 +585,9 @@ describe("Auth Login Command", () => {
         yield* Effect.all([inputsEffect, handlerEffect], { concurrency: "unbounded" })
 
         assert.isDefined(storedCreds)
-        assert.strictEqual(storedCreds?.clientId, "prompted-client-id")
+        assert.strictEqual(storedCreds?.clientId, "550b8400-e29b-42d4-a716-446655440000")
         assert.strictEqual(storedCreds?.clientSecret, "prompted-secret")
-        assert.strictEqual(storedCreds?.environmentId, "prompted-env-id")
+        assert.strictEqual(storedCreds?.environmentId, "02fb4743-189a-4bc7-9d6c-a919edfe6447")
       }).pipe(
         Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
         Effect.withConfigProvider(emptyConfig)
@@ -714,6 +714,288 @@ describe("Auth Login Command", () => {
         Effect.provide(Layer.mergeAll(mockOAuthService, MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)),
         Effect.withConfigProvider(envConfig)
       )
+    })
+  })
+
+  /**
+   * Helper function to create a mock OAuthService for testing
+   */
+  const createMockOAuthService = () =>
+    Layer.succeed(
+      OAuthService,
+      OAuthService.of({
+        storeCredentials: () => Effect.void,
+        getAccessToken: () => Effect.succeed("test-access-token"),
+        getCredentials: () =>
+          Effect.succeed(
+            new StoredCredentials({
+              clientId: "test-client-id",
+              clientSecret: "test-client-secret",
+              environmentId: "test-env-id",
+              tokenEndpoint: "https://auth.pingone.com/test-env-id/as/token"
+            })
+          ),
+        clearAuth: () => Effect.void,
+        getAuthStatus: () =>
+          Effect.succeed({
+            hasCredentials: true,
+            hasValidToken: true,
+            clientId: "test-client-id",
+            environmentId: "test-env-id",
+            tokenExpiresAt: Date.now() + 3600000
+          })
+      })
+    )
+
+  describe("input validation", () => {
+    it.effect("should reject empty client ID in interactive prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // First attempt: empty string
+          yield* MockTerminal.inputText("")
+          yield* MockTerminal.inputKey("return")
+
+          // Second attempt: valid UUID
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid secret
+          yield* MockTerminal.inputText("test-secret")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid environment ID
+          yield* MockTerminal.inputText("02fb4743-189a-4bc7-9d6c-a919edfe6447")
+          yield* MockTerminal.inputKey("return")
+        })
+
+        yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          )
+        )
+
+        // If we reach here, validation passed and handler succeeded
+        assert.isTrue(true)
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+
+    it.effect("should accept valid UUID format for client ID in interactive prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Valid UUID on first attempt
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid secret
+          yield* MockTerminal.inputText("test-secret")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid environment ID
+          yield* MockTerminal.inputText("02fb4743-189a-4bc7-9d6c-a919edfe6447")
+          yield* MockTerminal.inputKey("return")
+        })
+
+        yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          )
+        )
+
+        // If we reach here, validation passed and handler succeeded
+        assert.isTrue(true)
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+
+    it.effect("should reject empty environment ID in interactive prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Valid client ID
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid secret
+          yield* MockTerminal.inputText("test-secret")
+          yield* MockTerminal.inputKey("return")
+
+          // First attempt: empty environment ID
+          yield* MockTerminal.inputText("")
+          yield* MockTerminal.inputKey("return")
+
+          // Second attempt: valid environment ID
+          yield* MockTerminal.inputText("02fb4743-189a-4bc7-9d6c-a919edfe6447")
+          yield* MockTerminal.inputKey("return")
+        })
+
+        yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          )
+        )
+
+        // If we reach here, validation passed and handler succeeded
+        assert.isTrue(true)
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+
+    it.effect("should accept valid UUID format for environment ID in interactive prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Valid client ID
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid secret
+          yield* MockTerminal.inputText("test-secret")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid environment ID on first attempt
+          yield* MockTerminal.inputText("02fb4743-189a-4bc7-9d6c-a919edfe6447")
+          yield* MockTerminal.inputKey("return")
+        })
+
+        yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          )
+        )
+
+        // If we reach here, validation passed and handler succeeded
+        assert.isTrue(true)
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+  })
+
+  describe("prompt cancellation", () => {
+    it.effect("should handle Ctrl+C cancellation during client ID prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Simulate Ctrl+C
+          yield* MockTerminal.inputKey("c", { ctrl: true })
+        })
+
+        const result = yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          ),
+          Effect.exit
+        )
+
+        // Should fail with QuitException
+        assert.isTrue(result._tag === "Failure")
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+
+    it.effect("should handle Ctrl+D cancellation during password prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Valid client ID
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Simulate Ctrl+D during password prompt
+          yield* MockTerminal.inputKey("d", { ctrl: true })
+        })
+
+        const result = yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          ),
+          Effect.exit
+        )
+
+        // Should fail with QuitException
+        assert.isTrue(result._tag === "Failure")
+      }).pipe(Effect.withConfigProvider(emptyConfig))
+    })
+
+    it.effect("should handle Ctrl+C cancellation during environment ID prompt", () => {
+      const emptyConfig = ConfigProvider.fromMap(new Map())
+
+      return Effect.gen(function*() {
+        const handler = login.handler({
+          clientId: Option.none(),
+          clientSecret: Option.none(),
+          environmentId: Option.none(),
+          region: Option.none()
+        })
+
+        const inputsEffect = Effect.gen(function*() {
+          // Valid client ID
+          yield* MockTerminal.inputText("550b8400-e29b-42d4-a716-446655440000")
+          yield* MockTerminal.inputKey("return")
+
+          // Valid secret
+          yield* MockTerminal.inputText("test-secret")
+          yield* MockTerminal.inputKey("return")
+
+          // Simulate Ctrl+C during environment ID prompt
+          yield* MockTerminal.inputKey("c", { ctrl: true })
+        })
+
+        const result = yield* Effect.all([inputsEffect, handler], { concurrency: "unbounded" }).pipe(
+          Effect.provide(
+            Layer.mergeAll(createMockOAuthService(), MockTerminal.layer, NodeFileSystem.layer, NodePath.layer)
+          ),
+          Effect.exit
+        )
+
+        // Should fail with QuitException
+        assert.isTrue(result._tag === "Failure")
+      }).pipe(Effect.withConfigProvider(emptyConfig))
     })
   })
 })

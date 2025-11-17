@@ -38,6 +38,15 @@ type Region = typeof VALID_REGIONS[number]
  */
 const isValidRegion = (value: string): value is Region => VALID_REGIONS.includes(value as Region)
 
+/**
+ * Validates UUID v4 format (loosely - accepts standard UUID format).
+ * PingOne uses UUIDs for client IDs and environment IDs.
+ */
+const isValidUUID = (value: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(value.trim())
+}
+
 const region = Options.choice("region", ["com", "eu", "asia", "ca"]).pipe(
   Options.optional,
   Options.withDescription(
@@ -83,12 +92,22 @@ const resolveClientId = (cliOption: Option.Option<string>) =>
     )
 
     if (envValue) {
+      yield* Console.log("Using PINGONE_CLIENT_ID from environment variable")
       return envValue
     }
 
     return yield* Prompt.text({
-      message: "Enter your PingOne OAuth client ID:",
-      validate: (value) => value.trim().length > 0 ? Effect.succeed(value) : Effect.fail("Client ID cannot be empty")
+      message: "Enter your PingOne OAuth client ID (UUID format):",
+      validate: (value) => {
+        const trimmed = value.trim()
+        if (trimmed.length === 0) {
+          return Effect.fail("Client ID cannot be empty")
+        }
+        if (!isValidUUID(trimmed)) {
+          return Effect.fail("Client ID must be a valid UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)")
+        }
+        return Effect.succeed(trimmed)
+      }
     }).pipe(Prompt.run)
   })
 
@@ -111,12 +130,14 @@ const resolveClientSecret = (cliOption: Option.Option<Redacted.Redacted<string>>
     )
 
     if (envValue) {
+      yield* Console.log("Using PINGONE_CLIENT_SECRET from environment variable")
       return envValue
     }
 
-    return yield* Prompt.password({
+    const secret = yield* Prompt.password({
       message: "Enter your PingOne OAuth client secret:"
     }).pipe(Prompt.run)
+    return Redacted.value(secret)
   })
 
 /**
@@ -136,13 +157,24 @@ const resolveEnvironmentId = (cliOption: Option.Option<string>) =>
     )
 
     if (envValue) {
+      yield* Console.log("Using PINGONE_ENV_ID from environment variable")
       return envValue
     }
 
     return yield* Prompt.text({
-      message: "Enter your PingOne environment ID:",
-      validate: (value) =>
-        value.trim().length > 0 ? Effect.succeed(value) : Effect.fail("Environment ID cannot be empty")
+      message: "Enter your PingOne environment ID (UUID format):",
+      validate: (value) => {
+        const trimmed = value.trim()
+        if (trimmed.length === 0) {
+          return Effect.fail("Environment ID cannot be empty")
+        }
+        if (!isValidUUID(trimmed)) {
+          return Effect.fail(
+            "Environment ID must be a valid UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+          )
+        }
+        return Effect.succeed(trimmed)
+      }
     }).pipe(Prompt.run)
   })
 
@@ -191,14 +223,9 @@ export const login = Command.make(
 
       // Resolve credentials with fallback: CLI args > env vars > prompts
       const resolvedClientId = yield* resolveClientId(clientId)
-      const resolvedClientSecretRaw = yield* resolveClientSecret(clientSecret)
+      const resolvedClientSecret = yield* resolveClientSecret(clientSecret)
       const resolvedEnvironmentId = yield* resolveEnvironmentId(environmentId)
       const resolvedRegion = yield* resolveRegion(region)
-
-      // Ensure client secret is unwrapped (Prompt.password may return Redacted<string>)
-      const resolvedClientSecret: string = typeof resolvedClientSecretRaw === "string" ?
-        resolvedClientSecretRaw :
-        Redacted.value(resolvedClientSecretRaw)
 
       // Build token endpoint based on region
       const tokenEndpoint = buildTokenEndpoint(resolvedEnvironmentId, resolvedRegion)
