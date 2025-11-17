@@ -1,10 +1,28 @@
 import { FileSystem } from "@effect/platform"
+import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Schema } from "effect"
 import { PingOneBulkDeleteUserSchema, PingOneBulkImportUserSchema } from "./PingOneSchemas.js"
 
-const TestLive = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer)
+// Mock HttpClient that returns empty success responses (not used in dry-run mode)
+const mockHttpClient = HttpClient.make((req) =>
+  Effect.succeed(
+    HttpClientResponse.fromWeb(
+      req,
+      new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      })
+    )
+  )
+)
+
+const TestLive = Layer.mergeAll(
+  NodeFileSystem.layer,
+  NodePath.layer,
+  Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+)
 
 describe("Bulk Operations", () => {
   describe("File Operations", () => {
