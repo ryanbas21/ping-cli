@@ -829,251 +829,36 @@ If you receive `403 Forbidden` or `400 Bad Request` errors for these operations:
 
 ## Architecture
 
-### Service Composition
-
-The CLI uses Effect-ts wrapper layer pattern for cross-cutting concerns:
-
-#### Retry Logic (HttpClientWithRetry)
-
-Automatically retries transient failures via wrapper layer:
-- **Architecture**: Wrapper layer wraps HttpClient.execute at app entry point
-- **Retries**: Network errors, 5xx server errors, and 429 rate limits
-- **Respects**: `Retry-After` header from rate limit responses
-- **Maximum retry duration**: 2 minutes
-- **Applied to**: All HTTP requests automatically (transparent to consumers)
-
-#### Caching (CacheService)
-
-Caches read operation responses with runtime type safety:
-- **Architecture**: Applied in executeCachedRequest helper after schema validation
-- **Per-resource caching**: Separate caches for users, groups, applications, populations
-- **Cache TTL**: 5 minutes
-- **Cache capacity**: 100 entries per resource type
-- **Automatic invalidation**: Cache cleared on mutations (POST/PUT/PATCH/DELETE)
-- **Runtime validation**: Schema validation for cached values ensures type safety
-- **Self-healing**: Invalid cached entries are automatically recomputed
-- **Applied to**: Read operations via executeCachedRequest helper
-
-#### Why This Architecture?
-
-- **Retry**: Applied at HttpClient layer (no schema needed)
-- **Caching**: Applied after schema validation (requires response schema)
-- **Clean separation**: Each concern at the right abstraction level
-
-### Layer Composition
-
-Services are composed using wrapper pattern in `src/main.ts`:
-
-```typescript
-// Retry wrapper: Base -> Retry
-const httpClientLayer = HttpClientWithRetry.pipe(
-  Layer.provide(
-    Layer.mergeAll(NodeHttpClient.layer, RetryServiceLive)
-  )
-)
-
-const layers = Layer.mergeAll(
-  httpClientLayer,
-  NodeContext.layer,
-  CacheServiceLive,
-  // ... other services
-)
-```
-
-### HTTP Client Functions
-
-All HTTP client functions (`src/HttpClient/*Client.ts`) use reusable helper functions from `src/HttpClient/helpers.ts` that encapsulate common patterns:
-
-#### Helper Functions
-
-**executeRequest** - Standard HTTP requests with schema validation:
-```typescript
-export const executeRequest = <A, I, R>(
-  request: HttpClientRequest.HttpClientRequest,
-  responseSchema: Schema.Schema<A, I, R>
-): Effect.Effect<
-  A,
-  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | R
->
-```
-
-**executeCachedRequest** - GET requests with automatic caching and runtime schema validation:
-```typescript
-export const executeCachedRequest = <A, I, R>(
-  request: HttpClientRequest.HttpClientRequest,
-  responseSchema: Schema.Schema<A, I, R>
-): Effect.Effect<
-  A,
-  PingOneApiError | HttpClientError.HttpClientError | ParseResult.ParseError,
-  HttpClient.HttpClient | CacheService | R
->
-```
-
-**IMPORTANT**:
-- **Retry is automatic** via HttpClientWithRetry wrapper (transparent to helpers)
-- **Caching requires schema** for runtime validation - applied in executeCachedRequest
-- Invalid cached entries are automatically invalidated and recomputed
-
-**executeVoidRequest** - DELETE/POST operations returning void:
-```typescript
-export const executeVoidRequest = (
-  request: HttpClientRequest.HttpClientRequest
-): Effect.Effect<
-  HttpClientResponseType.HttpClientResponse,
-  PingOneApiError | HttpClientError.HttpClientError,
-  HttpClient.HttpClient
->
-```
-
-#### Usage in Client Functions
-
-**Create operations (mutation with schema validation):**
-```typescript
-export const createPopulation = <S extends Schema.Schema.Type<typeof CreatePopulationRequestSchema>>(
-  { envId, token, populationData }: { envId: string; token: string; populationData: S }
-) =>
-  Effect.gen(function*() {
-    const apiBaseUrl = yield* getApiBaseUrl()
-
-    const request = yield* HttpClientRequest.post(
-      `${apiBaseUrl}/environments/${envId}/populations`
-    ).pipe(
-      HttpClientRequest.bearerToken(token),
-      HttpClientRequest.accept("application/json"),
-      HttpClientRequest.setHeader("Content-Type", "application/json"),
-      HttpClientRequest.schemaBodyJson(CreatePopulationRequestSchema)(populationData)
-    )
-
-    return yield* executeRequest(request, PopulationSchema)
-  })
-```
-
-**Read operations (cached with schema validation):**
-```typescript
-export const readPopulation = ({
-  envId,
-  token,
-  populationId
-}: {
-  envId: string
-  token: string
-  populationId: string
-}) =>
-  Effect.gen(function*() {
-    const apiBaseUrl = yield* getApiBaseUrl()
-
-    const request = HttpClientRequest.get(
-      `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
-    ).pipe(
-      HttpClientRequest.bearerToken(token),
-      HttpClientRequest.accept("application/json")
-    )
-
-    return yield* executeCachedRequest(request, PopulationSchema)
-  })
-```
-
-**Delete operations (void response):**
-```typescript
-export const deletePopulation = ({
-  envId,
-  token,
-  populationId
-}: {
-  envId: string
-  token: string
-  populationId: string
-}) =>
-  Effect.gen(function*() {
-    const apiBaseUrl = yield* getApiBaseUrl()
-
-    const request = HttpClientRequest.del(
-      `${apiBaseUrl}/environments/${envId}/populations/${populationId}`
-    ).pipe(
-      HttpClientRequest.bearerToken(token),
-      HttpClientRequest.accept("application/json")
-    )
-
-    yield* executeVoidRequest(request)
-    return undefined
-  })
-```
-
-**Benefits of Helper Functions:**
-- **Code Reduction**: Eliminated 535+ lines of duplicated code across client files
-- **Consistent Error Handling**: Centralized error handling for HTTP operations
-- **Automatic Retry Logic**: Built-in retry with exponential backoff
-- **Type Safety**: Full type inference and error type unions
-- **Maintainability**: Changes to HTTP patterns require updates in one place
+For detailed information about the internal architecture, service composition, and design patterns, see:
+- **[Architecture Guide](../../docs/ARCHITECTURE.md)** - Service composition, layer composition, HTTP client patterns
+- **[API Reference](../../docs/API.md)** - Detailed API documentation
 
 ## Error Handling
 
-The CLI uses structured error types for comprehensive error information:
+The CLI provides clear error messages to help troubleshoot issues:
 
-### Error Types
+### Common Error Types
 
-- **`PingOneAuthError`**: Authentication failures (missing tokens, invalid credentials)
-- **`PingOneApiError`**: API errors with status code, error code, and request ID
-- **`PingOneValidationError`**: Input validation errors with field and constraint details
-- **`NetworkError`**: Network connectivity issues with retry information
-- **`RateLimitError`**: Rate limit errors with retry-after timing
+- **Authentication Errors**: Occurs when credentials are missing or invalid. Run `p1-cli auth login` to authenticate.
+- **API Errors**: Returned by the PingOne API (e.g., resource not found, permission denied). Check the error message for details.
+- **Validation Errors**: Input validation failed (e.g., invalid email format, missing required fields).
+- **Network Errors**: Connection issues or timeouts. The CLI automatically retries transient failures.
+- **Rate Limit Errors**: Too many requests. The CLI automatically respects rate limits and retries after the specified delay.
 
-### Error Context
+### Troubleshooting
 
-All errors include context for debugging:
+If you encounter errors:
 
-```typescript
-{
-  message: "Human-readable error message",
-  cause: "Detailed cause description",
-  context: {
-    environmentId: "abc123",
-    accessTokenProvided: true
-  }
-}
-```
+1. **Check authentication**: Run `p1-cli auth status` to verify you're authenticated
+2. **Verify permissions**: Ensure your Worker Application has the necessary OAuth scopes (see [Known Limitations](#known-limitations))
+3. **Check environment ID**: Verify you're using the correct environment ID
+4. **Review error details**: Error messages include context to help identify the issue
+
+For detailed error type information for developers, see [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Development
 
-### Build
-
-```bash
-# Build TypeScript to JavaScript
-pnpm build
-
-# Type-check without building
-pnpm tsc --noEmit
-```
-
-### Lint
-
-```bash
-# Run ESLint
-pnpm lint
-
-# Auto-fix linting issues
-pnpm lint:fix
-```
-
-### Test
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with coverage
-pnpm test:coverage
-```
-
-## API Documentation
-
-For detailed API documentation, see:
-- [API Reference](../../docs/API.md)
-- [Architecture Guide](../../docs/ARCHITECTURE.md)
+Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, testing, and contribution guidelines
 
 ## License
 
