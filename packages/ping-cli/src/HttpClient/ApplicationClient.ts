@@ -4,6 +4,7 @@
  * Provides functions for managing PingOne applications via the PingOne Management API.
  * Includes operations for creating, reading, updating, and deleting OAuth/OIDC applications.
  *
+ * @internal
  * @since 0.0.1
  */
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"

@@ -1,3 +1,12 @@
+/**
+ * PingOne Group API Schemas
+ *
+ * Schema definitions for PingOne group resources.
+ * Groups organize users and control access to resources.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import * as Schema from "effect/Schema"
 
 /**

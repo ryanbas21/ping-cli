@@ -1,3 +1,12 @@
+/**
+ * PingOne Application API Schemas
+ *
+ * Schema definitions for PingOne application resources.
+ * Applications represent OAuth/OIDC clients and other integrations.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import { Schema } from "effect"
 
 /**

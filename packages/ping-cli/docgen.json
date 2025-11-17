@@ -9,9 +9,10 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "src/main.ts",
-    "src/index.ts",
     "src/Services/**/*",
-    "src/HttpClient/**/*"
+    "src/HttpClient/**/*",
+    "src/Commands/**/*",
+    "src/test-helpers/**/*"
   ],
   "enforceDescriptions": false,
   "enforceExamples": false,

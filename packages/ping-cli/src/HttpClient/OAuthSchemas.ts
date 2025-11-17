@@ -4,6 +4,7 @@
  * Defines schemas for OAuth token endpoint requests and responses.
  * Used for type-safe OAuth client credentials grant flow with PingOne.
  *
+ * @internal
  * @since 0.0.3
  */
 import * as Schema from "effect/Schema"
