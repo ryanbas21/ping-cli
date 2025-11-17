@@ -4,6 +4,7 @@
  * Provides functions for managing PingOne users via the PingOne Management API.
  * Includes operations for creating, reading, updating, deleting, and verifying users.
  *
+ * @internal
  * @since 0.0.1
  */
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"

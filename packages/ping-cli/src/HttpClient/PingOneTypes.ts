@@ -1,3 +1,12 @@
+/**
+ * PingOne User API TypeScript Types
+ *
+ * TypeScript type definitions for user API operations.
+ * Defines payload structures for user management, authentication, sessions, MFA, and bulk operations.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import type * as Schema from "effect/Schema"
 import type {
   PingOneCreateUserRequest,

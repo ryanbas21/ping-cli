@@ -4,6 +4,7 @@
  * Provides functions for bulk import, export, and delete operations.
  * Uses Effect concurrency for efficient parallel processing.
  *
+ * @internal
  * @since 0.0.1
  */
 import { FileSystem } from "@effect/platform"

@@ -5,6 +5,7 @@
  * Includes operations for creating, reading, updating, and deleting groups, as well as
  * managing group memberships.
  *
+ * @internal
  * @since 0.0.1
  */
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"

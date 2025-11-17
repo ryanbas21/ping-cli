@@ -1,3 +1,12 @@
+/**
+ * PingOne Group API TypeScript Types
+ *
+ * TypeScript type definitions for group API operations.
+ * Defines payload structures for group management functions.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import type { Schema } from "effect"
 import type { PingOneCreateGroupRequest, PingOneUpdateGroupRequest } from "./GroupSchemas.js"
 

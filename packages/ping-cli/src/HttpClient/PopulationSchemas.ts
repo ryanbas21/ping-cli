@@ -1,3 +1,12 @@
+/**
+ * PingOne Population API Schemas
+ *
+ * Schema definitions for PingOne population resources.
+ * Populations are containers for organizing users with shared policies.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import { Schema } from "effect"
 
 /**

@@ -1,3 +1,12 @@
+/**
+ * PingOne User API Schemas
+ *
+ * Schema definitions for PingOne user resources.
+ * Includes schemas for user CRUD operations, sessions, MFA, and bulk operations.
+ *
+ * @internal
+ * @since 0.0.1
+ */
 import * as Schema from "effect/Schema"
 
 /**
