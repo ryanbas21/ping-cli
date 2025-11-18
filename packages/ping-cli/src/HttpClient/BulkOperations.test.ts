@@ -7,7 +7,7 @@ import { FileSystem } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer, Schema } from "effect"
+import { ConfigProvider, Effect, Layer, Schema } from "effect"
 import { PingOneBulkDeleteUserSchema, PingOneBulkImportUserSchema } from "./PingOneSchemas.js"
 
 // Mock HttpClient that returns empty success responses (not used in dry-run mode)
@@ -26,7 +26,10 @@ const mockHttpClient = HttpClient.make((req) =>
 const TestLive = Layer.mergeAll(
   NodeFileSystem.layer,
   NodePath.layer,
-  Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+  Layer.succeed(HttpClient.HttpClient, mockHttpClient),
+  Layer.setConfigProvider(
+    ConfigProvider.fromMap(new Map([["PINGONE_API_URL", "https://api.pingone.com/v1"]]))
+  )
 )
 
 describe("Bulk Operations", () => {
