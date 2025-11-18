@@ -1,3 +1,8 @@
+/**
+ * Command for reading/retrieving a PingOne environment by ID.
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import * as Console from "effect/Console"
 import * as DateTime from "effect/DateTime"

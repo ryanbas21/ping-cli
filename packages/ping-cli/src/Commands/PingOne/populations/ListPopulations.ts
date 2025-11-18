@@ -1,3 +1,9 @@
+/**
+ * CLI command for listing all PingOne populations with optional filtering and pagination support.
+ *
+ * @since 0.0.1
+ */
+
 import { Command, Options } from "@effect/cli"
 import { Array, Effect } from "effect"
 import * as Console from "effect/Console"

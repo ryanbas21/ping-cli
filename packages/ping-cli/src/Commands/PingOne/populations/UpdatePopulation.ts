@@ -1,3 +1,9 @@
+/**
+ * CLI command for updating an existing PingOne population with optional name and description fields.
+ *
+ * @since 0.0.1
+ */
+
 import { Args, Command, Options } from "@effect/cli"
 import { Effect, Record } from "effect"
 import * as Console from "effect/Console"

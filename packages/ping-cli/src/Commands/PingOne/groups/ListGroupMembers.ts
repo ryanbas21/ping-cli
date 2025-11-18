@@ -1,3 +1,8 @@
+/**
+ * Command for listing members of a PingOne group.
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import { Array, Effect } from "effect"
 import * as Console from "effect/Console"

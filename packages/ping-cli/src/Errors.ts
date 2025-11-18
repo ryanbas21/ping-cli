@@ -31,6 +31,8 @@ import * as Data from "effect/Data"
  *   }
  * })
  * ```
+ *
+ * @since 0.0.1
  */
 export class PingOneAuthError extends Data.TaggedError("PingOneAuthError")<{
   readonly message: string
@@ -62,6 +64,8 @@ export class PingOneAuthError extends Data.TaggedError("PingOneAuthError")<{
  *   }
  * })
  * ```
+ *
+ * @since 0.0.1
  */
 export class PingOneApiError extends Data.TaggedError("PingOneApiError")<{
   readonly message: string
@@ -91,6 +95,8 @@ export class PingOneApiError extends Data.TaggedError("PingOneApiError")<{
  *   constraints: ["Must be valid email format", "Must not be empty"]
  * })
  * ```
+ *
+ * @since 0.0.1
  */
 export class PingOneValidationError extends Data.TaggedError("PingOneValidationError")<{
   readonly message: string
@@ -117,6 +123,8 @@ export class PingOneValidationError extends Data.TaggedError("PingOneValidationE
  *   }
  * })
  * ```
+ *
+ * @since 0.0.1
  */
 export class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly message: string
@@ -143,6 +151,8 @@ export class NetworkError extends Data.TaggedError("NetworkError")<{
  *   remaining: 0
  * })
  * ```
+ *
+ * @since 0.0.1
  */
 export class RateLimitError extends Data.TaggedError("RateLimitError")<{
   readonly message: string

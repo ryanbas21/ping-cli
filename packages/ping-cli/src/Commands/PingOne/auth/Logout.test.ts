@@ -1,3 +1,8 @@
+/**
+ * Tests for authentication logout command functionality
+ *
+ * @since 0.0.1
+ */
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"

@@ -1,3 +1,8 @@
+/**
+ * Command for updating an existing PingOne group.
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import { Effect, Record } from "effect"
 import * as Console from "effect/Console"

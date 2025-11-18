@@ -1,3 +1,8 @@
+/**
+ * Tests for MFA operations
+ *
+ * @since 0.0.1
+ */
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"

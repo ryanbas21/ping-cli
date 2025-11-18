@@ -272,12 +272,34 @@ PINGONE_POPULATION_ID=your-default-population-id
 
 ### Regional API Endpoints
 
-The CLI automatically configures the correct API endpoint based on the region you specify during `auth login`. You can also override it manually:
+The CLI automatically configures the correct API endpoint based on the region you specify during `auth login`. The API URL is determined using this priority:
+
+1. **`PINGONE_API_URL` environment variable** - Explicitly set URL (highest priority)
+2. **Stored credentials region** - Automatically derived from your login credentials (automatic)
+3. **Default** - North America endpoint (fallback)
+
+**When you run `auth login` with a region:**
+
+```bash
+p1-cli auth login --region="ca"
+# Automatically uses: https://api.pingone.ca/v1 for all API calls
+```
+
+**No manual configuration needed!** The CLI automatically extracts the region from your stored credentials and uses the correct API endpoint.
+
+**Available Regions:**
 
 - **North America** (default): `https://api.pingone.com/v1`
 - **Europe**: `https://api.pingone.eu/v1`
 - **Asia Pacific**: `https://api.pingone.asia/v1`
 - **Canada**: `https://api.pingone.ca/v1`
+
+**Manual Override (Optional):**
+
+```bash
+# Override the API URL for testing or custom deployments
+export PINGONE_API_URL="https://api.pingone.eu/v1"
+```
 
 ## Usage
 

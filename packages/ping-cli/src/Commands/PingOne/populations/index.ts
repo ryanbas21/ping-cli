@@ -1,3 +1,9 @@
+/**
+ * PingOne population management commands - entry point for all population-related CLI commands.
+ *
+ * @since 0.0.1
+ */
+
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { createPopulationCommand } from "./CreatePopulation.js"

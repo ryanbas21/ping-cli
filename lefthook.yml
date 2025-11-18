@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: pnpm --filter p1-cli lint --fix
+    typecheck:
+      run: pnpm --filter p1-cli tsc
+    test:
+      run: pnpm --filter p1-cli test
+    build:
+      run: pnpm --filter p1-cli build

@@ -1,5 +1,11 @@
+/**
+ * Tests for PingOne client operations
+ *
+ * @since 0.0.1
+ */
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
+import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import type { PingOneApiError } from "../Errors.js"
@@ -393,7 +399,10 @@ describe("PingOneClient", () => {
 
         const testLayer = Layer.mergeAll(
           Layer.succeed(HttpClient.HttpClient, mockClient),
-          MockServicesLive
+          MockServicesLive,
+          Layer.setConfigProvider(
+            ConfigProvider.fromMap(new Map([["PINGONE_API_URL", "https://api.pingone.ca/v1"]]))
+          )
         )
 
         yield* createPingOneUser({
@@ -402,7 +411,7 @@ describe("PingOneClient", () => {
           userData
         }).pipe(Effect.provide(testLayer))
 
-        assert.strictEqual(capturedUrl, "https://api.pingone.com/v1/environments/env-custom/users")
+        assert.strictEqual(capturedUrl, "https://api.pingone.ca/v1/environments/env-custom/users")
       }))
 
     it.effect("should set correct headers including bearer token", () =>

@@ -1,3 +1,8 @@
+/**
+ * Tests for authentication status command functionality
+ *
+ * @since 0.0.1
+ */
 import { assert, describe, it } from "@effect/vitest"
 import { DateTime, Effect, Layer } from "effect"
 import { OAuthFlowError } from "../../../Errors.js"

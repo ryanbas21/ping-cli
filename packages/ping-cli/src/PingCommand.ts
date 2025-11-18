@@ -1,4 +1,11 @@
 /* eslint-disable @effect/dprint */
+/**
+ * PingOne CLI command definitions and configuration
+ *
+ * @since 0.0.1
+ *
+ * @module
+ */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import packageJson from "../package.json" with { type: "json" }

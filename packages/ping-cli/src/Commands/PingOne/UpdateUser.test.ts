@@ -1,3 +1,8 @@
+/**
+ * Tests for PingOne user update command
+ *
+ * @since 0.0.1
+ */
 import { HttpClient, HttpClientError } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"

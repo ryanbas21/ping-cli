@@ -13,6 +13,7 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "build": "pnpm -r --filter './packages/*' build",
+    "docgen": "pnpm -r --filter './packages/*' docgen",
     "check": "pnpm -r tsc",
     "test": "pnpm -r --filter './packages/*' test",
     "lint": "pnpm -r --filter './packages/*' lint",
@@ -23,16 +24,13 @@
     "changeset": "changeset",
     "version": "changeset version",
     "prepare": "effect-language-service patch",
-    "release": "pnpm -r publish && changeset tag",
-    "docgen": "cd packages/ping-cli && pnpm exec docgen"
+    "release": "pnpm -r publish && changeset tag"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.7",
-    "@effect/docgen": "^0.5.2",
-    "@effect/eslint-plugin": "^0.3.2",
-    "@effect/language-service": "^0.55.2",
-    "@effect/vitest": "^0.27.0",
+    "@effect/eslint-plugin": "catalog:effect",
+    "@effect/language-service": "catalog:effect",
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
     "@eslint/markdown": "^7.5.1",
@@ -42,9 +40,11 @@
     "@vitest/coverage-v8": "^4.0.8",
     "dprint": "^0.50.2",
     "eslint": "^9.39.1",
+    "eslint-docgen": "^0.7.1",
     "eslint-plugin-jsdoc": "^61.1.12",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
+    "lefthook": "^2.0.4",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.46.3",
     "vitest": "^4.0.8"

@@ -1,8 +1,15 @@
+/**
+ * Tests for bulk operations
+ *
+ * @since 0.0.1
+ */
 import { FileSystem } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer, Schema } from "effect"
+import { ConfigProvider, Effect, Layer, Schema } from "effect"
+import { CredentialStorageError } from "../Errors.js"
+import { CredentialService } from "../Services/CredentialService.js"
 import { PingOneBulkDeleteUserSchema, PingOneBulkImportUserSchema } from "./PingOneSchemas.js"
 
 // Mock HttpClient that returns empty success responses (not used in dry-run mode)
@@ -18,10 +25,48 @@ const mockHttpClient = HttpClient.make((req) =>
   )
 )
 
+// Mock CredentialService that always fails (tests use direct token/config)
+const mockCredentialService = CredentialService.of({
+  store: () =>
+    Effect.fail(
+      new CredentialStorageError({
+        message: "Not implemented in tests",
+        storage: "keychain",
+        operation: "write",
+        cause: "Mock service",
+        fallbackAvailable: false
+      })
+    ),
+  retrieve: () =>
+    Effect.fail(
+      new CredentialStorageError({
+        message: "Not implemented in tests",
+        storage: "keychain",
+        operation: "read",
+        cause: "Mock service",
+        fallbackAvailable: false
+      })
+    ),
+  delete: () =>
+    Effect.fail(
+      new CredentialStorageError({
+        message: "Not implemented in tests",
+        storage: "keychain",
+        operation: "delete",
+        cause: "Mock service",
+        fallbackAvailable: false
+      })
+    )
+})
+
 const TestLive = Layer.mergeAll(
   NodeFileSystem.layer,
   NodePath.layer,
-  Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+  Layer.succeed(HttpClient.HttpClient, mockHttpClient),
+  Layer.succeed(CredentialService, mockCredentialService),
+  Layer.setConfigProvider(
+    ConfigProvider.fromMap(new Map([["PINGONE_API_URL", "https://api.pingone.com/v1"]]))
+  )
 )
 
 describe("Bulk Operations", () => {

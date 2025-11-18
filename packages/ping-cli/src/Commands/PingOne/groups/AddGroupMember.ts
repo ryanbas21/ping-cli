@@ -1,3 +1,8 @@
+/**
+ * Command for adding a user to a PingOne group.
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"

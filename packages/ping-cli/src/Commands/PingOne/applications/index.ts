@@ -1,3 +1,8 @@
+/**
+ * Application management commands for PingOne applications.
+ *
+ * @since 0.0.1
+ */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { createApplicationCommand } from "./CreateApplication.js"

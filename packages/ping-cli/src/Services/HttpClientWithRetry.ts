@@ -21,15 +21,8 @@ import { RetryService } from "./RetryService.js"
  * **Composability:**
  * This layer can be composed with other wrappers (e.g., caching, metrics).
  *
- * **Usage:**
- * ```typescript
- * const AppLayer = Layer.provide(
- *   HttpClientWithRetry,
- *   Layer.mergeAll(NodeHttpClient.layer, RetryServiceLive)
- * )
- * ```
- *
  * @since 0.3.0
+ * @category layers
  */
 export const HttpClientWithRetry = Layer.effect(
   HttpClient.HttpClient,

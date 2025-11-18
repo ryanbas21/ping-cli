@@ -1,3 +1,8 @@
+/**
+ * Create user command for PingOne CLI
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import * as Array from "effect/Array"
 import * as Config from "effect/Config"

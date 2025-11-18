@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "build": "tsc -p ./tsconfig.prod.json",
+    "docgen": "docgen",
     "postbuild": "chmod +x dist/main.js",
     "test": "vitest run",
     "lint": "eslint .",
@@ -53,15 +54,16 @@
     "registry": "https://registry.npmjs.org"
   },
   "dependencies": {
-    "@effect/cli": "^0.72.1",
-    "@effect/platform": "^0.93.0",
-    "@effect/platform-node": "^0.100.0",
-    "effect": "^3.19.3",
+    "@effect/cli": "catalog:effect",
+    "@effect/platform": "catalog:effect",
+    "@effect/platform-node": "catalog:effect",
+    "effect": "catalog:effect",
     "keytar": "^7.9.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "@effect/vitest": "^0.27.0",
+    "@effect/docgen": "catalog:effect",
+    "@effect/vitest": "catalog:effect",
     "@types/node": "^24.10.0",
     "@vitest/coverage-v8": "^4.0.8",
     "publint": "^0.3.15",
