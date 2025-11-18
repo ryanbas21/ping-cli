@@ -1,6 +1,6 @@
 {
   "name": "p1-cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A CLI tool for managing PingOne resources",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

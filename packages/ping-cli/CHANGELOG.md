@@ -1,5 +1,26 @@
 # p1-cli
 
+## 0.3.2
+
+### Patch Changes
+
+- [#29](https://github.com/ryanbas21/ping-cli/pull/29) [`e92817c`](https://github.com/ryanbas21/ping-cli/commit/e92817c4967ee9aadaf7125bc6e283dd2d31366a) Thanks [@ryanbas21](https://github.com/ryanbas21)! - Automatic API endpoint detection from stored credentials region
+
+  The CLI now automatically determines the correct API URL based on the region specified during `auth login`, eliminating the need to manually set `PINGONE_API_URL` for non-default regions.
+
+  **Changes:**
+
+  - `getApiBaseUrl()` now uses 3-tier priority: `PINGONE_API_URL` env var > stored credentials region > default
+  - Automatically extracts region from stored credentials' `tokenEndpoint`
+  - Supports all regions: North America (com), Europe (eu), Asia Pacific (asia), Canada (ca)
+  - Fixes 401 errors when using Canada, Europe, or Asia Pacific regions without explicit configuration
+
+  **What this means for users:**
+
+  - Just run `p1-cli auth login --region="ca"` and the CLI automatically uses `https://api.pingone.ca/v1`
+  - No need to manually set `PINGONE_API_URL` environment variable anymore
+  - Seamless multi-region support out of the box
+
 ## 0.3.1
 
 ### Patch Changes
