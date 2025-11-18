@@ -103,6 +103,7 @@ export interface OAuthService {
  * Context tag for OAuthService.
  *
  * @since 0.0.3
+ * @category services
  */
 export const OAuthService = Context.GenericTag<OAuthService>("@services/OAuthService")
 
@@ -143,6 +144,7 @@ const calculateExpirationTimestamp = (expiresIn: number): number =>
  * All service methods return Effects with no requirements (R = never).
  *
  * @since 0.0.3
+ * @category layers
  */
 export const OAuthServiceLive = Layer.effect(
   OAuthService,

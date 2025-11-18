@@ -1,3 +1,8 @@
+/**
+ * Tests for PingOne configuration helper functions
+ *
+ * @since 0.0.1
+ */
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Redacted } from "effect"
 import { CredentialStorageError, OAuthFlowError } from "../../Errors.js"

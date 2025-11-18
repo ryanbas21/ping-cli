@@ -1,3 +1,8 @@
+/**
+ * Tests for bulk operations
+ *
+ * @since 0.0.1
+ */
 import { FileSystem } from "@effect/platform"
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"

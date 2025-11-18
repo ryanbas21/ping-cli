@@ -6,6 +6,7 @@
  *
  * @since 0.0.3
  */
+import * as Config from "effect/Config"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -74,6 +75,7 @@ export interface CredentialService {
  * Context tag for CredentialService.
  *
  * @since 0.0.3
+ * @category services
  */
 export const CredentialService = Context.GenericTag<CredentialService>(
   "@services/CredentialService"
@@ -423,10 +425,18 @@ const retrieveFromEnvironment = (): Effect.Effect<
   CredentialStorageError
 > =>
   Effect.gen(function*() {
-    const clientId = process.env.PINGONE_CLIENT_ID
-    const clientSecret = process.env.PINGONE_CLIENT_SECRET
-    const environmentId = process.env.PINGONE_ENV_ID
-    const region = process.env.PINGONE_AUTH_REGION ?? "com"
+    const clientId = yield* Config.string("PINGONE_CLIENT_ID").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+    const clientSecret = yield* Config.string("PINGONE_CLIENT_SECRET").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+    const environmentId = yield* Config.string("PINGONE_ENV_ID").pipe(
+      Effect.catchAll(() => Effect.succeed(undefined))
+    )
+    const region = yield* Config.string("PINGONE_AUTH_REGION").pipe(
+      Effect.catchAll(() => Effect.succeed("com"))
+    )
 
     if (!clientId || !clientSecret || !environmentId) {
       return yield* Effect.fail(
@@ -457,6 +467,7 @@ const retrieveFromEnvironment = (): Effect.Effect<
  * 3. Encrypted file (fallback)
  *
  * @since 0.0.3
+ * @category layers
  */
 export const CredentialServiceLive = Layer.succeed(
   CredentialService,

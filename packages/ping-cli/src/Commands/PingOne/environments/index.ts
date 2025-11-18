@@ -1,3 +1,8 @@
+/**
+ * PingOne environment command exports and composition.
+ *
+ * @since 0.0.1
+ */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { listEnvironmentsCommand } from "./ListEnvironments.js"

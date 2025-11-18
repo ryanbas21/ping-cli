@@ -132,19 +132,9 @@ export const readPingOneUser = (
  * @param payload.envId - PingOne environment ID containing the users
  * @param payload.token - PingOne access token with user:read permissions
  * @param payload.limit - Optional maximum number of users to return (default: 100, max: 1000)
- * @param payload.filter - Optional SCIM filter expression (e.g., 'email eq "user@example.com"')
  * @returns Effect that yields paginated list of users with metadata
  * @throws {PingOneApiError} When API request fails (e.g., 400 if filter is invalid)
  * @see {@link PingOneListUsersResponse} for response schema definition
- * @example
- * // List all users (up to default limit)
- * listPingOneUsers({ envId, token })
- *
- * // Search by email
- * listPingOneUsers({ envId, token, filter: 'email eq "user@example.com"' })
- *
- * // Search by username with limit
- * listPingOneUsers({ envId, token, filter: 'username sw "john"', limit: 50 })
  * @since 0.0.1
  * @category API Client
  */

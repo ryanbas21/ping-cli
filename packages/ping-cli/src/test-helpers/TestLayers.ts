@@ -13,6 +13,8 @@ import { CacheService, CredentialService, OAuthService, RetryService } from "../
 
 /**
  * Mock RetryService that passes through requests without retry logic
+ *
+ * @since 0.0.1
  */
 export const MockRetryServiceLive = Layer.succeed(
   RetryService,
@@ -23,6 +25,8 @@ export const MockRetryServiceLive = Layer.succeed(
 
 /**
  * Mock CacheService that passes through requests without caching
+ *
+ * @since 0.0.1
  */
 export const MockCacheServiceLive = Layer.succeed(
   CacheService,
@@ -93,6 +97,8 @@ export const MockCredentialServiceLive = Layer.succeed(
 
 /**
  * Combined mock services layer for testing
+ *
+ * @since 0.0.1
  */
 export const MockServicesLive = Layer.mergeAll(
   MockRetryServiceLive,

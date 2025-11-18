@@ -16,21 +16,6 @@ import { executeCachedRequest } from "./helpers.js"
 /**
  * Reads an environment by ID
  *
- * @example
- * ```ts
- * import { Effect } from "effect"
- * import { readEnvironment } from "./EnvironmentClient"
- *
- * const program = Effect.gen(function* () {
- *   const environment = yield* readEnvironment({
- *     token: "your-auth-token",
- *     environmentId: "env-123"
- *   })
- *   console.log(`Environment: ${environment.name} (${environment.type})`)
- *   console.log(`Region: ${environment.region}`)
- * })
- * ```
- *
  * @param params - Object containing token and environmentId
  * @param params.token - Authentication token
  * @param params.environmentId - Environment ID
@@ -60,41 +45,6 @@ export const readEnvironment = ({
 
 /**
  * Lists environments
- *
- * @example
- * ```ts
- * import { Effect } from "effect"
- * import { listEnvironments } from "./EnvironmentClient"
- *
- * // List all environments
- * const program = Effect.gen(function* () {
- *   const response = yield* listEnvironments({
- *     token: "your-auth-token"
- *   })
- *   const environments = response._embedded.environments
- *   console.log(`Found ${environments.length} environments`)
- * })
- *
- * // List with pagination
- * const limited = Effect.gen(function* () {
- *   const response = yield* listEnvironments({
- *     token: "your-auth-token",
- *     limit: 10
- *   })
- *   const environments = response._embedded.environments
- *   console.log(`Retrieved ${environments.length} environments (max 10)`)
- * })
- *
- * // List with filtering
- * const filtered = Effect.gen(function* () {
- *   const response = yield* listEnvironments({
- *     token: "your-auth-token",
- *     filter: "type eq \"PRODUCTION\""
- *   })
- *   const environments = response._embedded.environments
- *   console.log(`Found ${environments.length} production environments`)
- * })
- * ```
  *
  * @param params - Object containing token and optional query parameters
  * @param params.token - Authentication token

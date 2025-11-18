@@ -1,3 +1,8 @@
+/**
+ * Retry logic service for HTTP requests with exponential backoff
+ *
+ * @since 0.0.1
+ */
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
@@ -35,6 +40,7 @@ export interface RetryService {
  * Context tag for RetryService.
  *
  * @since 0.0.1
+ * @category services
  */
 export const RetryService = Context.GenericTag<RetryService>("@services/RetryService")
 
@@ -107,6 +113,7 @@ const getRetryAfterDelay = (error: unknown): Duration.Duration | undefined => {
  * Provides retry logic with exponential backoff and Retry-After header support.
  *
  * @since 0.0.1
+ * @category layers
  */
 export const RetryServiceLive = Layer.succeed(
   RetryService,

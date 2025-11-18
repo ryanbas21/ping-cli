@@ -1,3 +1,8 @@
+/**
+ * Set password command for PingOne CLI
+ *
+ * @since 0.0.1
+ */
 import { Args, Command, Options } from "@effect/cli"
 import { Effect, Redacted } from "effect"
 import * as Console from "effect/Console"

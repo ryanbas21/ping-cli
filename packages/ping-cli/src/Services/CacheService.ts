@@ -71,6 +71,7 @@ export interface CacheService {
  * Context tag for CacheService.
  *
  * @since 0.0.1
+ * @category services
  */
 export const CacheService = Context.GenericTag<CacheService>("@services/CacheService")
 
@@ -79,10 +80,6 @@ export const CacheService = Context.GenericTag<CacheService>("@services/CacheSer
  *
  * @param urlPath - The URL path to analyze
  * @returns The resource type or undefined if not recognized
- *
- * @example
- * extractResourceType("/v1/environments/abc/users/123") // => "users"
- * extractResourceType("/v1/environments/abc/groups") // => "groups"
  *
  * @since 0.0.1
  */
@@ -203,6 +200,7 @@ const validateCachedValue = <A, SR>(
  * - Capacity: 100 entries per resource type
  *
  * @since 0.0.1
+ * @category layers
  */
 export const CacheServiceLive = Layer.effect(
   CacheService,
@@ -238,6 +236,7 @@ export const CacheServiceLive = Layer.effect(
 
     /**
      * Gets the appropriate cache instance for a resource type.
+     * @since 0.0.1
      */
     const getCacheForResource = (resourceType: ResourceType): ResourceCache => {
       switch (resourceType) {

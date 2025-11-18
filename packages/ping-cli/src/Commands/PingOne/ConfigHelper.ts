@@ -1,3 +1,9 @@
+/**
+ * Configuration helper functions for PingOne CLI commands.
+ *
+ * @since 0.0.1
+ */
+
 import { Config, Effect, Predicate, Redacted } from "effect"
 import { PingOneAuthError } from "../../Errors.js"
 import { CredentialService, OAuthService } from "../../Services/index.js"

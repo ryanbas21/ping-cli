@@ -1,3 +1,8 @@
+/**
+ * Tests for authentication login command functionality
+ *
+ * @since 0.0.1
+ */
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
 import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"

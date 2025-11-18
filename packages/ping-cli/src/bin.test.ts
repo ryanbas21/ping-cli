@@ -1,3 +1,8 @@
+/**
+ * Tests for CLI binary
+ *
+ * @since 0.0.1
+ */
 import { execFile } from "node:child_process"
 import { existsSync, statSync } from "node:fs"
 import { resolve } from "node:path"

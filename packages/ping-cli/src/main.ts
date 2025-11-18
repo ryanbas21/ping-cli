@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * PingOne CLI application entry point
+ *
+ * @since 0.0.1
+ */
 import { NodeContext, NodeHttpClient, NodeRuntime } from "@effect/platform-node"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"

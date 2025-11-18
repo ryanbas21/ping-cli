@@ -1,3 +1,8 @@
+/**
+ * PingOne command module aggregating all PingOne-related CLI commands.
+ *
+ * @since 0.0.1
+ */
 import { Command } from "@effect/cli"
 import { Array } from "effect"
 import { applicationsCommand } from "./applications/index.js"

@@ -1,3 +1,8 @@
+/**
+ * Command to list PingOne applications with optional filtering and pagination.
+ *
+ * @since 0.0.1
+ */
 import { Command, Options } from "@effect/cli"
 import { Array, Effect } from "effect"
 import * as Console from "effect/Console"

@@ -1,3 +1,8 @@
+/**
+ * Mock terminal service for testing
+ *
+ * @since 0.0.1
+ */
 import type * as Terminal from "@effect/platform/Terminal"
 import * as Array from "effect/Array"
 import * as Console from "effect/Console"
@@ -147,6 +152,19 @@ export declare namespace MockTerminal {
  * Implements the Terminal.Terminal interface for testing purposes.
  *
  * @since 0.0.3
+ *
+ * @example
+ * ```ts
+ * import { Effect } from "effect"
+ * import * as MockTerminal from "./test/services/MockTerminal.js"
+ *
+ * const program = Effect.gen(function*() {
+ *   const terminal = yield* MockTerminal.MockTerminal
+ *   yield* terminal.inputText("test")
+ * })
+ * ```
+ *
+ * @category services
  */
 export const MockTerminal = Context.GenericTag<Terminal.Terminal, MockTerminal>(
   "@effect/platform/Terminal"

@@ -1,3 +1,8 @@
+/**
+ * Tests for PingOne CLI commands
+ *
+ * @since 0.0.1
+ */
 import { NodeContext, NodeHttpClient } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
