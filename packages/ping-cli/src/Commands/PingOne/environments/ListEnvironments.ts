@@ -38,41 +38,32 @@ export const listEnvironmentsCommand = Command.make(
       const filterParam = filter._tag === "Some" ? filter.value : undefined
 
       // List environments
-      return yield* listEnvironments({
+      const response = yield* listEnvironments({
         token,
         limit: limitParam,
         filter: filterParam
-      }).pipe(
-        Effect.flatMap((response) => {
-          const environments = response._embedded.environments
+      })
+      const environments = response._embedded.environments
 
-          return Console.log(
-            `Found ${environments.length} environment(s):\n\n${
-              Array.join(
-                Array.map(
-                  environments,
-                  (env, index) =>
-                    `${index + 1}. ${env.name} (${env.id})${
-                      env.description ?
-                        `
+      yield* Console.log(
+        `Found ${environments.length} environment(s):\n\n${
+          Array.join(
+            Array.map(
+              environments,
+              (env, index) =>
+                `${index + 1}. ${env.name} (${env.id})${
+                  env.description ?
+                    `
    Description: ${env.description}` :
-                        ""
-                    }
+                    ""
+                }
    Type: ${env.type}
    Region: ${env.region}
    License: ${env.license.name}`
-                ),
-                "\n\n"
-              )
-            }`
+            ),
+            "\n\n"
           )
-        }),
-        Effect.catchAll((error) => {
-          const errorMsg = `Failed to list environments: ${error._tag}`
-          const statusMsg = "status" in error ? ` (HTTP ${error.status})` : ""
-          const detailMsg = "message" in error ? `\n  Details: ${error.message}` : ""
-          return Console.error(`${errorMsg}${statusMsg}${detailMsg}`)
-        })
+        }`
       )
     })
 )

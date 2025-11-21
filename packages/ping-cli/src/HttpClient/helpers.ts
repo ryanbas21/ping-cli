@@ -51,12 +51,33 @@ export const executeRequest = <A, I, R>(
       Effect.if(response.status >= 200 && response.status < 300, {
         onTrue: () => HttpClientResponse.schemaBodyJson(responseSchema)(response),
         onFalse: () =>
-          Effect.fail(
-            new PingOneApiError({
-              status: response.status,
-              message: `PingOne API request failed with status ${response.status}`
-            })
-          )
+          Effect.gen(function*() {
+            // Try to extract error details from response body
+            const body = yield* response.json.pipe(
+              Effect.catchAll(() => Effect.succeed({}))
+            )
+
+            const errorBody = body as {
+              message?: string
+              code?: string
+              details?: unknown
+              id?: string
+            }
+
+            return yield* Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: errorBody.message ?? `PingOne API request failed with status ${response.status}`,
+                errorCode: errorBody.code,
+                errorDetails: errorBody.details,
+                requestId: errorBody.id,
+                context: {
+                  method: request.method,
+                  url: request.url
+                }
+              })
+            )
+          })
       })
     )
   )
@@ -120,12 +141,32 @@ export const executeVoidRequest = (
       Effect.if(response.status >= 200 && response.status < 300, {
         onTrue: () => Effect.succeed(response),
         onFalse: () =>
-          Effect.fail(
-            new PingOneApiError({
-              status: response.status,
-              message: `PingOne API request failed with status ${response.status}`
-            })
-          )
+          Effect.gen(function*() {
+            const body = yield* response.json.pipe(
+              Effect.catchAll(() => Effect.succeed({}))
+            )
+
+            const errorBody = body as {
+              message?: string
+              code?: string
+              details?: unknown
+              id?: string
+            }
+
+            return yield* Effect.fail(
+              new PingOneApiError({
+                status: response.status,
+                message: errorBody.message ?? `PingOne API request failed with status ${response.status}`,
+                errorCode: errorBody.code,
+                errorDetails: errorBody.details,
+                requestId: errorBody.id,
+                context: {
+                  method: request.method,
+                  url: request.url
+                }
+              })
+            )
+          })
       })
     )
   )

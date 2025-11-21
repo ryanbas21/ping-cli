@@ -37,14 +37,12 @@ export const removeGroupMemberCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Remove member from group
-      return yield* removeGroupMember({
+      yield* removeGroupMember({
         envId,
         token,
         groupId,
         userId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`User ${userId} removed from group ${groupId} successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to remove member from group: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`User ${userId} removed from group ${groupId} successfully!`)
     })
 )

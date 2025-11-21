@@ -51,8 +51,11 @@ describe("UpdateUser Command", () => {
           })
         )
 
-        // Validation passes, HTTP fails but error is handled gracefully
-        assert.strictEqual(result._tag, "Success")
+        // Validation passes, HTTP fails with transport error (not validation error)
+        assert.strictEqual(result._tag, "Failure")
+        if (result._tag === "Failure" && result.cause._tag === "Fail") {
+          assert.notStrictEqual(result.cause.error._tag, "PingOneValidationError")
+        }
       }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
@@ -156,8 +159,11 @@ describe("UpdateUser Command", () => {
           })
         )
 
-        // Validation passes, HTTP fails but error is handled gracefully
-        assert.strictEqual(result._tag, "Success")
+        // Validation passes, HTTP fails with transport error (not validation error)
+        assert.strictEqual(result._tag, "Failure")
+        if (result._tag === "Failure" && result.cause._tag === "Fail") {
+          assert.notStrictEqual(result.cause.error._tag, "PingOneValidationError")
+        }
       }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 

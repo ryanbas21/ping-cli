@@ -42,20 +42,16 @@ export const readGroupCommand = Command.make(
       const expandParam = expand._tag === "Some" ? expand.value : undefined
 
       // Read the group
-      return yield* readGroup({
+      const group = yield* readGroup({
         envId,
         token,
         groupId,
         expand: expandParam
-      }).pipe(
-        Effect.flatMap((group) =>
-          Console.log(
-            `Group Details:\nID: ${group.id}\nName: ${group.name}${
-              group.description ? `\nDescription: ${group.description}` : ""
-            }\nCustom: ${group.custom}\nCreated: ${group.createdAt}\nUpdated: ${group.updatedAt}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to read group: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Group Details:\nID: ${group.id}\nName: ${group.name}${
+          group.description ? `\nDescription: ${group.description}` : ""
+        }\nCustom: ${group.custom}\nCreated: ${group.createdAt}\nUpdated: ${group.updatedAt}`
       )
     })
 )

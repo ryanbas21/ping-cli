@@ -54,13 +54,11 @@ export const deleteUser = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Delete the user
-      return yield* deletePingOneUser({
+      yield* deletePingOneUser({
         envId,
         token,
         userId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`User ${userId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete user: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`User ${userId} deleted successfully!`)
     })
 )

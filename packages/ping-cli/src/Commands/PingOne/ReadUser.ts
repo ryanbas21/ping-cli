@@ -54,14 +54,13 @@ export const readUser = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Read the user
-      return yield* readPingOneUser({
+      const user = yield* readPingOneUser({
         envId,
         token,
         userId
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User found!
+      })
+      yield* Console.log(
+        `User found!
 ID: ${user.id}
 Username: ${user.username}
 Email: ${user.email}
@@ -72,9 +71,6 @@ Created: ${user.createdAt}
 Updated: ${user.updatedAt}
 Population ID: ${user.population.id}
 Environment ID: ${user.environment.id}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to read user: ${error._tag}`))
       )
     })
 )

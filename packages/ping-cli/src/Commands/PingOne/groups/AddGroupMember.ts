@@ -37,14 +37,12 @@ export const addGroupMemberCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Add member to group
-      return yield* addGroupMember({
+      yield* addGroupMember({
         envId,
         token,
         groupId,
         userId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`User ${userId} added to group ${groupId} successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to add member to group: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`User ${userId} added to group ${groupId} successfully!`)
     })
 )

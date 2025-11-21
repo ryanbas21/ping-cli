@@ -71,7 +71,7 @@ export const PingOneCreateUserResponse = Schema.Struct({
   environment: PingOneEnvironmentSchema,
   population: PingOnePopulationSchema,
   createdAt: Schema.String,
-  email: Schema.String,
+  email: Schema.optional(Schema.String),
   enabled: Schema.Boolean,
   lifecycle: PingOneLifecycleSchema,
   mfaEnabled: Schema.Boolean,

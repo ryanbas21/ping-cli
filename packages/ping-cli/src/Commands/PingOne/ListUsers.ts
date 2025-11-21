@@ -58,7 +58,7 @@ export const listUsers = Command.make(
       for (const user of users) {
         yield* Console.log(`ID: ${user.id}`)
         yield* Console.log(`  Username: ${user.username}`)
-        yield* Console.log(`  Email: ${user.email}`)
+        yield* Console.log(`  Email: ${user.email ?? "N/A"}`)
         yield* Console.log(`  Enabled: ${user.enabled}`)
         yield* Console.log(`  Status: ${user.lifecycle.status}`)
         if (user.name?.given || user.name?.family) {

@@ -83,24 +83,20 @@ export const updateUser = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Update the user
-      return yield* updatePingOneUser({
+      const user = yield* updatePingOneUser({
         envId,
         token,
         userId,
         userData
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User updated successfully!
+      })
+      yield* Console.log(
+        `User updated successfully!
 ID: ${user.id}
 Username: ${user.username ?? "N/A"}
 Email: ${user.email ?? "N/A"}
 Enabled: ${user.enabled}
 Lifecycle Status: ${user.lifecycle.status}
 Updated: ${user.updatedAt}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update user: ${error._tag}`))
       )
     })
 )

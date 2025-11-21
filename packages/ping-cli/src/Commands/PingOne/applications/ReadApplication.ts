@@ -31,19 +31,15 @@ export const readApplicationCommand = Command.make(
       const envId = yield* getEnvironmentId(environmentId)
       const token = yield* getToken(pingoneToken)
 
-      return yield* readApplication({
+      const application = yield* readApplication({
         envId,
         token,
         applicationId
-      }).pipe(
-        Effect.flatMap((application) =>
-          Console.log(
-            `Application Details:\nID: ${application.id}\nName: ${application.name}${
-              application.description ? `\nDescription: ${application.description}` : ""
-            }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to read application: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Application Details:\nID: ${application.id}\nName: ${application.name}${
+          application.description ? `\nDescription: ${application.description}` : ""
+        }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
       )
     })
 )

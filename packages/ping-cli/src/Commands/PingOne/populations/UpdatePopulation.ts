@@ -67,20 +67,16 @@ export const updatePopulationCommand = Command.make(
       }
 
       // Update the population
-      return yield* updatePopulation({
+      const population = yield* updatePopulation({
         envId,
         token,
         populationId,
         populationData
-      }).pipe(
-        Effect.flatMap((population) =>
-          Console.log(
-            `Population updated successfully!\nID: ${population.id}\nName: ${population.name}${
-              population.description ? `\nDescription: ${population.description}` : ""
-            }`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update population: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Population updated successfully!\nID: ${population.id}\nName: ${population.name}${
+          population.description ? `\nDescription: ${population.description}` : ""
+        }`
       )
     })
 )

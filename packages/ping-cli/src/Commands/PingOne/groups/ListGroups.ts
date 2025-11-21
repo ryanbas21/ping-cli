@@ -44,39 +44,35 @@ export const listGroupsCommand = Command.make(
       const expandParam = expand._tag === "Some" ? expand.value : undefined
 
       // List groups
-      return yield* listGroups({
+      const response = yield* listGroups({
         envId,
         token,
         limit: limitParam,
         filter: filterParam,
         expand: expandParam
-      }).pipe(
-        Effect.flatMap((response) => {
-          const groups = response._embedded.groups
-          const count = response.count || groups.length
+      })
+      const groups = response._embedded.groups
+      const count = response.count || groups.length
 
-          return Console.log(
-            `Found ${count} group(s):
+      yield* Console.log(
+        `Found ${count} group(s):
 
 ${
-              Array.join(
-                Array.map(
-                  groups,
-                  (group, index) =>
-                    `${index + 1}. ${group.name} (${group.id})${
-                      group.description ?
-                        `
+          Array.join(
+            Array.map(
+              groups,
+              (group, index) =>
+                `${index + 1}. ${group.name} (${group.id})${
+                  group.description ?
+                    `
    Description: ${group.description}` :
-                        ""
-                    }
+                    ""
+                }
    Custom: ${group.custom}`
-                ),
-                "\n\n"
-              )
-            }`
+            ),
+            "\n\n"
           )
-        }),
-        Effect.catchAll((error) => Console.error(`Failed to list groups: ${error._tag}`))
+        }`
       )
     })
 )

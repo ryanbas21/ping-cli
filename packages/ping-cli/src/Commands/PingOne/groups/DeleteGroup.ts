@@ -35,13 +35,11 @@ export const deleteGroupCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Delete the group
-      return yield* deleteGroup({
+      yield* deleteGroup({
         envId,
         token,
         groupId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`Group ${groupId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete group: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`Group ${groupId} deleted successfully!`)
     })
 )

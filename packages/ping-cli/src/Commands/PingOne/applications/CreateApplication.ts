@@ -65,15 +65,11 @@ export const createApplicationCommand = Command.make(
 
       applicationData.enabled = enabled
 
-      return yield* createApplication({ envId, token, applicationData }).pipe(
-        Effect.flatMap((application) =>
-          Console.log(
-            `Application created successfully!\nID: ${application.id}\nName: ${application.name}${
-              application.description ? `\nDescription: ${application.description}` : ""
-            }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create application: ${error._tag}`))
+      const application = yield* createApplication({ envId, token, applicationData })
+      yield* Console.log(
+        `Application created successfully!\nID: ${application.id}\nName: ${application.name}${
+          application.description ? `\nDescription: ${application.description}` : ""
+        }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
       )
     })
 )

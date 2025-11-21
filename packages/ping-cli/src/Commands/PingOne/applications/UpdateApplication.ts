@@ -67,15 +67,11 @@ export const updateApplicationCommand = Command.make(
         applicationData.enabled = enabled.value
       }
 
-      return yield* updateApplication({ envId, token, applicationId, applicationData }).pipe(
-        Effect.flatMap((application) =>
-          Console.log(
-            `Application updated successfully!\nID: ${application.id}\nName: ${application.name}${
-              application.description ? `\nDescription: ${application.description}` : ""
-            }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update application: ${error._tag}`))
+      const application = yield* updateApplication({ envId, token, applicationId, applicationData })
+      yield* Console.log(
+        `Application updated successfully!\nID: ${application.id}\nName: ${application.name}${
+          application.description ? `\nDescription: ${application.description}` : ""
+        }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
       )
     })
 )

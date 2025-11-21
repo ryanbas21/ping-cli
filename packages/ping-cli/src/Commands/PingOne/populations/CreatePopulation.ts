@@ -64,19 +64,15 @@ export const createPopulationCommand = Command.make(
       }
 
       // Create the population
-      return yield* createPopulation({
+      const population = yield* createPopulation({
         envId,
         token,
         populationData
-      }).pipe(
-        Effect.flatMap((population) =>
-          Console.log(
-            `Population created successfully!\nID: ${population.id}\nName: ${population.name}${
-              population.description ? `\nDescription: ${population.description}` : ""
-            }\nDefault: ${population.default}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create population: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Population created successfully!\nID: ${population.id}\nName: ${population.name}${
+          population.description ? `\nDescription: ${population.description}` : ""
+        }\nDefault: ${population.default}`
       )
     })
 )

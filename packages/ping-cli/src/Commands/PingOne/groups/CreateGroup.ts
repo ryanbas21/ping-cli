@@ -88,19 +88,15 @@ export const createGroupCommand = Command.make(
       }
 
       // Create the group
-      return yield* createGroup({
+      const group = yield* createGroup({
         envId,
         token,
         groupData
-      }).pipe(
-        Effect.flatMap((group) =>
-          Console.log(
-            `Group created successfully!\nID: ${group.id}\nName: ${group.name}${
-              group.description ? `\nDescription: ${group.description}` : ""
-            }`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create group: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Group created successfully!\nID: ${group.id}\nName: ${group.name}${
+          group.description ? `\nDescription: ${group.description}` : ""
+        }`
       )
     })
 )

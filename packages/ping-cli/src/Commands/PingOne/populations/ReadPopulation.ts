@@ -36,21 +36,17 @@ export const readPopulationCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Read the population
-      return yield* readPopulation({
+      const population = yield* readPopulation({
         envId,
         token,
         populationId
-      }).pipe(
-        Effect.flatMap((population) =>
-          Console.log(
-            `Population Details:\nID: ${population.id}\nName: ${population.name}${
-              population.description ? `\nDescription: ${population.description}` : ""
-            }\nDefault: ${population.default}${
-              population.passwordPolicy ? `\nPassword Policy ID: ${population.passwordPolicy.id}` : ""
-            }`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to read population: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Population Details:\nID: ${population.id}\nName: ${population.name}${
+          population.description ? `\nDescription: ${population.description}` : ""
+        }\nDefault: ${population.default}${
+          population.passwordPolicy ? `\nPassword Policy ID: ${population.passwordPolicy.id}` : ""
+        }`
       )
     })
 )

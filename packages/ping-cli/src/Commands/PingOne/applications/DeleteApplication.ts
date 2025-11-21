@@ -31,13 +31,11 @@ export const deleteApplicationCommand = Command.make(
       const envId = yield* getEnvironmentId(environmentId)
       const token = yield* getToken(pingoneToken)
 
-      return yield* deleteApplication({
+      yield* deleteApplication({
         envId,
         token,
         applicationId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`Application ${applicationId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete application: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`Application ${applicationId} deleted successfully!`)
     })
 )

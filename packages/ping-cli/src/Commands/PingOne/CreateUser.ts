@@ -145,17 +145,13 @@ export const createUser = Command.make(
       }
 
       // Create the user
-      return yield* createPingOneUser({
+      const user = yield* createPingOneUser({
         envId,
         token,
         userData
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create user: ${error._tag}`))
+      })
+      yield* Console.log(
+        `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
       )
     })
 )
