@@ -4,7 +4,7 @@
  * @since 0.0.1
  */
 
-import { Config, Effect, Predicate, Redacted } from "effect"
+import { Config, Effect, Option, Predicate, Redacted } from "effect"
 import { PingOneAuthError } from "../../Errors.js"
 import { CredentialService, OAuthService } from "../../Services/index.js"
 
@@ -68,11 +68,12 @@ export const getApiBaseUrl = () =>
  *
  * @since 0.0.1
  */
-export const getEnvironmentId = (cliOption: string) =>
+export const getEnvironmentId = (cliOption: Option.Option<string>) =>
   Effect.gen(function*() {
     // Check if CLI option was provided
-    if (Predicate.isTruthy(cliOption) && cliOption.trim().length > 0) {
-      return cliOption
+    const value = Option.getOrElse(cliOption, () => "")
+    if (Predicate.isTruthy(value) && value.trim().length > 0) {
+      return value
     }
 
     // Fall back to PINGONE_ENV_ID environment variable

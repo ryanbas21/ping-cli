@@ -14,7 +14,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 
 const name = Args.text({ name: "name" })
 
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 const description = Options.text("description").pipe(Options.optional)
 const type = Options.text("type").pipe(Options.withDefault("WEB_APP"))

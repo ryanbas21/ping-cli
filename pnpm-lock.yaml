@@ -166,6 +166,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.0.8
         version: 4.0.8(vitest@4.0.8(@types/debug@4.1.12)(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       publint:
         specifier: ^0.3.15
         version: 0.3.15

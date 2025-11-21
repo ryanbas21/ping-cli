@@ -4,7 +4,7 @@
  * @since 0.0.1
  */
 import { assert, describe, it } from "@effect/vitest"
-import { ConfigProvider, Effect, Layer, Redacted } from "effect"
+import { ConfigProvider, Effect, Layer, Option, Redacted } from "effect"
 import { CredentialStorageError, OAuthFlowError } from "../../Errors.js"
 import { StoredCredentials } from "../../HttpClient/OAuthSchemas.js"
 import { CredentialService, OAuthService } from "../../Services/index.js"
@@ -15,7 +15,7 @@ describe("ConfigHelper", () => {
   describe("getEnvironmentId", () => {
     it.effect("should return CLI option when provided", () =>
       Effect.gen(function*() {
-        const cliOption = "env-from-cli"
+        const cliOption = Option.some("env-from-cli")
         const result = yield* getEnvironmentId(cliOption)
 
         assert.strictEqual(result, "env-from-cli")
@@ -30,7 +30,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = "env-from-cli"
+        const cliOption = Option.some("env-from-cli")
 
         // Even if env var is set, CLI option should take precedence
         const result = yield* getEnvironmentId(cliOption)
@@ -39,7 +39,7 @@ describe("ConfigHelper", () => {
       }).pipe(Effect.provide(configLayer))
     })
 
-    it.effect("should fall back to environment variable when CLI option is empty", () => {
+    it.effect("should fall back to environment variable when CLI option is None", () => {
       const configLayer = Layer.mergeAll(
         Layer.setConfigProvider(
           ConfigProvider.fromMap(new Map([["PINGONE_ENV_ID", "env-from-env"]]))
@@ -48,7 +48,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = ""
+        const cliOption = Option.none()
         const result = yield* getEnvironmentId(cliOption)
 
         assert.strictEqual(result, "env-from-env")
@@ -64,7 +64,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = "   "
+        const cliOption = Option.some("   ")
         const result = yield* getEnvironmentId(cliOption)
 
         assert.strictEqual(result, "env-from-env")
@@ -115,7 +115,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = ""
+        const cliOption = Option.none()
         const result = yield* getEnvironmentId(cliOption).pipe(
           Effect.provide(configLayer),
           Effect.exit
@@ -132,7 +132,7 @@ describe("ConfigHelper", () => {
 
     it.effect("should trim whitespace from CLI option before checking", () =>
       Effect.gen(function*() {
-        const cliOption = "  env-with-spaces  "
+        const cliOption = Option.some("  env-with-spaces  ")
         const result = yield* getEnvironmentId(cliOption)
 
         // Should succeed with trimmed value
@@ -560,7 +560,7 @@ describe("ConfigHelper", () => {
 
       return Effect.gen(function*() {
         // Test with both helpers to show complete hierarchy
-        const envId = yield* getEnvironmentId("cli-env")
+        const envId = yield* getEnvironmentId(Option.some("cli-env"))
 
         const token = yield* getToken({
           _tag: "Some" as const,
@@ -586,7 +586,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const envId = yield* getEnvironmentId("")
+        const envId = yield* getEnvironmentId(Option.none())
 
         const token = yield* getToken({ _tag: "None" as const })
 
@@ -632,7 +632,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const envIdResult = yield* getEnvironmentId("").pipe(Effect.exit)
+        const envIdResult = yield* getEnvironmentId(Option.none()).pipe(Effect.exit)
 
         const tokenResult = yield* getToken({ _tag: "None" as const })
 
