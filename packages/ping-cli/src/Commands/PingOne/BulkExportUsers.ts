@@ -15,7 +15,7 @@ import { getEnvironmentId, getToken } from "./ConfigHelper.js"
 const filePath = Args.text({ name: "filePath" })
 
 // Required options
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 // Format option

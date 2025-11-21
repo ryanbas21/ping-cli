@@ -42,7 +42,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "invalid-email",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "test-pop",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),
@@ -77,7 +77,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "   ",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "test-pop",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),
@@ -111,7 +111,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),
@@ -153,7 +153,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "cli-pop-id",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),
@@ -185,7 +185,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),
@@ -219,7 +219,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "test-pop",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.some("John"),
@@ -251,7 +251,7 @@ describe("CreateUser Command", () => {
           createUser.handler({
             username: "testuser",
             email: "test@example.com",
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             populationId: "test-pop",
             pingoneToken: Option.some(Redacted.make("test-token")),
             givenName: Option.none(),

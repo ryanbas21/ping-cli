@@ -57,6 +57,7 @@
     "@effect/cli": "catalog:effect",
     "@effect/platform": "catalog:effect",
     "@effect/platform-node": "catalog:effect",
+    "dotenv": "^17.2.3",
     "effect": "catalog:effect",
     "keytar": "^7.9.0"
   },

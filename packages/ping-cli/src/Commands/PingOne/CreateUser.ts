@@ -20,7 +20,7 @@ const username = Args.text({ name: "username" })
 const email = Args.text({ name: "email" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const populationId = Options.text("population-id").pipe(Options.withAlias("p"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 

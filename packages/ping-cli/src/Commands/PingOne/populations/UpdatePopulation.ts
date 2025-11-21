@@ -15,7 +15,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const populationId = Args.text({ name: "populationId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 // Optional update fields

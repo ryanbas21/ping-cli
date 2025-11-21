@@ -688,7 +688,7 @@ describe("PingOneClient", () => {
           userData: { email: "test@example.com" }
         })
 
-        assert.strictEqual(capturedMethod, "PUT")
+        assert.strictEqual(capturedMethod, "PATCH")
       }).pipe(Effect.provide(dependencies))
     })
   })

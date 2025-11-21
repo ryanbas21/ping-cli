@@ -25,9 +25,11 @@ describe("Password Operations", () => {
         }
 
         const mockResponse = {
-          id: "user-123",
           environment: { id: "env-123" },
-          status: "SUCCESS"
+          user: { id: "user-123" },
+          passwordPolicy: { id: "policy-123" },
+          status: "OK",
+          lastChangedAt: "2024-01-01T00:00:00.000Z"
         }
 
         const mockClient = HttpClient.make((req) =>
@@ -54,8 +56,8 @@ describe("Password Operations", () => {
           passwordData
         }).pipe(Effect.provide(testLayer))
 
-        assert.strictEqual(result.id, "user-123")
-        assert.strictEqual(result.status, "SUCCESS")
+        assert.strictEqual(result.status, "OK")
+        assert.strictEqual(result.user.id, "user-123")
       }))
 
     it.effect("should set password with forceChange flag", () =>
@@ -66,9 +68,11 @@ describe("Password Operations", () => {
         }
 
         const mockResponse = {
-          id: "user-456",
           environment: { id: "env-456" },
-          status: "SUCCESS"
+          user: { id: "user-456" },
+          passwordPolicy: { id: "policy-456" },
+          status: "OK",
+          lastChangedAt: "2024-01-01T00:00:00.000Z"
         }
 
         const mockClient = HttpClient.make((req) =>
@@ -95,8 +99,7 @@ describe("Password Operations", () => {
           passwordData
         }).pipe(Effect.provide(testLayer))
 
-        assert.strictEqual(result.id, "user-456")
-        assert.strictEqual(result.status, "SUCCESS")
+        assert.strictEqual(result.status, "OK")
       }))
 
     it.effect("should fail with PingOneApiError on 400 bad request", () =>

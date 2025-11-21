@@ -23,8 +23,6 @@ import {
   PingOnePasswordResetResponse,
   PingOneReadUserResponse,
   PingOneRevokeSessionResponse,
-  PingOneSetPasswordRequest,
-  PingOneSetPasswordResponse,
   PingOneUpdateMfaRequest,
   PingOneUpdateMfaResponse,
   PingOneUpdateUserAccountRequest,
@@ -35,6 +33,8 @@ import {
   PingOneVerifyUserRequest,
   PingOneVerifyUserResponse
 } from "./PingOneSchemas.js"
+import type { PingOneSetPasswordRequest } from "./PingOneSchemas.js"
+import { PingOneSetPasswordResponse } from "./PingOneSchemas.js"
 import type {
   CreateUserPayload,
   DeleteMfaDevicePayload,
@@ -169,7 +169,7 @@ export const listPingOneUsers = (
 /**
  * Updates a user in PingOne via API
  *
- * Makes a PUT request to update an existing user's information.
+ * Makes a PATCH request to update an existing user's information.
  * Only provided fields will be updated; omitted fields remain unchanged.
  * The request is validated against the PingOneUpdateUserRequest schema.
  *
@@ -191,7 +191,7 @@ export const updatePingOneUser = <S extends Schema.Schema.Type<typeof PingOneUpd
   Effect.gen(function*() {
     const apiBaseUrl = yield* getApiBaseUrl()
 
-    const request = yield* HttpClientRequest.put(
+    const request = yield* HttpClientRequest.patch(
       `${apiBaseUrl}/environments/${envId}/users/${userId}`
     ).pipe(
       HttpClientRequest.bearerToken(token),
@@ -301,8 +301,8 @@ export const setPingOneUserPassword = <S extends Schema.Schema.Type<typeof PingO
     ).pipe(
       HttpClientRequest.bearerToken(token),
       HttpClientRequest.accept("application/json"),
-      HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.set+json"),
-      HttpClientRequest.schemaBodyJson(PingOneSetPasswordRequest)(passwordData)
+      HttpClientRequest.bodyJson(passwordData),
+      Effect.map(HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.set+json"))
     )
 
     return yield* executeRequest(request, PingOneSetPasswordResponse)
