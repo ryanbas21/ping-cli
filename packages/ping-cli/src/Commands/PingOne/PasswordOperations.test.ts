@@ -24,12 +24,21 @@ describe("Password Operations", () => {
           forceChange: false
         }
 
+        const mockResponse = {
+          environment: { id: "env-123" },
+          user: { id: "user-123" },
+          passwordPolicy: { id: "policy-123" },
+          status: "OK",
+          lastChangedAt: "2024-01-01T00:00:00.000Z"
+        }
+
         const mockClient = HttpClient.make((req) =>
           Effect.succeed(
             HttpClientResponse.fromWeb(
               req,
-              new Response(null, {
-                status: 204
+              new Response(JSON.stringify(mockResponse), {
+                status: 200,
+                headers: { "content-type": "application/json" }
               })
             )
           )
@@ -40,13 +49,15 @@ describe("Password Operations", () => {
           MockServicesLive
         )
 
-        // Should complete without error (returns void)
-        yield* setPingOneUserPassword({
+        const result = yield* setPingOneUserPassword({
           envId: "env-123",
           token: "test-token",
           userId: "user-123",
           passwordData
         }).pipe(Effect.provide(testLayer))
+
+        assert.strictEqual(result.status, "OK")
+        assert.strictEqual(result.user.id, "user-123")
       }))
 
     it.effect("should set password with forceChange flag", () =>
@@ -56,12 +67,21 @@ describe("Password Operations", () => {
           forceChange: true
         }
 
+        const mockResponse = {
+          environment: { id: "env-456" },
+          user: { id: "user-456" },
+          passwordPolicy: { id: "policy-456" },
+          status: "OK",
+          lastChangedAt: "2024-01-01T00:00:00.000Z"
+        }
+
         const mockClient = HttpClient.make((req) =>
           Effect.succeed(
             HttpClientResponse.fromWeb(
               req,
-              new Response(null, {
-                status: 204
+              new Response(JSON.stringify(mockResponse), {
+                status: 200,
+                headers: { "content-type": "application/json" }
               })
             )
           )
@@ -72,13 +92,14 @@ describe("Password Operations", () => {
           MockServicesLive
         )
 
-        // Should complete without error (returns void)
-        yield* setPingOneUserPassword({
+        const result = yield* setPingOneUserPassword({
           envId: "env-456",
           token: "test-token",
           userId: "user-456",
           passwordData
         }).pipe(Effect.provide(testLayer))
+
+        assert.strictEqual(result.status, "OK")
       }))
 
     it.effect("should fail with PingOneApiError on 400 bad request", () =>

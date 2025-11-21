@@ -34,6 +34,7 @@ import {
   PingOneVerifyUserResponse
 } from "./PingOneSchemas.js"
 import type { PingOneSetPasswordRequest } from "./PingOneSchemas.js"
+import { PingOneSetPasswordResponse } from "./PingOneSchemas.js"
 import type {
   CreateUserPayload,
   DeleteMfaDevicePayload,
@@ -304,7 +305,7 @@ export const setPingOneUserPassword = <S extends Schema.Schema.Type<typeof PingO
       Effect.map(HttpClientRequest.setHeader("Content-Type", "application/vnd.pingidentity.password.set+json"))
     )
 
-    yield* executeVoidRequest(request)
+    return yield* executeRequest(request, PingOneSetPasswordResponse)
   })
 
 /**

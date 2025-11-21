@@ -70,7 +70,7 @@ export const setPassword = Command.make(
       }
 
       // Make API call to set password
-      yield* setPingOneUserPassword({
+      const response = yield* setPingOneUserPassword({
         envId,
         token,
         userId,
@@ -79,6 +79,8 @@ export const setPassword = Command.make(
 
       // Display success message
       yield* Console.log(`Password set successfully for user ${userId}`)
+      yield* Console.log(`Status: ${response.status}`)
+      yield* Console.log(`Last changed at: ${response.lastChangedAt}`)
 
       if (forceChange) {
         yield* Console.log("User will be required to change password on next login")
