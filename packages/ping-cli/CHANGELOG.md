@@ -1,5 +1,17 @@
 # p1-cli
 
+## 0.4.0
+
+### Minor Changes
+
+- [#31](https://github.com/ryanbas21/ping-cli/pull/31) [`8b873d6`](https://github.com/ryanbas21/ping-cli/commit/8b873d65edc18974ffa7fddeaabd5296109f8ad3) Thanks [@ryanbas21](https://github.com/ryanbas21)! - Add dotenv support and make environment-id optional across all commands
+
+  - Add dotenv package to automatically load .env files on startup
+  - Make --environment-id optional for all commands (falls back to PINGONE_ENV_ID env var or stored credentials)
+  - Fix ConfigHelper to use idiomatic Option handling
+  - Fix updatePingOneUser to use PATCH instead of PUT
+  - Fix setPingOneUserPassword Content-Type header handling
+
 ## 0.3.2
 
 ### Patch Changes
