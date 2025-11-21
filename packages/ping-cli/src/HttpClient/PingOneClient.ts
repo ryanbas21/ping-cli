@@ -169,7 +169,7 @@ export const listPingOneUsers = (
 /**
  * Updates a user in PingOne via API
  *
- * Makes a PUT request to update an existing user's information.
+ * Makes a PATCH request to update an existing user's information.
  * Only provided fields will be updated; omitted fields remain unchanged.
  * The request is validated against the PingOneUpdateUserRequest schema.
  *

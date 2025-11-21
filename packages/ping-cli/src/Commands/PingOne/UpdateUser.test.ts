@@ -46,7 +46,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -73,7 +73,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: invalidJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -104,7 +104,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: emptyJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -151,7 +151,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: complexJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -178,7 +178,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: arrayJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -209,7 +209,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: primitiveJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -240,7 +240,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: numberJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -273,7 +273,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "   ",
             jsonData,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )

@@ -57,6 +57,7 @@
     "@effect/cli": "catalog:effect",
     "@effect/platform": "catalog:effect",
     "@effect/platform-node": "catalog:effect",
+    "dotenv": "^17.2.3",
     "effect": "catalog:effect",
     "keytar": "^7.9.0"
   },
@@ -66,7 +67,6 @@
     "@effect/vitest": "catalog:effect",
     "@types/node": "^24.10.0",
     "@vitest/coverage-v8": "^4.0.8",
-    "dotenv": "^17.2.3",
     "publint": "^0.3.15",
     "typescript": "^5.7.2",
     "vitest": "^4.0.8"

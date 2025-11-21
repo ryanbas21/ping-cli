@@ -136,17 +136,14 @@ describe("ConfigHelper", () => {
         const result = yield* getEnvironmentId(cliOption)
 
         // Should succeed with trimmed value
-        assert.strictEqual(result, "  env-with-spaces  ")
+        assert.strictEqual(result, "env-with-spaces")
       }).pipe(Effect.provide(MockServicesLive)))
   })
 
   describe("getToken", () => {
     it.effect("should return CLI option when provided with Some tag", () =>
       Effect.gen(function*() {
-        const cliOption = {
-          _tag: "Some" as const,
-          value: Redacted.make("token-from-cli")
-        }
+        const cliOption = Option.some(Redacted.make("token-from-cli"))
 
         const result = yield* getToken(cliOption)
 
@@ -162,10 +159,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = {
-          _tag: "Some" as const,
-          value: Redacted.make("token-from-cli")
-        }
+        const cliOption = Option.some(Redacted.make("token-from-cli"))
 
         const result = yield* getToken(cliOption)
 
@@ -182,7 +176,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = { _tag: "None" as const }
+        const cliOption = Option.none()
         const result = yield* getToken(cliOption)
 
         assert.strictEqual(result, "token-from-env")
@@ -198,10 +192,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = {
-          _tag: "Some" as const,
-          value: Redacted.make("")
-        }
+        const cliOption = Option.some(Redacted.make(""))
 
         const result = yield* getToken(cliOption)
 
@@ -218,7 +209,7 @@ describe("ConfigHelper", () => {
       )
 
       return Effect.gen(function*() {
-        const cliOption = { _tag: "None" as const }
+        const cliOption = Option.none()
         const result = yield* getToken(cliOption)
 
         // Should succeed with mock OAuth token since MockOAuthServiceLive provides one
@@ -229,10 +220,7 @@ describe("ConfigHelper", () => {
     it.effect("should handle redacted values correctly", () =>
       Effect.gen(function*() {
         const secretToken = "super-secret-token-12345"
-        const cliOption = {
-          _tag: "Some" as const,
-          value: Redacted.make(secretToken)
-        }
+        const cliOption = Option.some(Redacted.make(secretToken))
 
         const result = yield* getToken(cliOption)
 
@@ -562,10 +550,7 @@ describe("ConfigHelper", () => {
         // Test with both helpers to show complete hierarchy
         const envId = yield* getEnvironmentId(Option.some("cli-env"))
 
-        const token = yield* getToken({
-          _tag: "Some" as const,
-          value: Redacted.make("cli-token")
-        })
+        const token = yield* getToken(Option.some(Redacted.make("cli-token")))
 
         assert.strictEqual(envId, "cli-env")
         assert.strictEqual(token, "cli-token")
@@ -588,7 +573,7 @@ describe("ConfigHelper", () => {
       return Effect.gen(function*() {
         const envId = yield* getEnvironmentId(Option.none())
 
-        const token = yield* getToken({ _tag: "None" as const })
+        const token = yield* getToken(Option.none())
 
         assert.strictEqual(envId, "env-var-env")
         assert.strictEqual(token, "env-var-token")
@@ -634,7 +619,7 @@ describe("ConfigHelper", () => {
       return Effect.gen(function*() {
         const envIdResult = yield* getEnvironmentId(Option.none()).pipe(Effect.exit)
 
-        const tokenResult = yield* getToken({ _tag: "None" as const })
+        const tokenResult = yield* getToken(Option.none())
 
         // envId should fail (no fallback available)
         assert.strictEqual(envIdResult._tag, "Failure")
