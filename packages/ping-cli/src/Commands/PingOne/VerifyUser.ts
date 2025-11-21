@@ -18,7 +18,7 @@ const userId = Args.text({ name: "userId" })
 const verificationCode = Args.text({ name: "verificationCode" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -71,25 +71,21 @@ export const verifyUser = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Verify the user
-      return yield* verifyPingOneUser({
+      const user = yield* verifyPingOneUser({
         envId,
         token,
         userId,
         verificationData: {
           verificationCode
         }
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User verified successfully!
+      })
+      yield* Console.log(
+        `User verified successfully!
 ID: ${user.id}
 Username: ${user.username}
 Email: ${user.email}
 Lifecycle Status: ${user.lifecycle.status}
 Enabled: ${user.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to verify user: ${error._tag}`))
       )
     })
 )

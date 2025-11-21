@@ -9,7 +9,7 @@ import * as Console from "effect/Console"
 import { listApplications } from "../../../HttpClient/ApplicationClient.js"
 import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 const limit = Options.integer("limit").pipe(Options.withAlias("l"), Options.optional)
@@ -36,40 +36,37 @@ export const listApplicationsCommand = Command.make(
       const limitParam = limit._tag === "Some" ? limit.value : undefined
       const filterParam = filter._tag === "Some" ? filter.value : undefined
 
-      return yield* listApplications({
+      const response = yield* listApplications({
         envId,
         token,
         limit: limitParam,
         filter: filterParam
-      }).pipe(
-        Effect.flatMap((response) => {
-          const applications = response._embedded.applications
-          const count = response.count || applications.length
+      })
 
-          return Console.log(
-            `Found ${count} application(s):
+      const applications = response._embedded.applications
+      const count = response.count || applications.length
+
+      yield* Console.log(
+        `Found ${count} application(s):
 
 ${
-              Array.join(
-                Array.map(
-                  applications,
-                  (application, index) =>
-                    `${index + 1}. ${application.name} (${application.id})${
-                      application.description ?
-                        `
+          Array.join(
+            Array.map(
+              applications,
+              (application, index) =>
+                `${index + 1}. ${application.name} (${application.id})${
+                  application.description ?
+                    `
    Description: ${application.description}` :
-                        ""
-                    }
+                    ""
+                }
    Type: ${application.type}
    Protocol: ${application.protocol}
    Enabled: ${application.enabled}`
-                ),
-                "\n\n"
-              )
-            }`
+            ),
+            "\n\n"
           )
-        }),
-        Effect.catchAll((error) => Console.error(`Failed to list applications: ${error._tag}`))
+        }`
       )
     })
 )

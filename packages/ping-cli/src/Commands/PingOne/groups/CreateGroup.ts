@@ -15,7 +15,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const name = Args.text({ name: "name" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 // Optional group data
@@ -88,19 +88,15 @@ export const createGroupCommand = Command.make(
       }
 
       // Create the group
-      return yield* createGroup({
+      const group = yield* createGroup({
         envId,
         token,
         groupData
-      }).pipe(
-        Effect.flatMap((group) =>
-          Console.log(
-            `Group created successfully!\nID: ${group.id}\nName: ${group.name}${
-              group.description ? `\nDescription: ${group.description}` : ""
-            }`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create group: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Group created successfully!\nID: ${group.id}\nName: ${group.name}${
+          group.description ? `\nDescription: ${group.description}` : ""
+        }`
       )
     })
 )

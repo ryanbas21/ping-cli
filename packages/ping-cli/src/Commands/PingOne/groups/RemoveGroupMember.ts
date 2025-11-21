@@ -14,7 +14,7 @@ const groupId = Args.text({ name: "groupId" })
 const userId = Args.text({ name: "userId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -37,14 +37,12 @@ export const removeGroupMemberCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Remove member from group
-      return yield* removeGroupMember({
+      yield* removeGroupMember({
         envId,
         token,
         groupId,
         userId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`User ${userId} removed from group ${groupId} successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to remove member from group: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`User ${userId} removed from group ${groupId} successfully!`)
     })
 )

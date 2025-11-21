@@ -13,7 +13,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const groupId = Args.text({ name: "groupId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -35,13 +35,11 @@ export const deleteGroupCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Delete the group
-      return yield* deleteGroup({
+      yield* deleteGroup({
         envId,
         token,
         groupId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`Group ${groupId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete group: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`Group ${groupId} deleted successfully!`)
     })
 )

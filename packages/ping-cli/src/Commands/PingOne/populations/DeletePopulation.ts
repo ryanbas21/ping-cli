@@ -14,7 +14,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const populationId = Args.text({ name: "populationId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -36,13 +36,11 @@ export const deletePopulationCommand = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Delete the population
-      return yield* deletePopulation({
+      yield* deletePopulation({
         envId,
         token,
         populationId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`Population ${populationId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete population: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`Population ${populationId} deleted successfully!`)
     })
 )

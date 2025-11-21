@@ -14,7 +14,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const groupId = Args.text({ name: "groupId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 // Optional update fields
@@ -84,20 +84,16 @@ export const updateGroupCommand = Command.make(
       }
 
       // Update the group
-      return yield* updateGroup({
+      const group = yield* updateGroup({
         envId,
         token,
         groupId,
         groupData
-      }).pipe(
-        Effect.flatMap((group) =>
-          Console.log(
-            `Group updated successfully!\nID: ${group.id}\nName: ${group.name}${
-              group.description ? `\nDescription: ${group.description}` : ""
-            }`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update group: ${error._tag}`))
+      })
+      yield* Console.log(
+        `Group updated successfully!\nID: ${group.id}\nName: ${group.name}${
+          group.description ? `\nDescription: ${group.description}` : ""
+        }`
       )
     })
 )

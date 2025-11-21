@@ -23,7 +23,7 @@ const userId = Args.text({ name: "userId" })
 const jsonData = Args.text({ name: "jsonData" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -83,24 +83,20 @@ export const updateUser = Command.make(
       const token = yield* getToken(pingoneToken)
 
       // Update the user
-      return yield* updatePingOneUser({
+      const user = yield* updatePingOneUser({
         envId,
         token,
         userId,
         userData
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User updated successfully!
+      })
+      yield* Console.log(
+        `User updated successfully!
 ID: ${user.id}
 Username: ${user.username ?? "N/A"}
 Email: ${user.email ?? "N/A"}
 Enabled: ${user.enabled}
 Lifecycle Status: ${user.lifecycle.status}
 Updated: ${user.updatedAt}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update user: ${error._tag}`))
       )
     })
 )

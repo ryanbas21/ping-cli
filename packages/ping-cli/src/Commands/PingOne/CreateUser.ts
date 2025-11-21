@@ -20,7 +20,7 @@ const username = Args.text({ name: "username" })
 const email = Args.text({ name: "email" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const populationId = Options.text("population-id").pipe(Options.withAlias("p"))
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
@@ -145,17 +145,13 @@ export const createUser = Command.make(
       }
 
       // Create the user
-      return yield* createPingOneUser({
+      const user = yield* createPingOneUser({
         envId,
         token,
         userData
-      }).pipe(
-        Effect.flatMap((user) =>
-          Console.log(
-            `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create user: ${error._tag}`))
+      })
+      yield* Console.log(
+        `User created successfully!\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}`
       )
     })
 )

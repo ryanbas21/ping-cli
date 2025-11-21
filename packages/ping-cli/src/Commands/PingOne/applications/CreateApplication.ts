@@ -14,7 +14,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 
 const name = Args.text({ name: "name" })
 
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 const description = Options.text("description").pipe(Options.optional)
 const type = Options.text("type").pipe(Options.withDefault("WEB_APP"))
@@ -65,15 +65,11 @@ export const createApplicationCommand = Command.make(
 
       applicationData.enabled = enabled
 
-      return yield* createApplication({ envId, token, applicationData }).pipe(
-        Effect.flatMap((application) =>
-          Console.log(
-            `Application created successfully!\nID: ${application.id}\nName: ${application.name}${
-              application.description ? `\nDescription: ${application.description}` : ""
-            }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to create application: ${error._tag}`))
+      const application = yield* createApplication({ envId, token, applicationData })
+      yield* Console.log(
+        `Application created successfully!\nID: ${application.id}\nName: ${application.name}${
+          application.description ? `\nDescription: ${application.description}` : ""
+        }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
       )
     })
 )

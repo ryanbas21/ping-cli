@@ -13,7 +13,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 const groupId = Args.text({ name: "groupId" })
 
 // Required options with environment variable fallback
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 // Optional query parameters
@@ -42,28 +42,24 @@ export const listGroupMembersCommand = Command.make(
       const limitParam = limit._tag === "Some" ? limit.value : undefined
 
       // List group members
-      return yield* listGroupMembers({
+      const response = yield* listGroupMembers({
         envId,
         token,
         groupId,
         limit: limitParam
-      }).pipe(
-        Effect.flatMap((response) => {
-          const members = response._embedded.users
-          const count = response.count || members.length
+      })
+      const members = response._embedded.users
+      const count = response.count || members.length
 
-          return Console.log(
-            `Found ${count} member(s) in group ${groupId}:
+      yield* Console.log(
+        `Found ${count} member(s) in group ${groupId}:
 
 ${
-              Array.join(
-                Array.map(members, (user, index) => `${index + 1}. User ID: ${user.id}`),
-                "\n"
-              )
-            }`
+          Array.join(
+            Array.map(members, (user, index) => `${index + 1}. User ID: ${user.id}`),
+            "\n"
           )
-        }),
-        Effect.catchAll((error) => Console.error(`Failed to list group members: ${error._tag}`))
+        }`
       )
     })
 )

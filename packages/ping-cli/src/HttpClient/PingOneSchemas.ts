@@ -71,7 +71,7 @@ export const PingOneCreateUserResponse = Schema.Struct({
   environment: PingOneEnvironmentSchema,
   population: PingOnePopulationSchema,
   createdAt: Schema.String,
-  email: Schema.String,
+  email: Schema.optional(Schema.String),
   enabled: Schema.Boolean,
   lifecycle: PingOneLifecycleSchema,
   mfaEnabled: Schema.Boolean,
@@ -219,9 +219,11 @@ export const PingOneSetPasswordRequest = Schema.Struct({
  * @since 0.0.1
  */
 export const PingOneSetPasswordResponse = Schema.Struct({
-  id: Schema.String,
   environment: PingOneEnvironmentSchema,
-  status: Schema.String
+  user: Schema.Struct({ id: Schema.String }),
+  passwordPolicy: Schema.Struct({ id: Schema.String }),
+  status: Schema.String,
+  lastChangedAt: Schema.String
 })
 
 /**

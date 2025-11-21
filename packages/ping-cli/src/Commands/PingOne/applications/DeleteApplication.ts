@@ -11,7 +11,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 
 const applicationId = Args.text({ name: "applicationId" })
 
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 
 /**
@@ -31,13 +31,11 @@ export const deleteApplicationCommand = Command.make(
       const envId = yield* getEnvironmentId(environmentId)
       const token = yield* getToken(pingoneToken)
 
-      return yield* deleteApplication({
+      yield* deleteApplication({
         envId,
         token,
         applicationId
-      }).pipe(
-        Effect.flatMap(() => Console.log(`Application ${applicationId} deleted successfully!`)),
-        Effect.catchAll((error) => Console.error(`Failed to delete application: ${error._tag}`))
-      )
+      })
+      yield* Console.log(`Application ${applicationId} deleted successfully!`)
     })
 )

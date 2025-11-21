@@ -46,13 +46,16 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
-        // Validation passes, HTTP fails but error is handled gracefully
-        assert.strictEqual(result._tag, "Success")
+        // Validation passes, HTTP fails with transport error (not validation error)
+        assert.strictEqual(result._tag, "Failure")
+        if (result._tag === "Failure" && result.cause._tag === "Fail") {
+          assert.notStrictEqual(result.cause.error._tag, "PingOneValidationError")
+        }
       }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
@@ -73,7 +76,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: invalidJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -104,7 +107,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: emptyJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -151,13 +154,16 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: complexJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
 
-        // Validation passes, HTTP fails but error is handled gracefully
-        assert.strictEqual(result._tag, "Success")
+        // Validation passes, HTTP fails with transport error (not validation error)
+        assert.strictEqual(result._tag, "Failure")
+        if (result._tag === "Failure" && result.cause._tag === "Fail") {
+          assert.notStrictEqual(result.cause.error._tag, "PingOneValidationError")
+        }
       }).pipe(Effect.provide(Layer.mergeAll(configLayer, httpClientLayer, MockServicesLive)))
     })
 
@@ -178,7 +184,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: arrayJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -209,7 +215,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: primitiveJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -240,7 +246,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "test-user-id",
             jsonData: numberJson,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )
@@ -273,7 +279,7 @@ describe("UpdateUser Command", () => {
           updateUser.handler({
             userId: "   ",
             jsonData,
-            environmentId: "test-env",
+            environmentId: Option.some("test-env"),
             pingoneToken: Option.some(Redacted.make("test-token"))
           })
         )

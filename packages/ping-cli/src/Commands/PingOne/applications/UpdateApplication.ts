@@ -12,7 +12,7 @@ import { getEnvironmentId, getToken } from "../ConfigHelper.js"
 
 const applicationId = Args.text({ name: "applicationId" })
 
-const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"))
+const environmentId = Options.text("environment-id").pipe(Options.withAlias("e"), Options.optional)
 const pingoneToken = Options.redacted("pingone-token").pipe(Options.withAlias("t"), Options.optional)
 const name = Options.text("name").pipe(Options.optional)
 const description = Options.text("description").pipe(Options.optional)
@@ -67,15 +67,11 @@ export const updateApplicationCommand = Command.make(
         applicationData.enabled = enabled.value
       }
 
-      return yield* updateApplication({ envId, token, applicationId, applicationData }).pipe(
-        Effect.flatMap((application) =>
-          Console.log(
-            `Application updated successfully!\nID: ${application.id}\nName: ${application.name}${
-              application.description ? `\nDescription: ${application.description}` : ""
-            }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
-          )
-        ),
-        Effect.catchAll((error) => Console.error(`Failed to update application: ${error._tag}`))
+      const application = yield* updateApplication({ envId, token, applicationId, applicationData })
+      yield* Console.log(
+        `Application updated successfully!\nID: ${application.id}\nName: ${application.name}${
+          application.description ? `\nDescription: ${application.description}` : ""
+        }\nType: ${application.type}\nProtocol: ${application.protocol}\nEnabled: ${application.enabled}`
       )
     })
 )
